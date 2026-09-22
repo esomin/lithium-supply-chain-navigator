@@ -574,7 +574,7 @@ export function GraphRenderer({
                     zIndex: 10,
                 }}
             >
-                {/* 좌측 버튼 컬럼: 충격 시뮬레이션 + 국가 클러스터링 */}
+                {/* 좌측 버튼 컬럼: 국가 클러스터링 */}
                 <div
                     style={{
                         display: 'flex',
@@ -583,30 +583,7 @@ export function GraphRenderer({
                         gap: '0.35rem',
                     }}
                 >
-                    {/* 1. 충격 시뮬레이션 버튼 */}
-                    {onToggleSimulation && (
-                        <Button
-                            id="tour-sim-button"
-                            onClick={onToggleSimulation}
-                            variant={isSimulationOpen ? "outline" : "default"}
-                            className={`font-semibold shadow-md flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer rounded px-3 py-1.5 text-xs h-[30px] ${
-                                isSimulationOpen
-                                    ? 'bg-card/95 text-foreground border border-border hover:bg-muted hover:text-foreground ring-1 ring-border'
-                                    : 'bg-primary text-primary-foreground hover:bg-primary/90'
-                            }`}
-                            aria-label={isSimulationOpen ? "충격 시뮬레이션 패널 닫기" : "충격 시뮬레이션 패널 열기"}
-                            aria-pressed={isSimulationOpen}
-                        >
-                            {isSimulationOpen ? (
-                                <Pause className="w-3.5 h-3.5 fill-current" />
-                            ) : (
-                                <Play className="w-3.5 h-3.5 fill-current" />
-                            )}
-                            충격 시뮬레이션
-                        </Button>
-                    )}
-
-                    {/* 2. 국가 클러스터링 토글 스위치 (좌측 스위치 + 우측 텍스트) */}
+                    {/* 국가 클러스터링 토글 스위치 (좌측 스위치 + 우측 텍스트) */}
                     <div
                         role="switch"
                         aria-checked={clusteringEnabled}

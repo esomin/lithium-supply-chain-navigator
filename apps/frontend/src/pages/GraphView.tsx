@@ -210,7 +210,30 @@ export function GraphView() {
 
     return (
         <div className="w-screen h-screen flex flex-col bg-background text-foreground">
-            <AppHeader currentView="graph" />
+            <AppHeader
+                currentView="graph"
+                actions={
+                    <Button
+                        id="tour-sim-button"
+                        onClick={() => setShowSimulation(!showSimulation)}
+                        variant={showSimulation ? "outline" : "default"}
+                        className={`font-semibold shadow-md flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer rounded-md px-3.5 py-1.5 text-xs h-[32px] ${
+                            showSimulation
+                                ? 'bg-muted text-foreground border border-border hover:bg-muted/80'
+                                : 'bg-primary text-primary-foreground hover:bg-primary/90'
+                        }`}
+                        aria-label={showSimulation ? "충격 시뮬레이션 패널 닫기" : "충격 시뮬레이션 패널 열기"}
+                        aria-pressed={showSimulation}
+                    >
+                        {showSimulation ? (
+                            <Pause className="w-3.5 h-3.5 fill-current" />
+                        ) : (
+                            <Play className="w-3.5 h-3.5 fill-current" />
+                        )}
+                        충격 시뮬레이션
+                    </Button>
+                }
+            />
 
             {/* 필터 컨트롤 바 (상시 렌더링으로 레이아웃 시프트 방지, 시뮬레이션 중에는 disabled 처리) */}
             <FilterBar
