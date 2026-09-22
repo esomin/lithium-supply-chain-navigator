@@ -6,7 +6,7 @@ import { useLODClustering } from '../../hooks/useLODClustering';
 import type { ClusterResult } from '../../utils/clustering';
 import { useSupplyChainStore } from '../../store/supply-chain-store';
 import { useSimulationStore } from '../../store/simulation-store';
-import { Play, Pause } from 'lucide-react';
+import { Play, Pause, Circle } from 'lucide-react';
 import { Button } from '../ui/button';
 
 export type ColorMode = 'country' | 'nodeType' | 'risk';
@@ -62,6 +62,17 @@ export function GraphRenderer({
     // 노드 클릭 핸들러를 ref로 보관 (리렌더링 방지)
     const onNodeClickRef = useRef(onNodeClick);
     onNodeClickRef.current = onNodeClick;
+
+    // LG Chem Cheongju 타겟 비콘(Pulsing Dot) 상태 및 위치 계산
+    const [beaconPos, setBeaconPos] = useState<{ x: number; y: number } | null>(null);
+    const [isBeaconDismissed, setIsBeaconDismissed] = useState(false);
+
+    const targetBeaconNode = useMemo(() => {
+        return (
+            filteredNodes.find((n) => n.name.includes('LG Chem Cheongju')) ||
+            filteredNodes.find((n) => n.type === 'Factory')
+        );
+    }, [filteredNodes]);
 
     // LOD 클러스터링 (Web Worker 기반) — enabled = 버튼 state 및 시뮬레이션 상태 기준 제어
     const { lodResult, isClustered } = useLODClustering({
@@ -405,6 +416,80 @@ export function GraphRenderer({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [filteredNodes, filteredEdges, riskScores]);
 
+    // 비콘(Pulsing Dot) 화면 좌표 실시간 추적 핸들러
+    const updateBeaconPosition = useCallback(() => {
+        if (!graphRef.current || !containerRef.current || !targetBeaconNode || isBeaconDismissed || selectedNodeId) {
+            setBeaconPos(null);
+            return;
+        }
+        const graph = graphRef.current;
+        if (graph.destroyed) return;
+
+        try {
+            if (!graph.hasNode(targetBeaconNode.id)) {
+                setBeaconPos(null);
+                return;
+            }
+
+            const pos = graph.getElementPosition(targetBeaconNode.id);
+            if (!pos) return;
+
+            const clientPos = graph.getClientByCanvas(pos);
+            const containerRect = containerRef.current.getBoundingClientRect();
+
+            const x = clientPos[0] - containerRect.left;
+            const y = clientPos[1] - containerRect.top;
+
+            // 캔버스 영역 내에 보이는 경우만 표시
+            if (x >= 20 && x <= containerRect.width - 20 && y >= 20 && y <= containerRect.height - 20) {
+                setBeaconPos({ x, y });
+            } else {
+                setBeaconPos(null);
+            }
+        } catch {
+            // 그래프 리렌더링 중 오류 무시
+        }
+    }, [targetBeaconNode, isBeaconDismissed, selectedNodeId]);
+
+    // 그래프 렌더링, 줌, 패닝, 윈도우 리사이즈 시 비콘 위치 동기화
+    useEffect(() => {
+        if (!graphRef.current || !isGraphReady || isBeaconDismissed || selectedNodeId) {
+            setBeaconPos(null);
+            return;
+        }
+
+        const graph = graphRef.current;
+
+        // 레이아웃 수렴 중 위치 추적을 위한 주기적 갱신
+        const interval = setInterval(updateBeaconPosition, 100);
+
+        const handleGraphEvent = () => {
+            requestAnimationFrame(updateBeaconPosition);
+        };
+
+        graph.on('afterlayout', handleGraphEvent);
+        graph.on('afterrender', handleGraphEvent);
+        graph.on('canvas:wheel', handleGraphEvent);
+        graph.on('canvas:drag', handleGraphEvent);
+        graph.on('drag', handleGraphEvent);
+        graph.on('node:drag', handleGraphEvent);
+
+        window.addEventListener('resize', handleGraphEvent);
+
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener('resize', handleGraphEvent);
+            if (!graph.destroyed) {
+                graph.off('afterlayout', handleGraphEvent);
+                graph.off('afterrender', handleGraphEvent);
+                graph.off('canvas:wheel', handleGraphEvent);
+                graph.off('canvas:drag', handleGraphEvent);
+                graph.off('drag', handleGraphEvent);
+                graph.off('node:drag', handleGraphEvent);
+            }
+        };
+    }, [isGraphReady, isBeaconDismissed, selectedNodeId, updateBeaconPosition]);
+
     // LOD 클러스터링 및 우회 경로(Re-Routing) 시각화 변경 시 그래프 데이터 업데이트
     useEffect(() => {
         if (!graphRef.current || graphRef.current.destroyed || !isGraphReady || filteredNodes.length === 0) return;
@@ -610,19 +695,17 @@ export function GraphRenderer({
                                         ? '국가 클러스터링 해제'
                                         : '국가 클러스터링 활성화'
                         }
-                        className={`font-semibold shadow-xs flex items-center justify-start gap-2 transition-all duration-200 rounded px-2.5 py-1.5 text-xs h-[30px] select-none border ${
-                            isSimulationOpen
-                                ? 'bg-card/40 border-border/40 text-muted-foreground cursor-not-allowed opacity-50'
-                                : 'bg-card text-foreground border-border hover:bg-accent/80 cursor-pointer shadow-xs'
-                        }`}
+                        className={`font-semibold shadow-xs flex items-center justify-start gap-2 transition-all duration-200 rounded px-2.5 py-1.5 text-xs h-[30px] select-none border ${isSimulationOpen
+                            ? 'bg-card/40 border-border/40 text-muted-foreground cursor-not-allowed opacity-50'
+                            : 'bg-card text-foreground border-border hover:bg-accent/80 cursor-pointer shadow-xs'
+                            }`}
                     >
                         {/* 좌측 토글 스위치 UI */}
                         <div
-                            className={`w-7 h-3.5 flex items-center rounded-full p-0.5 transition-colors duration-200 shrink-0 ${
-                                clusteringEnabled
-                                    ? 'bg-primary justify-end'
-                                    : 'bg-zinc-600 dark:bg-zinc-600 border border-zinc-500/50 justify-start'
-                            }`}
+                            className={`w-7 h-3.5 flex items-center rounded-full p-0.5 transition-colors duration-200 shrink-0 ${clusteringEnabled
+                                ? 'bg-primary justify-end'
+                                : 'bg-zinc-600 dark:bg-zinc-600 border border-zinc-500/50 justify-start'
+                                }`}
                         >
                             <div className="w-2.5 h-2.5 rounded-full bg-white shadow-xs" />
                         </div>
@@ -647,66 +730,143 @@ export function GraphRenderer({
 
                     {/* 2. 시각화 모드 라디오 버튼 그룹 */}
                     <div className="bg-muted border border-border rounded p-2 shadow-md flex flex-col gap-1.5">
-                    <span className="text-[0.7rem] font-bold text-foreground text-center block">시각화 모드</span>
-                    <div className="flex flex-col gap-0.5">
-                        <label
-                            onClick={() => setColorMode('nodeType')}
-                            className={`flex items-center gap-2 px-2 py-1.5 rounded text-[0.7rem] font-medium cursor-pointer transition-all ${colorMode === 'nodeType'
-                                ? 'bg-primary/20 text-primary font-bold'
-                                : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
-                                }`}
-                        >
-                            <input
-                                type="radio"
-                                name="visualizationMode"
-                                value="nodeType"
-                                checked={colorMode === 'nodeType'}
-                                onChange={() => setColorMode('nodeType')}
-                                className="w-3.5 h-3.5 accent-primary cursor-pointer"
-                            />
-                            <span>노드 타입별</span>
-                        </label>
+                        <span className="text-[0.7rem] font-bold text-foreground text-center block">시각화 모드</span>
+                        <div className="flex flex-col gap-0.5">
+                            <label
+                                onClick={() => setColorMode('nodeType')}
+                                className={`flex items-center gap-2 px-2 py-1.5 rounded text-[0.7rem] font-medium cursor-pointer transition-all ${colorMode === 'nodeType'
+                                    ? 'bg-primary/20 text-primary font-bold'
+                                    : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+                                    }`}
+                            >
+                                <input
+                                    type="radio"
+                                    name="visualizationMode"
+                                    value="nodeType"
+                                    checked={colorMode === 'nodeType'}
+                                    onChange={() => setColorMode('nodeType')}
+                                    className="w-3.5 h-3.5 accent-primary cursor-pointer"
+                                />
+                                <span>노드 타입별</span>
+                            </label>
 
-                        <label
-                            onClick={() => setColorMode('country')}
-                            className={`flex items-center gap-2 px-2 py-1.5 rounded text-[0.7rem] font-medium cursor-pointer transition-all ${colorMode === 'country'
-                                ? 'bg-primary/20 text-primary font-bold'
-                                : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
-                                }`}
-                        >
-                            <input
-                                type="radio"
-                                name="visualizationMode"
-                                value="country"
-                                checked={colorMode === 'country'}
-                                onChange={() => setColorMode('country')}
-                                className="w-3.5 h-3.5 accent-primary cursor-pointer"
-                            />
-                            <span>국가별</span>
-                        </label>
+                            <label
+                                onClick={() => setColorMode('country')}
+                                className={`flex items-center gap-2 px-2 py-1.5 rounded text-[0.7rem] font-medium cursor-pointer transition-all ${colorMode === 'country'
+                                    ? 'bg-primary/20 text-primary font-bold'
+                                    : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+                                    }`}
+                            >
+                                <input
+                                    type="radio"
+                                    name="visualizationMode"
+                                    value="country"
+                                    checked={colorMode === 'country'}
+                                    onChange={() => setColorMode('country')}
+                                    className="w-3.5 h-3.5 accent-primary cursor-pointer"
+                                />
+                                <span>국가별</span>
+                            </label>
 
-                        <label
-                            onClick={() => setColorMode('risk')}
-                            className={`flex items-center gap-2 px-2 py-1.5 rounded text-[0.7rem] font-medium cursor-pointer transition-all ${colorMode === 'risk'
-                                ? 'bg-primary/20 text-primary font-bold'
-                                : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
-                                }`}
-                        >
-                            <input
-                                type="radio"
-                                name="visualizationMode"
-                                value="risk"
-                                checked={colorMode === 'risk'}
-                                onChange={() => setColorMode('risk')}
-                                className="w-3.5 h-3.5 accent-primary cursor-pointer"
-                            />
-                            <span>리스크별</span>
-                        </label>
+                            <label
+                                onClick={() => setColorMode('risk')}
+                                className={`flex items-center gap-2 px-2 py-1.5 rounded text-[0.7rem] font-medium cursor-pointer transition-all ${colorMode === 'risk'
+                                    ? 'bg-primary/20 text-primary font-bold'
+                                    : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+                                    }`}
+                            >
+                                <input
+                                    type="radio"
+                                    name="visualizationMode"
+                                    value="risk"
+                                    checked={colorMode === 'risk'}
+                                    onChange={() => setColorMode('risk')}
+                                    className="w-3.5 h-3.5 accent-primary cursor-pointer"
+                                />
+                                <span>리스크별</span>
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>
+
+            {/* LG Chem Cheongju 타겟 비콘 & 펄스 툴팁 (Beacon / Hotspot / Pulsing Dot) */}
+            {beaconPos && targetBeaconNode && !selectedNodeId && !isBeaconDismissed && (
+                <div
+                    className="absolute z-20 pointer-events-auto select-none transition-all duration-150"
+                    style={{
+                        top: beaconPos.y,
+                        left: beaconPos.x,
+                    }}
+                >
+                    {/* 펄스 비콘 점 (Pulsing Beacon Dot) */}
+                    <div
+                        onClick={() => {
+                            if (onNodeClickRef.current) {
+                                onNodeClickRef.current(targetBeaconNode.id);
+                            }
+                        }}
+                        className="relative -top-5 -right-5 flex items-center justify-center cursor-pointer group"
+                        title="LG Chem Cheongju 공장 노드 선택"
+                    >
+                        {/* 1. 바깥쪽 확장 핑 애니메이션 링 */}
+                        <span className="absolute inline-flex h-8 w-8 rounded-full bg-sky-400 opacity-60 animate-ping pointer-events-none" />
+                        <span className="absolute inline-flex h-6 w-6 rounded-full bg-sky-500/40 animate-pulse pointer-events-none" />
+
+                        {/* 2. 중앙 발광 비콘 코어 버튼 */}
+                        <div
+                            className="relative flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground shadow-[0_0_16px_rgba(59,130,246,0.8)] border-2 border-white group-hover:scale-110 transition-transform"
+                        >
+                            {/* <Sparkles className="w-3.5 h-3.5 text-white animate-spin [animation-duration:5s]" /> */}
+                            <Circle className="w-3.5 h-3.5 text-white animate-spin [animation-duration:5s]" />
+                        </div>
+                    </div>
+
+                    {/* 안내 말풍선 팝오버 툴팁 */}
+                    <div
+                        className="absolute left-8 -top-7 w-60 bg-card/95 backdrop-blur-md border border-primary text-card-foreground rounded-xl shadow-[0_0_16px_rgba(59,130,246,0.25)] p-3 animate-in fade-in zoom-in-95 group hover:border-2 hover:border-primary hover:shadow-[0_0_24px_rgba(59,130,246,0.45)] transition-all cursor-pointer"
+                        onClick={() => {
+                            if (onNodeClickRef.current) {
+                                onNodeClickRef.current(targetBeaconNode.id);
+                            }
+                        }}
+                    >
+                        {/* 툴팁 화살표 말풍선 꼬리 */}
+                        <div className="absolute -left-1.5 top-4 w-3 h-3 bg-card rotate-45 border-l border-b border-primary group-hover:border-l-2 group-hover:border-b-2 transition-all" />
+
+                        <div className="flex items-start justify-between gap-1 mb-1">
+                            <span className="text-[10px] font-bold text-primary bg-primary/15 px-1.5 py-0.5 rounded border border-primary/30 flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-ping" />
+                                주요 시설 추천
+                            </span>
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setIsBeaconDismissed(true);
+                                }}
+                                className="text-muted-foreground hover:text-foreground text-[11px] px-1 rounded hover:bg-muted/60 transition-colors cursor-pointer"
+                                title="닫기"
+                                aria-label="안내 닫기"
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        <h4 className="text-xs font-bold text-foreground mb-0.5 flex items-center gap-1">
+                            LG Chem Cheongju (공장)
+                        </h4>
+                        <p className="text-[11px] text-muted-foreground leading-snug mb-2">
+                            클릭하여 <strong>ESG 역추적 분석</strong> 및 시설 상세 정보를 확인해보세요.
+                        </p>
+
+                        <div className="text-[10px] font-semibold text-primary flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+                            노드 선택 및 분석하기 →
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
-    </div>
     );
 }
 
