@@ -31,6 +31,8 @@ export function GraphView() {
     const [showAIPanel, setShowAIPanel] = useState(false);
     // 시뮬레이션 패널 표시 상태
     const [showSimulation, setShowSimulation] = useState(false);
+    // 시뮬레이션 버튼 안내 말풍선 표시 상태
+    const [showSimTooltip, setShowSimTooltip] = useState(true);
 
     // 시뮬레이션 패널이 열릴 때 토스트 메시지 표시
     useEffect(() => {
@@ -213,25 +215,74 @@ export function GraphView() {
             <AppHeader
                 currentView="graph"
                 actions={
-                    <Button
-                        id="tour-sim-button"
-                        onClick={() => setShowSimulation(!showSimulation)}
-                        variant={showSimulation ? "outline" : "default"}
-                        className={`font-semibold shadow-md flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer rounded-md px-3.5 py-1.5 text-xs h-[32px] ${
-                            showSimulation
-                                ? 'bg-muted text-foreground border border-border hover:bg-muted/80'
-                                : 'bg-primary text-primary-foreground hover:bg-primary/90'
-                        }`}
-                        aria-label={showSimulation ? "충격 시뮬레이션 패널 닫기" : "충격 시뮬레이션 패널 열기"}
-                        aria-pressed={showSimulation}
-                    >
-                        {showSimulation ? (
-                            <Pause className="w-3.5 h-3.5 fill-current" />
-                        ) : (
-                            <Play className="w-3.5 h-3.5 fill-current" />
+                    <div className="relative">
+                        <Button
+                            id="tour-sim-button"
+                            onClick={() => {
+                                setShowSimulation(!showSimulation);
+                                setShowSimTooltip(false);
+                            }}
+                            variant={showSimulation ? "outline" : "default"}
+                            className={`font-semibold shadow-md flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer rounded-md px-3.5 py-1.5 text-xs h-[32px] ${
+                                showSimulation
+                                    ? 'bg-muted text-foreground border border-border hover:bg-muted/80'
+                                    : 'bg-primary text-primary-foreground hover:bg-primary/90'
+                            }`}
+                            aria-label={showSimulation ? "충격 시뮬레이션 패널 닫기" : "충격 시뮬레이션 패널 열기"}
+                            aria-pressed={showSimulation}
+                        >
+                            {showSimulation ? (
+                                <Pause className="w-3.5 h-3.5 fill-current" />
+                            ) : (
+                                <Play className="w-3.5 h-3.5 fill-current" />
+                            )}
+                            충격 시뮬레이션
+                        </Button>
+
+                        {/* 시뮬레이션 버튼 안내 말풍선 팝오버 툴팁 */}
+                        {showSimTooltip && !showSimulation && (
+                            <div
+                                className="absolute left-0 top-full mt-2.5 w-[280px] bg-card/95 backdrop-blur-md border border-primary text-card-foreground rounded-xl shadow-[0_0_16px_rgba(59,130,246,0.25)] p-3.5 z-50 animate-in fade-in slide-in-from-top-2 duration-300 pointer-events-auto select-none group hover:border-2 hover:border-primary hover:shadow-[0_0_24px_rgba(59,130,246,0.45)] transition-all cursor-pointer"
+                                onClick={() => {
+                                    setShowSimulation(true);
+                                    setShowSimTooltip(false);
+                                }}
+                            >
+                                {/* 상단 화살표 말풍선 꼬리 */}
+                                <div className="absolute -top-1.5 left-6 w-3 h-3 bg-card rotate-45 border-l border-t border-primary group-hover:border-l-2 group-hover:border-t-2 transition-all" />
+
+                                <div className="flex items-center justify-between gap-1 mb-1.5">
+                                    <span className="text-[10px] font-bold text-primary bg-primary/15 px-2 py-0.5 rounded-full border border-primary/30 flex items-center gap-1">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-primary animate-ping" />
+                                        위기 시나리오 분석
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setShowSimTooltip(false);
+                                        }}
+                                        className="text-muted-foreground hover:text-foreground text-[11px] px-1 py-0.5 rounded hover:bg-muted/60 transition-colors cursor-pointer"
+                                        title="안내 닫기"
+                                        aria-label="안내 닫기"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+
+                                <h4 className="text-xs font-bold text-foreground mb-1">
+                                    충격 시뮬레이션
+                                </h4>
+                                <p className="text-[11px] text-muted-foreground leading-relaxed mb-2.5">
+                                    공급망 중단 위기 시나리오를 적용하고 우회 공급 경로 및 영향을 즉시 시뮬레이션해보세요.
+                                </p>
+
+                                <div className="text-[10px] font-semibold text-primary flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+                                    시뮬레이션 모드 열기 →
+                                </div>
+                            </div>
                         )}
-                        충격 시뮬레이션
-                    </Button>
+                    </div>
                 }
             />
 
