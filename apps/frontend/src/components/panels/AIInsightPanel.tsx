@@ -311,14 +311,14 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
                     >
                         <FiChevronRight className="w-5 h-5" />
                     </button>
-                    <span className="p-1 rounded-md bg-violet-600/10 border border-violet-500/30 text-violet-400 shrink-0">
+                    <span className="p-1 rounded-md bg-primary/10 border border-primary/20 text-primary shrink-0">
                         <GiDiamonds size={18} />
                     </span>
                     <div>
                         <h2 className="m-0 text-sm font-bold text-foreground flex items-center gap-2">
                             AI 공급망 인사이트
                             {messages.length > 0 && (
-                                <span className="text-[10px] font-normal px-1.5 py-0.5 rounded bg-violet-500/15 text-violet-300 border border-violet-500/20">
+                                <span className="text-[10px] font-normal px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
                                     세션 유지 중
                                 </span>
                             )}

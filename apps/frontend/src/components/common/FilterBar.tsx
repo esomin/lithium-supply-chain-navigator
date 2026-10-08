@@ -8,7 +8,7 @@ const HS_CODE_OPTIONS = [
         value: '2530.90',
         label: '리튬 광석',
         badges: [
-            { text: '광산→정제소 원료', color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' },
+            { text: '광산→정제소 원료', color: 'bg-muted/80 text-muted-foreground border-border/80' },
         ],
         description: '리튬 광석 (2530.90): 광산 → 정제소 이동 원료',
     },
@@ -16,8 +16,8 @@ const HS_CODE_OPTIONS = [
         value: '2836.91',
         label: '탄산리튬',
         badges: [
-            { text: '염호→정제소 원료', color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' },
-            { text: 'LFP계 양극재 원료', color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20' },
+            { text: '염호→정제소 원료', color: 'bg-muted/80 text-muted-foreground border-border/80' },
+            { text: 'LFP계 양극재 원료', color: 'bg-muted/80 text-muted-foreground border-border/80' },
         ],
         description: '탄산리튬 (2836.91): 염호 직조달 및 정제소 → LFP 양극재 공장 납품',
     },
@@ -25,7 +25,7 @@ const HS_CODE_OPTIONS = [
         value: '2825.20',
         label: '수산화리튬',
         badges: [
-            { text: '삼원계 양극재 원료', color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20' },
+            { text: '삼원계 양극재 원료', color: 'bg-muted/80 text-muted-foreground border-border/80' },
         ],
         description: '수산화리튬 (2825.20): 정제소 → 삼원계(NCM/NCA) 하이니켈 공장 납품',
     },
@@ -207,13 +207,8 @@ export function FilterBar({ nodeCount, totalNodeCount, disabled = false }: Filte
                 </div>
             </div>
 
-            {/* 우측 정보: 시뮬레이션 알림 + 노드 카운트 텍스트 (하단 정렬) */}
+            {/* 우측 정보: 노드 카운트 텍스트 (하단 정렬) */}
             <div className="flex items-center gap-3 self-end shrink-0 pb-0.5">
-                {disabled && (
-                    <span className="text-[11px] font-medium text-amber-500 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded">
-                        시뮬레이션 모드
-                    </span>
-                )}
                 <div className="text-xs text-muted-foreground select-none">
                     <span>노드: </span>
                     <span className="font-bold text-foreground">{displayNodeCount}</span>

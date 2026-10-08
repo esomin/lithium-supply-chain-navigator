@@ -34,13 +34,13 @@ export function AppHeader({
                     variant={showAIPanel ? "outline" : "default"}
                     className={`font-semibold shadow-xs flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer rounded-[4px] px-3 py-1.5 text-xs h-8 ${
                         showAIPanel
-                            ? 'bg-violet-950/60 text-violet-200 border border-violet-500/50 hover:bg-violet-900/50'
-                            : 'bg-violet-600 text-white hover:bg-violet-700 border border-violet-500/30'
+                            ? 'bg-primary/15 text-primary border border-primary/40 hover:bg-primary/25'
+                            : 'bg-muted/80 text-foreground hover:bg-muted border border-border hover:border-primary/40'
                     }`}
                     aria-label={showAIPanel ? "AI 인사이트 패널 닫기" : "AI 인사이트 패널 열기"}
                     aria-pressed={showAIPanel}
                 >
-                    <GiDiamonds className="w-3.5 h-3.5" />
+                    <GiDiamonds className={`w-3.5 h-3.5 ${showAIPanel ? 'text-primary' : 'text-muted-foreground'}`} />
                     AI 인사이트
                 </Button>
 
