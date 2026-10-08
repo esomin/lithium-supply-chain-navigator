@@ -791,7 +791,7 @@ export function GraphRenderer({
             </div>
 
             {/* LG Chem Cheongju 타겟 비콘 & 펄스 툴팁 (Beacon / Hotspot / Pulsing Dot) */}
-            {beaconPos && targetBeaconNode && !selectedNodeId && !isBeaconDismissed && (
+            {beaconPos && targetBeaconNode && !selectedNodeId && !isBeaconDismissed && !isSimulationOpen && (
                 <div
                     className="absolute z-20 pointer-events-auto select-none transition-all duration-150"
                     style={{
