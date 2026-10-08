@@ -328,119 +328,121 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
             <div className="flex-1 min-h-0 flex pointer-events-none">
                 {/* 1열: 시뮬레이션 설정 및 입력 폼 */}
                 <aside
-                    className="w-[380px] h-full bg-card border-r border-border p-4 pr-2 pt-3 shadow-md flex flex-col pointer-events-auto relative"
+                    className="w-[380px] h-full bg-card border-r border-border/40 p-4 pr-2 pt-3 shadow-md flex flex-col pointer-events-auto relative"
                     aria-label="시뮬레이션 입력 및 설정 제어"
                 >
-                    <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-3 p-1">
-                        {/* 시나리오 프리셋 선택 카드 (아이디어 1: Hero 하이라이트) */}
-                        <Card className="border border-primary/40 bg-gradient-to-b from-primary/15 via-primary/5 to-card/70 backdrop-blur-xs shadow-md ring-1 ring-primary/20 mb-3 overflow-visible relative z-10 rounded-lg">
-                            <CardHeader className="p-3 pb-2 flex flex-row items-center justify-between space-y-0 border-b border-primary/15">
-                                <CardTitle className="text-xs font-bold text-primary flex items-center gap-1.5 tracking-normal">
-                                    <Sparkles className="w-3.5 h-3.5 fill-primary/30" />
+                    <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-3.5 p-1">
+                        {/* 시나리오 프리셋 선택 섹션 (플랫 리스트 & 소프트 보더) */}
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-between px-0.5">
+                                <h3 className="text-xs font-semibold text-foreground flex items-center gap-1.5 tracking-normal">
+                                    <Sparkles className="w-3.5 h-3.5 text-muted-foreground" />
                                     추천 시나리오 프리셋
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-2.5 pt-2 overflow-visible">
-                                <div className="flex flex-col gap-1.5 overflow-visible">
-                                    {SCENARIO_PRESETS.map((preset, index) => {
-                                        const isSelected =
-                                            currentDisruption.disruptionType === preset.config.disruptionType &&
-                                            currentDisruption.targetType === preset.config.targetType &&
-                                            currentDisruption.targetId === preset.config.targetId &&
-                                            Math.abs(currentDisruption.severity - preset.config.severity) < 0.01;
+                                </h3>
+                                <span className="text-[10px] text-muted-foreground font-normal">빠른 충격 적용</span>
+                            </div>
 
-                                        const isLast = index === SCENARIO_PRESETS.length - 1;
+                            <div className="flex flex-col gap-1.5">
+                                {SCENARIO_PRESETS.map((preset, index) => {
+                                    const isSelected =
+                                        currentDisruption.disruptionType === preset.config.disruptionType &&
+                                        currentDisruption.targetType === preset.config.targetType &&
+                                        currentDisruption.targetId === preset.config.targetId &&
+                                        Math.abs(currentDisruption.severity - preset.config.severity) < 0.01;
 
-                                        const badgeColor = 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30';
+                                    const isLast = index === SCENARIO_PRESETS.length - 1;
 
-                                        const severityVal =
-                                            DISRUPTION_TYPE_CONFIGS[preset.config.disruptionType]?.formatValue(
-                                                preset.config.severity,
-                                            ) ?? '';
+                                    const severityVal =
+                                        DISRUPTION_TYPE_CONFIGS[preset.config.disruptionType]?.formatValue(
+                                            preset.config.severity,
+                                        ) ?? '';
 
-                                        return (
-                                            <div key={preset.id} className="relative group hover:z-50">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleApplyPreset(preset)}
-                                                    className={`w-full text-left p-2.5 rounded-md border transition-all cursor-pointer flex flex-col gap-1.5 ${isSelected
-                                                        ? 'bg-primary/20 border-primary shadow-sm ring-1 ring-primary/50 text-foreground font-semibold'
-                                                        : 'bg-card/85 border-border/80 text-muted-foreground hover:bg-primary/5 hover:border-primary/40 hover:text-foreground'
-                                                        }`}
-                                                    aria-label={`프리셋 적용: ${preset.name}`}
-                                                >
-                                                    <div className="flex items-center justify-between gap-2">
-                                                        <div className="flex items-center gap-1.5 min-w-0">
-                                                            <span
-                                                                className={`text-[10px] font-bold py-0.5 rounded border shrink-0 w-11 text-center ${badgeColor}`}
-                                                            >
-                                                                {preset.badge}
-                                                            </span>
-                                                            <span
-                                                                className={`text-xs font-semibold leading-tight truncate ${isSelected
-                                                                    ? 'text-primary font-bold'
-                                                                    : 'text-foreground'
-                                                                    }`}
-                                                            >
-                                                                {preset.name}
-                                                            </span>
-                                                        </div>
-                                                        <div className="flex items-center gap-1 shrink-0">
-                                                            {isSelected && (
-                                                                <span className="text-[9px] font-bold text-primary px-1 py-0.2 rounded bg-primary/10 border border-primary/20">
-                                                                    선택됨
-                                                                </span>
-                                                            )}
-                                                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-background/90 border border-border text-foreground shrink-0 shadow-2xs">
-                                                                {severityVal}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="text-[10px] opacity-75 leading-tight flex items-center justify-between text-muted-foreground">
-                                                        <span className="truncate">
-                                                            {preset.config.targetType === 'node'
-                                                                ? preset.config.country === 'ALL'
-                                                                    ? '모든 국가'
-                                                                    : `${getCountryDisplayName(preset.config.country || '')} ${getNodeTypeLabel(preset.config.nodeType || '')}`
-                                                                : '호주 ➔ 한국 수송로'}
-                                                            {' • '}
-                                                            {DISRUPTION_TYPE_CONFIGS[preset.config.disruptionType]?.label}
+                                    return (
+                                        <div key={preset.id} className="relative group hover:z-50">
+                                            <button
+                                                type="button"
+                                                onClick={() => handleApplyPreset(preset)}
+                                                className={`w-full text-left p-2.5 rounded-lg border transition-all duration-150 cursor-pointer flex flex-col gap-1 ${
+                                                    isSelected
+                                                        ? 'bg-primary/10 border-primary/60 text-foreground font-medium shadow-xs ring-1 ring-primary/40 hover:border-primary/80'
+                                                        : 'bg-muted/30 border-border/40 text-muted-foreground hover:bg-muted/60 hover:text-foreground hover:border-primary/50 hover:shadow-2xs'
+                                                }`}
+                                                aria-label={`프리셋 적용: ${preset.name}`}
+                                            >
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <div className="flex items-center gap-2 min-w-0">
+                                                        <span
+                                                            className={`text-[10px] font-medium py-0.5 px-1.5 rounded border shrink-0 transition-colors ${
+                                                                isSelected
+                                                                    ? 'bg-primary/15 text-primary border-primary/30'
+                                                                    : 'bg-muted/80 text-muted-foreground border-border/50 group-hover:border-primary/30 group-hover:text-foreground'
+                                                            }`}
+                                                        >
+                                                            {preset.badge}
+                                                        </span>
+                                                        <span
+                                                            className={`text-xs font-semibold leading-tight truncate transition-colors ${
+                                                                isSelected ? 'text-foreground font-bold' : 'text-foreground/90 group-hover:text-foreground'
+                                                            }`}
+                                                        >
+                                                            {preset.name}
                                                         </span>
                                                     </div>
-                                                </button>
-                                                {/* 마우스 호버 시 나오는 상세 설명 툴팁 */}
-                                                <div
-                                                    className={`absolute hidden group-hover:block z-50 w-64 p-2.5 bg-popover text-popover-foreground text-[10px] leading-relaxed rounded-md border border-border shadow-xl pointer-events-none ${isLast ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
-                                                        } left-0`}
-                                                >
-                                                    <div className="font-semibold text-foreground mb-0.5">
-                                                        {preset.name}
+                                                    <div className="flex items-center gap-1 shrink-0">
+                                                        <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded border transition-colors shrink-0 ${
+                                                            isSelected
+                                                                ? 'bg-primary/15 border-primary/30 text-primary font-bold'
+                                                                : 'bg-background/80 border-border/60 text-muted-foreground group-hover:border-border group-hover:text-foreground'
+                                                        }`}>
+                                                            {severityVal}
+                                                        </span>
                                                     </div>
-                                                    <div className="text-muted-foreground">{preset.description}</div>
                                                 </div>
+                                                <div className="text-[10px] text-muted-foreground/80 leading-tight pl-0.5">
+                                                    <span>
+                                                        {preset.config.targetType === 'node'
+                                                            ? preset.config.country === 'ALL'
+                                                                ? '모든 국가'
+                                                                : `${getCountryDisplayName(preset.config.country || '')} ${getNodeTypeLabel(preset.config.nodeType || '')}`
+                                                            : '호주 ➔ 한국 수송로'}
+                                                        {' • '}
+                                                        {DISRUPTION_TYPE_CONFIGS[preset.config.disruptionType]?.label}
+                                                    </span>
+                                                </div>
+                                            </button>
+                                            {/* 마우스 호버 시 나오는 상세 설명 툴팁 */}
+                                            <div
+                                                className={`absolute hidden group-hover:block z-50 w-64 p-2.5 bg-popover text-popover-foreground text-[10px] leading-relaxed rounded-lg border border-border shadow-xl pointer-events-none ${
+                                                    isLast ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
+                                                } left-0`}
+                                            >
+                                                <div className="font-semibold text-foreground mb-0.5">
+                                                    {preset.name}
+                                                </div>
+                                                <div className="text-muted-foreground">{preset.description}</div>
                                             </div>
-                                        );
-                                    })}
-                                </div>
-                            </CardContent>
-                        </Card>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
 
-                        {/* 시나리오 구성 UI (아이디어 2: 아코디언 접기 형태) */}
-                        <Card className="border border-border/70 bg-card/60 shadow-xs mb-3 transition-all duration-200">
-                            <CardHeader
-                                className="p-2.5 flex flex-row items-center justify-between space-y-0 cursor-pointer hover:bg-muted/40 rounded-t-lg transition-colors select-none"
+                        {/* 시나리오 구성 UI (아코디언 접기 형태) */}
+                        <div className="border border-border/40 bg-muted/20 rounded-lg overflow-hidden transition-all duration-200">
+                            <div
+                                className="p-2.5 px-3 flex flex-row items-center justify-between cursor-pointer hover:bg-muted/40 transition-colors select-none"
                                 onClick={() => setIsCustomConfigOpen(!isCustomConfigOpen)}
                             >
-                                <CardTitle className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-                                    <SlidersHorizontal className="w-3 h-3 opacity-70" />
-                                    시나리오 조건 구성(Custom Settings)
-                                </CardTitle>
+                                <div className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                                    <SlidersHorizontal className="w-3.5 h-3.5 opacity-70" />
+                                    시나리오 조건 직접 구성
+                                </div>
                                 {isCustomConfigOpen ? (
                                     <ChevronDown className="w-3.5 h-3.5 text-muted-foreground transition-transform" />
                                 ) : (
                                     <ChevronRight className="w-3.5 h-3.5 text-muted-foreground transition-transform" />
                                 )}
-                            </CardHeader>
+                            </div>
                             {isCustomConfigOpen && (
                                 <CardContent className="p-2.5 pt-2 border-t border-border/40">
                                     {/* 대상 유형 선택 */}
@@ -695,24 +697,24 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
                                         onClick={handleAddDisruption}
                                         disabled={!currentDisruption.targetId}
                                         variant="secondary"
-                                        className="w-full h-8 text-xs font-bold shadow-xs cursor-pointer bg-gradient-to-r from-secondary via-secondary-hover to-secondary bg-[length:200%_200%] animate-pulse-gradient border border-border text-secondary-foreground hover:border-primary/50 disabled:bg-none disabled:bg-secondary/40 disabled:border-border disabled:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+                                        className="w-full h-8 text-xs font-semibold shadow-xs cursor-pointer border border-border/50 text-secondary-foreground hover:border-primary/50 disabled:border-border/30 disabled:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                                     >
                                         + 충격 조건 추가
                                     </Button>
                                 </CardContent>
                             )}
-                        </Card>
+                        </div>
 
                         {/* 구성된 충격 리스트 */}
                         {disruptions.length > 0 && (
-                            <div className="mb-3 p-2 bg-muted border border-border rounded-md">
-                                <div className="text-[11px] font-bold text-foreground mb-1.5 flex justify-between items-center">
+                            <div className="p-2.5 bg-muted/20 border border-border/40 rounded-lg">
+                                <div className="text-[11px] font-semibold text-foreground mb-1.5 flex justify-between items-center">
                                     <span>적용될 충격 목록 ({disruptions.length})</span>
                                     <Button
                                         variant="ghost"
                                         size="xs"
                                         onClick={clearDisruptions}
-                                        className="h-5 text-[10px] text-muted-foreground hover:text-foreground hover:bg-card font-medium cursor-pointer gap-1 px-1.5"
+                                        className="h-5 text-[10px] text-muted-foreground hover:text-foreground font-medium cursor-pointer gap-1 px-1.5"
                                         title="적용될 충격 목록 전체 삭제"
                                         aria-label="적용될 충격 목록 전체 삭제"
                                     >
@@ -722,7 +724,7 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
                                 </div>
                                 <ul className="space-y-1 max-h-32 overflow-y-auto custom-scrollbar pr-1">
                                     {disruptions.map((d, idx) => (
-                                        <li key={idx} className="flex justify-between items-center p-1.5 bg-card border border-border rounded text-[11px]">
+                                        <li key={idx} className="flex justify-between items-center p-1.5 px-2 bg-card/70 border border-border/40 rounded-md text-[11px]">
                                             <span className="truncate pr-2 text-foreground">
                                                 {d.targetType === 'node' ? '시설: ' : '경로: '}
                                                 {d.targetId === 'ALL_NODES'
@@ -803,14 +805,14 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
                 >
                     <div className="w-[380px] h-full p-4 flex flex-col min-h-0">
                         <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as 'result' | 'history')} className="w-full h-full flex flex-col">
-                            <TabsList className="w-full grid grid-cols-2 p-1 bg-muted/60 border border-border">
-                                <TabsTrigger value="result" className="gap-1.5 font-bold">
+                            <TabsList className="w-full grid grid-cols-2 p-1 bg-muted/40 border border-border/40 rounded-lg">
+                                <TabsTrigger value="result" className="gap-1.5 font-semibold text-xs data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-xs">
                                     <span>시뮬레이션 결과</span>
                                     {result && (
-                                        <span className="w-2 h-2 rounded-full bg-primary inline-block" />
+                                        <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block" />
                                     )}
                                 </TabsTrigger>
-                                <TabsTrigger value="history" className="gap-1.5 font-bold">
+                                <TabsTrigger value="history" className="gap-1.5 font-semibold text-xs data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-xs">
                                     <span>시뮬레이션 이력</span>
                                     {historyEntries.length > 0 && (
                                         <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-muted-foreground/15 text-muted-foreground font-mono">

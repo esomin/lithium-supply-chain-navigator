@@ -70,27 +70,27 @@ export const ReRoutingPanel: React.FC<ReRoutingPanelProps> = ({
 
     return (
         <>
-            <Card
-                className="border border-border bg-muted/40 shadow-sm shrink-0 min-h-[360px] flex flex-col overflow-hidden text-foreground"
+            <div
+                className="border border-border/40 bg-muted/20 rounded-lg shadow-xs shrink-0 min-h-[360px] flex flex-col overflow-hidden text-foreground"
                 aria-label="대체 공급망 최적화 추천 결과"
                 role="region"
             >
-                <CardHeader className="p-3 pb-2 flex flex-col space-y-2 shrink-0 border-b border-border/40">
+                <div className="p-3 pb-2 flex flex-col space-y-2 shrink-0 border-b border-border/40">
                     {/* 상단 타이틀 영역 */}
                     <div className="flex items-center justify-between">
-                        <CardTitle className="text-xs font-bold text-primary flex items-center gap-1.5">
-                            <Route className="w-3.5 h-3.5" />
+                        <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                            <Route className="w-3.5 h-3.5 text-muted-foreground" />
                             전역 통합 대체 공급망 시나리오
-                        </CardTitle>
+                        </div>
                     </div>
-                </CardHeader>
+                </div>
 
-                <CardContent className="p-3 pt-2.5 flex-1 min-h-0 flex flex-col overflow-y-auto custom-scrollbar space-y-2.5">
+                <div className="p-3 pt-2.5 flex-1 min-h-0 flex flex-col overflow-y-auto custom-scrollbar space-y-2.5">
                     {/* 2. 세그먼트 컨트롤 탭 (1안/2안 결과 동일 시 단일 최적안 통합 표시) */}
                     {plans.length > 0 && (
-                        <div className="flex bg-muted/60 p-0.5 rounded-md border border-border/50 text-[11px] shrink-0">
+                        <div className="flex bg-muted/40 p-0.5 rounded-lg border border-border/40 text-[11px] shrink-0">
                             {isIdenticalPlan ? (
-                                <div className="flex-1 py-1 rounded text-center bg-card text-primary font-bold shadow-xs border border-border/60">
+                                <div className="flex-1 py-1 rounded-md text-center bg-card text-foreground font-semibold shadow-2xs border border-border/40">
                                     비용·시간 단일 최적안
                                 </div>
                             ) : (
@@ -104,8 +104,8 @@ export const ReRoutingPanel: React.FC<ReRoutingPanelProps> = ({
                                                 key={p.planNumber}
                                                 type="button"
                                                 onClick={() => setSelectedPlanNumber(p.planNumber)}
-                                                className={`flex-1 py-1 rounded text-center transition-all cursor-pointer ${isSelected
-                                                    ? 'bg-card text-primary font-bold shadow-xs border border-border/60'
+                                                className={`flex-1 py-1 rounded-md text-center transition-all cursor-pointer ${isSelected
+                                                    ? 'bg-card text-foreground font-semibold shadow-2xs border border-border/40'
                                                     : 'text-muted-foreground hover:text-foreground'
                                                     }`}
                                             >
@@ -126,15 +126,15 @@ export const ReRoutingPanel: React.FC<ReRoutingPanelProps> = ({
                                     setModalOption(opt);
                                     setIsModalOpen(true);
                                 }}
-                                className="p-2 rounded border-l-2 border-l-white border border-border/40 bg-card space-y-1 transition-all cursor-pointer hover:border-primary/80 hover:bg-muted/40 group shadow-xs"
+                                className="p-2.5 rounded-lg border border-border/40 bg-card/70 space-y-1 transition-all cursor-pointer hover:border-primary/60 hover:bg-card group shadow-2xs"
                                 title="클릭하여 노드간 세부 물량 수급 관계 보기"
                             >
                                 <div className="flex items-center justify-between font-medium text-[11px] text-foreground">
                                     <span className="truncate font-semibold group-hover:text-primary transition-colors flex items-center gap-1">
                                         {opt.rank}차 수급: {opt.sourceName}
-                                        <Info className="w-3 h-3 text-muted-foreground group-hover:text-primary opacity-70 transition-opacity" />
+                                        <Info className="w-3 h-3 text-muted-foreground group-hover:text-primary opacity-60 transition-opacity" />
                                     </span>
-                                    <span className="font-bold text-primary shrink-0">
+                                    <span className="font-semibold text-sky-400 shrink-0">
                                         {opt.allocatedVolumeTons.toLocaleString()}톤 ({opt.coveredDeficitPercentage}%p)
                                     </span>
                                 </div>
@@ -147,14 +147,14 @@ export const ReRoutingPanel: React.FC<ReRoutingPanelProps> = ({
                     </div>
 
                     {/* 4. 하단 요약 인라인 레이아웃 */}
-                    <div className="pt-2 border-t border-border/60 flex items-center justify-between text-[11px] text-muted-foreground shrink-0">
-                        <div className="flex items-center gap-1.5 font-semibold text-foreground">
+                    <div className="pt-2 border-t border-border/40 flex items-center justify-between text-[11px] text-muted-foreground shrink-0">
+                        <div className="flex items-center gap-1.5 font-medium text-foreground">
                             <span className="text-emerald-400">+${currentPlan.totalExtraCostUsd.toLocaleString()}</span>
                             <span>•</span>
                             <span className="text-emerald-400">+{currentPlan.averageExtraLeadTimeDays}일</span>
                         </div>
                         <div>
-                            {activeResult.isGlobalCombined ? '평균 부족률' : '부족률'} <strong className="text-foreground">{activeResult.originalDeficitPercentage}%</strong> ➔ <strong className="text-primary font-bold">{currentPlan.remainingDeficitPercentage}%</strong>
+                            {activeResult.isGlobalCombined ? '평균 부족률' : '부족률'} <strong className="text-foreground">{activeResult.originalDeficitPercentage}%</strong> ➔ <strong className="text-foreground font-semibold">{currentPlan.remainingDeficitPercentage}%</strong>
                         </div>
                     </div>
 
@@ -170,8 +170,8 @@ export const ReRoutingPanel: React.FC<ReRoutingPanelProps> = ({
                         <GiDiamonds className="w-3.5 h-3.5 text-violet-200" />
                         대체 공급망 AI 규제 분석
                     </Button>
-                </CardContent>
-            </Card>
+                </div>
+            </div>
 
             {/* 수급 세부 내역 상세 모달 */}
             <SupplyDetailModal
