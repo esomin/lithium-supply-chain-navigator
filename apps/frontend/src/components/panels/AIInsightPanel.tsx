@@ -587,11 +587,11 @@ function CitationList({
             <button
                 type="button"
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="flex items-center gap-1.5 text-[11px] font-semibold text-violet-400 hover:text-violet-300 bg-transparent border-none cursor-pointer p-0 transition-colors"
+                className="flex items-center gap-1.5 text-[11px] font-medium text-slate-400 hover:text-slate-200 bg-transparent border-none cursor-pointer p-0 transition-colors select-none"
                 aria-expanded={isExpanded}
                 aria-label="참조 정책/보고서 원문 목록 토글"
             >
-                <span className="text-[9px]">{isExpanded ? '▼' : '▶'}</span>
+                <span className="text-[9px] text-slate-500">{isExpanded ? '▼' : '▶'}</span>
                 <span>참조 정책/보고서 원문 ({citations.length}건)</span>
             </button>
 
@@ -602,20 +602,26 @@ function CitationList({
                         return (
                             <li
                                 key={idx}
-                                className="p-2.5 bg-slate-950/90 rounded-lg border border-slate-800/90 text-[11px] hover:border-violet-500/50 transition-all shadow-sm group/card"
+                                className="p-2.5 bg-slate-950/70 rounded-lg border border-slate-800 text-[11px] hover:border-slate-700 transition-all shadow-xs group/card"
                             >
                                 <div className="flex items-start justify-between gap-2 mb-1.5">
                                     <div className="flex items-center gap-1.5 min-w-0">
-                                        <FiFileText className="w-3.5 h-3.5 text-violet-400 shrink-0" />
-                                        <span className="font-semibold text-white truncate text-[11px]" title={meta.title}>
+                                        <FiFileText className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                        <span className="font-semibold text-slate-200 truncate text-[11px]" title={meta.title}>
                                             {meta.title}
                                         </span>
                                     </div>
                                     <div className="flex items-center gap-1.5 shrink-0">
-                                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700/60 font-mono">
+                                        <span
+                                            className="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 font-mono cursor-help"
+                                            title="문서 분류: 규제 정책, 시장 전망 보고서 또는 통계 자료"
+                                        >
                                             {meta.category}
                                         </span>
-                                        <span className="text-[9px] font-mono font-semibold text-violet-300 bg-violet-950/80 border border-violet-800/60 px-1.5 py-0.5 rounded">
+                                        <span
+                                            className="text-[9px] font-mono text-slate-300 bg-slate-800 px-1.5 py-0.5 rounded cursor-help"
+                                            title={`질문 키워드 및 시맨틱 벡터 유사도 기반 관련성 점수 (${Math.round(citation.relevance * 100)}%)`}
+                                        >
                                             {Math.round(citation.relevance * 100)}%
                                         </span>
                                     </div>
@@ -626,7 +632,7 @@ function CitationList({
                                     <span>{meta.organization}</span>
                                 </div>
 
-                                <p className="m-0 text-slate-300 text-[11px] leading-relaxed line-clamp-3 bg-slate-900/80 p-2 rounded border border-slate-800/60 font-sans">
+                                <p className="m-0 text-slate-300 text-[11px] leading-relaxed line-clamp-3 bg-slate-900/60 p-2 rounded border border-slate-800/50 font-sans">
                                     "{citation.content}"
                                 </p>
 
@@ -635,10 +641,10 @@ function CitationList({
                                         <button
                                             type="button"
                                             onClick={() => onSelectCitation(citation)}
-                                            className="flex items-center gap-1 text-[10px] font-medium text-violet-400 hover:text-violet-300 bg-violet-950/50 hover:bg-violet-900/60 border border-violet-800/60 px-2 py-1 rounded transition-colors cursor-pointer"
+                                            className="flex items-center gap-1 text-[10px] font-medium text-slate-400 hover:text-white bg-slate-900 hover:bg-slate-800 border border-slate-700/70 hover:border-slate-600 px-2.5 py-1 rounded transition-colors cursor-pointer"
                                             title="문서 전문 및 인용 단락 확인"
                                         >
-                                            <FiExternalLink className="w-3 h-3" />
+                                            <FiExternalLink className="w-3 h-3 text-slate-400" />
                                             <span>원문 전문 보기</span>
                                         </button>
                                     </div>
@@ -664,7 +670,6 @@ function DocumentViewerModal({
     const [fullContent, setFullContent] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [searchKeyword, setSearchKeyword] = useState('');
 
     useEffect(() => {
         let isMounted = true;
@@ -678,13 +683,17 @@ function DocumentViewerModal({
                 }
                 const data = await res.json();
                 if (isMounted) {
-                    setFullContent(data.content || citation.content);
+                    const raw = data.content || citation.content;
+                    // YAML Frontmatter (--- ... ---) 완전 제거 로직
+                    const cleanText = raw.replace(/^---[\s\S]*?---\s*/, '').trim();
+                    setFullContent(cleanText);
                 }
             })
             .catch((err) => {
                 if (isMounted) {
-                    // API 실패 시 인용 청크 본문으로 대체 표시
-                    setFullContent(citation.content);
+                    // API 실패 시 인용 청크 본문으로 대체 표시 (Frontmatter 제거)
+                    const cleanFallback = citation.content.replace(/^---[\s\S]*?---\s*/, '').trim();
+                    setFullContent(cleanFallback);
                     console.warn('원문 fetch 실패, 인용 본문 표시:', err);
                 }
             })
@@ -706,19 +715,22 @@ function DocumentViewerModal({
         >
             <div className="bg-slate-900 border border-slate-700/80 w-full max-w-3xl max-h-[85vh] rounded-xl shadow-2xl flex flex-col overflow-hidden text-slate-100">
                 {/* 모달 헤더 */}
-                <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-800 bg-slate-950/80">
+                <div className="flex items-center justify-between px-5 py-3 border-b border-slate-800 bg-slate-950/80">
                     <div className="flex items-center gap-2.5 min-w-0">
-                        <span className="p-1.5 rounded-lg bg-violet-600/20 border border-violet-500/30 text-violet-400 shrink-0">
-                            <FiFileText size={18} />
+                        <span className="p-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 shrink-0">
+                            <FiFileText size={16} />
                         </span>
                         <div className="min-w-0">
-                            <h3 id="doc-modal-title" className="m-0 text-sm font-bold text-white truncate">
+                            <h3 id="doc-modal-title" className="m-0 text-xs font-bold text-slate-100 truncate">
                                 {meta.title}
                             </h3>
-                            <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
+                            <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5">
                                 <span>{meta.organization}</span>
                                 <span>·</span>
-                                <span className="px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 font-mono text-[10px]">
+                                <span
+                                    className="px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 font-mono text-[9px] cursor-help"
+                                    title="문서 분류: 규제 정책, 시장 전망 보고서 또는 통계 자료"
+                                >
                                     {meta.category}
                                 </span>
                             </div>
@@ -730,31 +742,31 @@ function DocumentViewerModal({
                         className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
                         aria-label="닫기"
                     >
-                        <FiX size={18} />
+                        <FiX size={16} />
                     </button>
                 </div>
 
                 {/* 인용 요약 배너 */}
-                <div className="px-5 py-2.5 bg-violet-950/40 border-b border-violet-900/40 flex items-start gap-2 text-xs">
-                    <span className="font-semibold text-violet-300 shrink-0">💡 AI 참조 단락:</span>
-                    <p className="m-0 text-slate-200 line-clamp-2 text-[11px] leading-relaxed">
+                <div className="px-5 py-2.5 bg-slate-950/60 border-b border-slate-800 flex items-start gap-2 text-xs">
+                    <span className="font-medium text-slate-400 shrink-0 text-[11px]">[참조 단락]</span>
+                    <p className="m-0 text-slate-300 line-clamp-2 text-[11px] leading-relaxed">
                         "{citation.content}"
                     </p>
                 </div>
 
-                {/* 모달 본문 영역 */}
-                <div className="flex-1 p-5 overflow-y-auto custom-scrollbar text-xs leading-relaxed space-y-3">
+                {/* 모달 본문 영역 (패널 텍스트 크기인 text-xs, line-height 통일) */}
+                <div className="flex-1 p-5 overflow-y-auto custom-scrollbar text-xs leading-relaxed space-y-3 bg-slate-900/95">
                     {isLoading ? (
-                        <div className="flex items-center justify-center py-16 text-slate-400 gap-2">
-                            <span className="w-2 h-2 rounded-full bg-violet-400 animate-ping" />
+                        <div className="flex items-center justify-center py-16 text-slate-400 gap-2 text-xs">
+                            <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-ping" />
                             <span>문서 원문을 불러오는 중...</span>
                         </div>
                     ) : error ? (
-                        <div className="p-4 bg-destructive/10 border border-destructive/40 text-destructive rounded-lg">
+                        <div className="p-3 bg-destructive/10 border border-destructive/40 text-destructive rounded-lg text-xs">
                             {error}
                         </div>
                     ) : (
-                        <div className="prose prose-invert prose-xs max-w-none [&>h1]:text-base [&>h1]:font-bold [&>h1]:text-white [&>h2]:text-sm [&>h2]:font-bold [&>h2]:text-violet-300 [&>h2]:mt-4 [&>h2]:mb-2 [&>h3]:text-xs [&>h3]:font-bold [&>h3]:text-slate-200 [&>p]:text-slate-300 [&>p]:leading-relaxed [&>ul]:list-disc [&>ul]:pl-4 [&>ul]:text-slate-300 [&>li]:my-1 [&>strong]:text-white [&>hr]:border-slate-800">
+                        <div className="prose prose-invert prose-xs max-w-none text-xs text-slate-200 [&>h1]:text-sm [&>h1]:font-bold [&>h1]:text-slate-100 [&>h1]:mb-2 [&>h2]:text-xs [&>h2]:font-bold [&>h2]:text-slate-200 [&>h2]:mt-3 [&>h2]:mb-1.5 [&>h3]:text-xs [&>h3]:font-semibold [&>h3]:text-slate-300 [&>p]:text-xs [&>p]:text-slate-300 [&>p]:leading-relaxed [&>p]:mb-2 [&>ul]:list-disc [&>ul]:pl-4 [&>ul]:text-slate-300 [&>ul]:space-y-1 [&>ol]:list-decimal [&>ol]:pl-4 [&>ol]:text-slate-300 [&>ol]:space-y-1 [&>li]:my-0.5 [&>strong]:text-slate-100 [&>strong]:font-semibold [&>hr]:border-slate-800">
                             <ReactMarkdown>{fullContent || ''}</ReactMarkdown>
                         </div>
                     )}
@@ -762,13 +774,13 @@ function DocumentViewerModal({
 
                 {/* 모달 푸터 */}
                 <div className="px-5 py-3 border-t border-slate-800 bg-slate-950/80 flex items-center justify-between text-[11px] text-slate-400">
-                    <span className="font-mono text-[10px] text-slate-500">
-                        출처 경로: {citation.source}
+                    <span className="font-mono text-[10px] text-slate-400">
+                        참조 파일: {citation.source.split('/').pop() || citation.source}
                     </span>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="px-4 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-medium transition-colors cursor-pointer"
+                        className="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition-colors cursor-pointer border border-slate-700/70"
                     >
                         닫기
                     </button>
@@ -786,16 +798,16 @@ function TypingIndicator() {
             <div className="bg-slate-900/90 border border-slate-700/80 rounded-xl px-4 py-2.5 rounded-bl-xs shadow-sm">
                 <div className="flex items-center gap-1.5" aria-label="응답 생성 중">
                     <span className="text-[11px] text-slate-400 font-medium mr-1">AI 분석 중</span>
-                    <span className="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce [animation-delay:0ms]" />
-                    <span className="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce [animation-delay:150ms]" />
-                    <span className="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce [animation-delay:300ms]" />
+                    <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:0ms]" />
+                    <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:150ms]" />
+                    <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:300ms]" />
                 </div>
             </div>
         </div>
     );
 }
 
-/** 에러 표시 + 재시도 컴포넌트 */
+/** 에러 표시 + 재시도 컴포넌트 (이모지 제거) */
 function ErrorDisplay({
     error,
     onRetry,
@@ -807,7 +819,7 @@ function ErrorDisplay({
 }) {
     return (
         <div className="p-3 bg-destructive/10 border border-destructive/40 text-destructive rounded-xl text-xs" role="alert">
-            <p className="m-0 font-medium mb-2">⚠️ {error}</p>
+            <p className="m-0 font-medium mb-2">[오류] {error}</p>
             <div className="flex items-center gap-2 flex-wrap">
                 {hasLastQuery && (
                     <button
