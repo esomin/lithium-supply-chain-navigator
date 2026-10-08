@@ -233,7 +233,7 @@ export function GraphView() {
             />
 
             <main className="flex-1 relative overflow-hidden bg-background">
-                {/* 캔버스 좌상단 플로팅 충격 시뮬레이션 진입 버튼 */}
+                {/* 캔버스 좌상단 플로팅 공급망 충격 시뮬레이션 진입 버튼 */}
                 {!showSimulation && (
                     <div className="absolute top-4 left-4 z-20 pointer-events-auto">
                         <Button
@@ -243,17 +243,17 @@ export function GraphView() {
                                 setShowSimTooltip(false);
                             }}
                             variant="default"
-                            className="font-semibold shadow-lg flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer rounded-lg px-4 py-2 text-xs h-[36px] bg-primary text-primary-foreground hover:bg-primary/90 border border-primary/20 backdrop-blur-md"
-                            aria-label="충격 시뮬레이션 패널 열기"
+                            className="font-semibold shadow-xs flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer rounded-[4px] px-3 py-1.5 text-xs h-8 bg-primary text-primary-foreground hover:bg-primary-hover border border-primary/20 backdrop-blur-md"
+                            aria-label="공급망 충격 시뮬레이션 패널 열기"
                         >
                             <Play className="w-3.5 h-3.5 fill-current" />
-                            <span>충격 시뮬레이션</span>
+                            <span>공급망 충격 시뮬레이션</span>
                         </Button>
 
                         {/* 시뮬레이션 버튼 안내 말풍선 팝오버 툴팁 */}
                         {showSimTooltip && (
                             <div
-                                className="absolute left-0 top-full mt-2.5 w-[280px] bg-card/95 backdrop-blur-md border border-primary text-card-foreground rounded-xl shadow-[0_0_16px_rgba(59,130,246,0.25)] p-3.5 z-50 animate-in fade-in slide-in-from-top-2 duration-300 pointer-events-auto select-none group hover:border-2 hover:border-primary hover:shadow-[0_0_24px_rgba(59,130,246,0.45)] transition-all cursor-pointer"
+                                className="absolute left-0 top-full mt-2.5 w-[280px] bg-card/95 backdrop-blur-md border border-primary text-card-foreground rounded-[4px] shadow-[0_0_16px_rgba(59,130,246,0.25)] p-3.5 z-50 animate-in fade-in slide-in-from-top-2 duration-300 pointer-events-auto select-none group hover:border-2 hover:border-primary hover:shadow-[0_0_24px_rgba(59,130,246,0.45)] transition-all cursor-pointer"
                                 onClick={() => {
                                     setShowSimulation(true);
                                     setShowSimTooltip(false);
@@ -282,7 +282,7 @@ export function GraphView() {
                                 </div>
 
                                 <h4 className="text-xs font-bold text-foreground mb-1">
-                                    충격 시뮬레이션
+                                    공급망 충격 시뮬레이션
                                 </h4>
                                 <p className="text-[11px] text-muted-foreground leading-relaxed mb-2.5">
                                     공급망 중단 위기 시나리오를 적용하고 우회 공급 경로 및 영향을 즉시 시뮬레이션해보세요.
