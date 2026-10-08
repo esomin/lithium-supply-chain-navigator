@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import type { ChatMessage, Citation, InsightResponse } from '@navigator/shared';
 import { GiDiamonds } from 'react-icons/gi';
 import { LuCopy, LuCheck } from 'react-icons/lu';
-import { FiFileText } from 'react-icons/fi';
+import { FiFileText, FiSend, FiChevronRight } from 'react-icons/fi';
 import ReactMarkdown from 'react-markdown';
 import { useSupplyChainStore } from '../../store/supply-chain-store';
 
@@ -299,9 +299,18 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
             aria-label="AI 인사이트 패널"
         >
             {/* 헤더 */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/40">
+            <div className="flex items-center justify-between px-3.5 py-3 border-b border-border bg-muted/40">
                 <div className="flex items-center gap-2">
-                    <span className="p-1 rounded-md bg-violet-600/10 border border-violet-500/30 text-violet-400">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="p-1.5 -ml-1 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer flex items-center justify-center"
+                        aria-label="AI 인사이트 패널 접기"
+                        title="패널 접기"
+                    >
+                        <FiChevronRight className="w-5 h-5" />
+                    </button>
+                    <span className="p-1 rounded-md bg-violet-600/10 border border-violet-500/30 text-violet-400 shrink-0">
                         <GiDiamonds size={18} />
                     </span>
                     <div>
@@ -327,14 +336,6 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
                             새 대화
                         </button>
                     )}
-                    <button
-                        onClick={onClose}
-                        className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer text-sm font-medium"
-                        aria-label="AI 인사이트 패널 닫기"
-                        title="패널 닫기"
-                    >
-                        ✕
-                    </button>
                 </div>
             </div>
 
@@ -386,30 +387,35 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
                 <div ref={messagesEndRef} />
             </div>
 
-            {/* 입력 영역: 자동 높이 조절 멀티라인 Textarea 지원 */}
+            {/* 입력 영역 */}
             <form
                 onSubmit={handleSubmit}
-                className="flex items-end gap-2 px-4 py-3 border-t border-border bg-card/80 backdrop-blur-xs"
+                className="px-4 py-3 border-t border-border bg-card/95 backdrop-blur-xs"
             >
-                <textarea
-                    ref={textareaRef}
-                    rows={2}
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="공급망 분석, 규제 적격성, 우회로 등을 질문하세요... (Enter 전송, Shift+Enter 줄바꿈)"
-                    disabled={isLoading}
-                    className="flex-1 min-h-[44px] max-h-[160px] px-3 py-2.5 bg-muted/60 border border-border rounded-lg text-xs text-foreground placeholder:text-muted-foreground/80 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all resize-none leading-normal custom-scrollbar"
-                    aria-label="AI 인사이트 질문 입력"
-                />
-                <button
-                    type="submit"
-                    disabled={isLoading || !inputValue.trim()}
-                    className="px-4 py-2 h-[44px] bg-violet-600 text-white font-semibold rounded-lg text-xs hover:bg-violet-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer shrink-0 flex items-center justify-center"
-                    aria-label="질문 전송"
-                >
-                    전송
-                </button>
+                <div className="relative flex flex-col bg-slate-900/90 border border-slate-700/80 rounded-xl p-2.5 focus-within:border-violet-500 focus-within:ring-1 focus-within:ring-violet-500 shadow-inner transition-all">
+                    <textarea
+                        ref={textareaRef}
+                        rows={2}
+                        value={inputValue}
+                        onChange={(e) => setInputValue(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        placeholder="공급망 분석, 규제 적격성, 우회로 등을 질문하세요..."
+                        disabled={isLoading}
+                        className="w-full min-h-[44px] max-h-[160px] bg-transparent border-0 text-xs text-white placeholder:text-slate-400 focus:outline-none focus:ring-0 disabled:opacity-50 disabled:cursor-not-allowed resize-none leading-relaxed custom-scrollbar pb-1 px-1"
+                        aria-label="AI 인사이트 질문 입력"
+                    />
+                    <div className="flex items-center justify-end pt-1 border-t border-slate-800/60 mt-1">
+                        <button
+                            type="submit"
+                            disabled={isLoading || !inputValue.trim()}
+                            className="p-2 rounded-lg bg-violet-600 text-white hover:bg-violet-500 disabled:bg-slate-800 disabled:text-slate-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer shrink-0 flex items-center justify-center"
+                            aria-label="질문 전송"
+                            title="전송"
+                        >
+                            <FiSend className="w-3.5 h-3.5" />
+                        </button>
+                    </div>
+                </div>
             </form>
         </aside>
     );
