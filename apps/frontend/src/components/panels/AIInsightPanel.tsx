@@ -213,7 +213,7 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
 
     return (
         <aside
-            className="fixed top-0 right-0 w-[580px] max-w-[92vw] h-full bg-card/95 backdrop-blur-md border-l border-border shadow-2xl z-50 flex flex-col animate-slide-in text-foreground"
+            className="fixed top-0 right-0 w-[580px] max-w-[92vw] h-full bg-card/95 backdrop-blur-md border-l border-border shadow-2xl z-40 flex flex-col animate-slide-in text-foreground"
             aria-label="AI 인사이트 패널"
         >
             {/* 헤더 */}
