@@ -210,6 +210,37 @@ router.post('/documents/search', async (req: Request, res: Response) => {
     }
 });
 
+/** GET /api/documents/content - 특정 출처의 전체 문서 원문 조회 */
+router.get('/documents/content', async (req: Request, res: Response) => {
+    const { source } = req.query;
+
+    if (!source || typeof source !== 'string') {
+        res.status(400).json({ error: 'source 쿼리 파라미터가 필요합니다.', statusCode: 400 });
+        return;
+    }
+
+    try {
+        const { resolve, dirname } = await import('path');
+        const { fileURLToPath } = await import('url');
+        const { readFileSync, existsSync } = await import('fs');
+
+        const currentDir = dirname(fileURLToPath(import.meta.url));
+        const cleanSource = source.replace(/^[./\\]+/, '');
+        const targetPath = resolve(currentDir, '../../../packages/database/src', cleanSource);
+
+        if (!existsSync(targetPath)) {
+            res.status(404).json({ error: '문서 파일을 찾을 수 없습니다.', statusCode: 404 });
+            return;
+        }
+
+        const content = readFileSync(targetPath, 'utf-8');
+        res.json({ source, content });
+    } catch (err) {
+        console.error('[documents/content] 오류:', err);
+        res.status(500).json({ error: '문서 내용을 불러오는 중 오류가 발생했습니다.', statusCode: 500 });
+    }
+});
+
 // === ESG 역추적 라우트 (Phase 2) ===
 
 /** GET /api/trace/:factoryNodeId - Factory 노드의 ESG 역추적 보고서 조회 */

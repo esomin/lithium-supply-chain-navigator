@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import type { ChatMessage, Citation, InsightResponse } from '@navigator/shared';
 import { GiDiamonds } from 'react-icons/gi';
 import { LuCopy, LuCheck } from 'react-icons/lu';
-import { FiFileText, FiSend, FiChevronRight } from 'react-icons/fi';
+import { FiFileText, FiSend, FiChevronRight, FiExternalLink, FiX, FiSearch } from 'react-icons/fi';
 import ReactMarkdown from 'react-markdown';
 import { useSupplyChainStore } from '../../store/supply-chain-store';
 
@@ -423,10 +424,81 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
 
 // === 하위 컴포넌트 ===
 
+/** 출처 메타데이터 맵핑 (파일명 -> 공식 명칭 및 태그) */
+interface SourceMeta {
+    title: string;
+    organization: string;
+    category: string;
+    isGraph?: boolean;
+}
+
+function getSourceMeta(source: string): SourceMeta {
+    const s = source.toLowerCase();
+    if (s.includes('ira-feoc-guidance')) {
+        return {
+            title: '미국 IRA §30D 해외우려기관(FEOC) 최종 규정 요약',
+            organization: 'IRS / 미국 재무부',
+            category: '법령/규제',
+        };
+    }
+    if (s.includes('irs-notice-2026-15')) {
+        return {
+            title: 'IRS Notice 2026-15 계약 지배력 및 실효 통제권 기준',
+            organization: '미국 국세청 (IRS)',
+            category: '가이드라인',
+        };
+    }
+    if (s.includes('treasury-30d-value-add')) {
+        return {
+            title: '미국 재무부 핵심광물 50% 부가가치 산정 기준',
+            organization: '미국 재무부 (US Treasury)',
+            category: '법령/규제',
+        };
+    }
+    if (s.includes('us-au-critical-minerals')) {
+        return {
+            title: '미-호 핵심광물 공급망 전략 협력 프레임워크',
+            organization: '미국-호주 정부 협정',
+            category: '국가협정',
+        };
+    }
+    if (s.includes('iea-lithium-outlook')) {
+        return {
+            title: 'IEA 글로벌 리튬 시장 수급 전망 보고서 (2025)',
+            organization: '국제에너지기구 (IEA)',
+            category: '시장전망',
+        };
+    }
+    if (s.includes('usgs-lithium')) {
+        return {
+            title: 'USGS 리튬 광물 상품 요약 통계 (2025)',
+            organization: '미국 지질조사국 (USGS)',
+            category: '통계보고서',
+        };
+    }
+    if (s.includes('그래프') || s.includes('공급망')) {
+        return {
+            title: '실시간 리튬 공급망 토폴로지 네트워크',
+            organization: '공급망 엔진',
+            category: '그래프 데이터',
+            isGraph: true,
+        };
+    }
+
+    // 기본 대체
+    const filename = source.split('/').pop() || source;
+    return {
+        title: filename,
+        organization: '참조 문서',
+        category: '문서',
+    };
+}
+
 /** 메시지 버블 컴포넌트 */
 function MessageBubble({ message }: { message: ChatMessage }) {
     const isUser = message.role === 'user';
     const [copied, setCopied] = useState(false);
+    const [selectedCitation, setSelectedCitation] = useState<Citation | null>(null);
 
     // 답변 복사 핸들러
     const handleCopy = async () => {
@@ -442,41 +514,44 @@ function MessageBubble({ message }: { message: ChatMessage }) {
     return (
         <div className={`group flex ${isUser ? 'justify-end' : 'justify-start'}`}>
             <div
-                className={`max-w-[88%] rounded-xl text-xs relative border shadow-sm ${isUser
-                    ? 'bg-primary text-primary-foreground border-primary/50 rounded-br-xs px-3.5 py-2.5'
-                    : 'bg-muted/70 text-foreground border-border/80 rounded-bl-xs pl-3.5 pr-9 py-2.5'
+                className={`max-w-[92%] rounded-xl text-xs relative border shadow-md transition-all ${isUser
+                    ? 'bg-primary text-primary-foreground border-primary/50 rounded-br-xs px-4 py-3'
+                    : 'bg-slate-900/95 text-slate-100 border-slate-700/80 rounded-bl-xs pl-4 pr-10 py-3 backdrop-blur-md'
                     }`}
             >
-                {/* 복사 버튼 (어시스턴트 메시지에만 표시 - 아이콘 단독 및 겹침 방지) */}
+                {/* 복사 버튼 (어시스턴트 메시지에만 표시) */}
                 {!isUser && (
                     <button
                         type="button"
                         onClick={handleCopy}
-                        className="absolute top-2.5 right-2 p-1 rounded-md bg-card/80 hover:bg-card text-muted-foreground hover:text-foreground border border-border/70 opacity-60 group-hover:opacity-100 transition-all cursor-pointer shadow-2xs flex items-center justify-center"
+                        className="absolute top-2.5 right-2 p-1.5 rounded-md bg-slate-800/90 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700/80 opacity-70 group-hover:opacity-100 transition-all cursor-pointer shadow-sm flex items-center justify-center"
                         aria-label="답변 복사"
                         title={copied ? '복사 완료' : '답변 복사'}
                     >
                         {copied ? (
                             <LuCheck className="w-3.5 h-3.5 text-emerald-400" />
                         ) : (
-                            <LuCopy className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground" />
+                            <LuCopy className="w-3.5 h-3.5" />
                         )}
                     </button>
                 )}
 
-                {/* 메시지 내용 */}
-                <div className="m-0 leading-relaxed break-words space-y-1.5 [&>p]:mb-1.5 [&>ul]:list-disc [&>ul]:pl-4 [&>ol]:list-decimal [&>ol]:pl-4 [&>h3]:text-xs [&>h3]:font-bold [&>h3]:text-primary [&>h4]:text-xs [&>h4]:font-bold">
+                {/* 메시지 내용 (선명한 명도 대비와 가독성) */}
+                <div className="m-0 leading-relaxed break-words space-y-2 [&>p]:mb-1.5 [&>p]:leading-relaxed [&>ul]:list-disc [&>ul]:pl-4 [&>ul]:space-y-1 [&>ol]:list-decimal [&>ol]:pl-4 [&>ol]:space-y-1 [&>h3]:text-[13px] [&>h3]:font-bold [&>h3]:text-violet-400 [&>h3]:mt-2 [&>h4]:text-xs [&>h4]:font-bold [&>h4]:text-slate-200 [&>strong]:text-white [&>code]:bg-slate-800 [&>code]:px-1 [&>code]:py-0.5 [&>code]:rounded [&>code]:text-violet-300">
                     <ReactMarkdown>{message.content}</ReactMarkdown>
                 </div>
 
                 {/* 출처 인용 (어시스턴트 메시지에만 표시) */}
                 {!isUser && message.citations && message.citations.length > 0 && (
-                    <CitationList citations={message.citations} />
+                    <CitationList
+                        citations={message.citations}
+                        onSelectCitation={(cit) => setSelectedCitation(cit)}
+                    />
                 )}
 
                 {/* 타임스탬프 */}
                 <span
-                    className={`block text-[9px] mt-1.5 font-mono ${isUser ? 'text-primary-foreground/70 text-right' : 'text-muted-foreground'
+                    className={`block text-[9px] mt-2 font-mono ${isUser ? 'text-primary-foreground/70 text-right' : 'text-slate-400'
                         }`}
                 >
                     {new Date(message.timestamp).toLocaleTimeString('ko-KR', {
@@ -485,51 +560,222 @@ function MessageBubble({ message }: { message: ChatMessage }) {
                     })}
                 </span>
             </div>
+
+            {/* 원문 전체보기 모달 */}
+            {selectedCitation && (
+                <DocumentViewerModal
+                    citation={selectedCitation}
+                    onClose={() => setSelectedCitation(null)}
+                />
+            )}
         </div>
     );
 }
 
 /** 출처 인용 리스트 컴포넌트 */
-function CitationList({ citations }: { citations: Citation[] }) {
+function CitationList({
+    citations,
+    onSelectCitation,
+}: {
+    citations: Citation[];
+    onSelectCitation: (citation: Citation) => void;
+}) {
     const [isExpanded, setIsExpanded] = useState(false);
 
     return (
-        <div className="mt-2.5 pt-2 border-t border-border/60">
+        <div className="mt-3 pt-2.5 border-t border-slate-800/80">
             <button
                 type="button"
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="flex items-center gap-1.5 text-[11px] font-medium text-primary bg-transparent border-none cursor-pointer hover:underline p-0"
+                className="flex items-center gap-1.5 text-[11px] font-semibold text-violet-400 hover:text-violet-300 bg-transparent border-none cursor-pointer p-0 transition-colors"
                 aria-expanded={isExpanded}
-                aria-label="출처 목록 토글"
+                aria-label="참조 정책/보고서 원문 목록 토글"
             >
                 <span className="text-[9px]">{isExpanded ? '▼' : '▶'}</span>
                 <span>참조 정책/보고서 원문 ({citations.length}건)</span>
             </button>
 
             {isExpanded && (
-                <ul className="mt-2 m-0 p-0 list-none space-y-1.5">
-                    {citations.map((citation, idx) => (
-                        <li
-                            key={idx}
-                            className="p-2 bg-card/90 rounded-md border border-border/80 text-[11px]"
-                        >
-                            <div className="flex items-center justify-between mb-1">
-                                <span className="font-semibold text-foreground truncate flex items-center gap-1.5">
-                                    <FiFileText className="w-3 h-3 text-sky-400 shrink-0" />
-                                    {citation.source}
-                                </span>
-                                <span className="text-[10px] font-mono text-primary bg-primary/10 border border-primary/20 px-1.5 py-0.2 rounded shrink-0 ml-1">
-                                    관련도 {Math.round(citation.relevance * 100)}%
-                                </span>
-                            </div>
-                            <p className="m-0 text-muted-foreground text-[10px] leading-relaxed line-clamp-3">
-                                {citation.content}
-                            </p>
-                        </li>
-                    ))}
+                <ul className="mt-2.5 m-0 p-0 list-none space-y-2">
+                    {citations.map((citation, idx) => {
+                        const meta = getSourceMeta(citation.source);
+                        return (
+                            <li
+                                key={idx}
+                                className="p-2.5 bg-slate-950/90 rounded-lg border border-slate-800/90 text-[11px] hover:border-violet-500/50 transition-all shadow-sm group/card"
+                            >
+                                <div className="flex items-start justify-between gap-2 mb-1.5">
+                                    <div className="flex items-center gap-1.5 min-w-0">
+                                        <FiFileText className="w-3.5 h-3.5 text-violet-400 shrink-0" />
+                                        <span className="font-semibold text-white truncate text-[11px]" title={meta.title}>
+                                            {meta.title}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 shrink-0">
+                                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700/60 font-mono">
+                                            {meta.category}
+                                        </span>
+                                        <span className="text-[9px] font-mono font-semibold text-violet-300 bg-violet-950/80 border border-violet-800/60 px-1.5 py-0.5 rounded">
+                                            {Math.round(citation.relevance * 100)}%
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-1 text-[10px] text-slate-400 mb-1.5">
+                                    <span className="text-slate-500">기관:</span>
+                                    <span>{meta.organization}</span>
+                                </div>
+
+                                <p className="m-0 text-slate-300 text-[11px] leading-relaxed line-clamp-3 bg-slate-900/80 p-2 rounded border border-slate-800/60 font-sans">
+                                    "{citation.content}"
+                                </p>
+
+                                {!meta.isGraph && (
+                                    <div className="mt-2 flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => onSelectCitation(citation)}
+                                            className="flex items-center gap-1 text-[10px] font-medium text-violet-400 hover:text-violet-300 bg-violet-950/50 hover:bg-violet-900/60 border border-violet-800/60 px-2 py-1 rounded transition-colors cursor-pointer"
+                                            title="문서 전문 및 인용 단락 확인"
+                                        >
+                                            <FiExternalLink className="w-3 h-3" />
+                                            <span>원문 전문 보기</span>
+                                        </button>
+                                    </div>
+                                )}
+                            </li>
+                        );
+                    })}
                 </ul>
             )}
         </div>
+    );
+}
+
+/** 문서 전문 확인 모달 (하이라이트 지원) */
+function DocumentViewerModal({
+    citation,
+    onClose,
+}: {
+    citation: Citation;
+    onClose: () => void;
+}) {
+    const meta = getSourceMeta(citation.source);
+    const [fullContent, setFullContent] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [searchKeyword, setSearchKeyword] = useState('');
+
+    useEffect(() => {
+        let isMounted = true;
+        setIsLoading(true);
+        setError(null);
+
+        fetch(`/api/documents/content?source=${encodeURIComponent(citation.source)}`)
+            .then(async (res) => {
+                if (!res.ok) {
+                    throw new Error(`문서를 불러오지 못했습니다 (${res.status})`);
+                }
+                const data = await res.json();
+                if (isMounted) {
+                    setFullContent(data.content || citation.content);
+                }
+            })
+            .catch((err) => {
+                if (isMounted) {
+                    // API 실패 시 인용 청크 본문으로 대체 표시
+                    setFullContent(citation.content);
+                    console.warn('원문 fetch 실패, 인용 본문 표시:', err);
+                }
+            })
+            .finally(() => {
+                if (isMounted) setIsLoading(false);
+            });
+
+        return () => {
+            isMounted = false;
+        };
+    }, [citation.source, citation.content]);
+
+    return createPortal(
+        <div
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="doc-modal-title"
+        >
+            <div className="bg-slate-900 border border-slate-700/80 w-full max-w-3xl max-h-[85vh] rounded-xl shadow-2xl flex flex-col overflow-hidden text-slate-100">
+                {/* 모달 헤더 */}
+                <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-800 bg-slate-950/80">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                        <span className="p-1.5 rounded-lg bg-violet-600/20 border border-violet-500/30 text-violet-400 shrink-0">
+                            <FiFileText size={18} />
+                        </span>
+                        <div className="min-w-0">
+                            <h3 id="doc-modal-title" className="m-0 text-sm font-bold text-white truncate">
+                                {meta.title}
+                            </h3>
+                            <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
+                                <span>{meta.organization}</span>
+                                <span>·</span>
+                                <span className="px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 font-mono text-[10px]">
+                                    {meta.category}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                        aria-label="닫기"
+                    >
+                        <FiX size={18} />
+                    </button>
+                </div>
+
+                {/* 인용 요약 배너 */}
+                <div className="px-5 py-2.5 bg-violet-950/40 border-b border-violet-900/40 flex items-start gap-2 text-xs">
+                    <span className="font-semibold text-violet-300 shrink-0">💡 AI 참조 단락:</span>
+                    <p className="m-0 text-slate-200 line-clamp-2 text-[11px] leading-relaxed">
+                        "{citation.content}"
+                    </p>
+                </div>
+
+                {/* 모달 본문 영역 */}
+                <div className="flex-1 p-5 overflow-y-auto custom-scrollbar text-xs leading-relaxed space-y-3">
+                    {isLoading ? (
+                        <div className="flex items-center justify-center py-16 text-slate-400 gap-2">
+                            <span className="w-2 h-2 rounded-full bg-violet-400 animate-ping" />
+                            <span>문서 원문을 불러오는 중...</span>
+                        </div>
+                    ) : error ? (
+                        <div className="p-4 bg-destructive/10 border border-destructive/40 text-destructive rounded-lg">
+                            {error}
+                        </div>
+                    ) : (
+                        <div className="prose prose-invert prose-xs max-w-none [&>h1]:text-base [&>h1]:font-bold [&>h1]:text-white [&>h2]:text-sm [&>h2]:font-bold [&>h2]:text-violet-300 [&>h2]:mt-4 [&>h2]:mb-2 [&>h3]:text-xs [&>h3]:font-bold [&>h3]:text-slate-200 [&>p]:text-slate-300 [&>p]:leading-relaxed [&>ul]:list-disc [&>ul]:pl-4 [&>ul]:text-slate-300 [&>li]:my-1 [&>strong]:text-white [&>hr]:border-slate-800">
+                            <ReactMarkdown>{fullContent || ''}</ReactMarkdown>
+                        </div>
+                    )}
+                </div>
+
+                {/* 모달 푸터 */}
+                <div className="px-5 py-3 border-t border-slate-800 bg-slate-950/80 flex items-center justify-between text-[11px] text-slate-400">
+                    <span className="font-mono text-[10px] text-slate-500">
+                        출처 경로: {citation.source}
+                    </span>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="px-4 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-medium transition-colors cursor-pointer"
+                    >
+                        닫기
+                    </button>
+                </div>
+            </div>
+        </div>,
+        document.body,
     );
 }
 
@@ -537,12 +783,12 @@ function CitationList({ citations }: { citations: Citation[] }) {
 function TypingIndicator() {
     return (
         <div className="flex justify-start">
-            <div className="bg-muted/70 border border-border rounded-xl px-4 py-2.5 rounded-bl-xs">
+            <div className="bg-slate-900/90 border border-slate-700/80 rounded-xl px-4 py-2.5 rounded-bl-xs shadow-sm">
                 <div className="flex items-center gap-1.5" aria-label="응답 생성 중">
-                    <span className="text-[11px] text-muted-foreground font-medium mr-1">AI 분석 중</span>
-                    <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:0ms]" />
-                    <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:150ms]" />
-                    <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:300ms]" />
+                    <span className="text-[11px] text-slate-400 font-medium mr-1">AI 분석 중</span>
+                    <span className="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce [animation-delay:0ms]" />
+                    <span className="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce [animation-delay:150ms]" />
+                    <span className="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce [animation-delay:300ms]" />
                 </div>
             </div>
         </div>
