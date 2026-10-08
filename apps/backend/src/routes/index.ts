@@ -226,10 +226,26 @@ router.get('/documents/content', async (req: Request, res: Response) => {
 
         const currentDir = dirname(fileURLToPath(import.meta.url));
         const cleanSource = source.replace(/^[./\\]+/, '');
-        const targetPath = resolve(currentDir, '../../../packages/database/src', cleanSource);
+        
+        // 탐색 후보 경로 (개발 tsx 환경 및 빌드 dist 환경 대응)
+        const candidates = [
+            resolve(currentDir, '../../../packages/database/src', cleanSource),
+            resolve(currentDir, '../../../../packages/database/src', cleanSource),
+            resolve(process.cwd(), 'packages/database/src', cleanSource),
+            resolve(process.cwd(), '../../packages/database/src', cleanSource),
+        ];
 
-        if (!existsSync(targetPath)) {
-            res.status(404).json({ error: '문서 파일을 찾을 수 없습니다.', statusCode: 404 });
+        let targetPath = '';
+        for (const cand of candidates) {
+            if (existsSync(cand)) {
+                targetPath = cand;
+                break;
+            }
+        }
+
+        if (!targetPath) {
+            console.warn(`[documents/content] 파일을 찾을 수 없음: ${cleanSource}`, candidates);
+            res.status(404).json({ error: `문서 파일을 찾을 수 없습니다: ${cleanSource}`, statusCode: 404 });
             return;
         }
 
