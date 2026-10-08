@@ -1,0 +1,15 @@
+{
+  "rule_id": "VALUE_ADD_50PCT_FTA",
+  "name": "FTA 국가 부가가치 50% 기준",
+  "description": "핵심광물의 추출·가공·재활용 단계에서 발생한 부가가치 중 미국 또는 FTA 체결국에서 발생한 비중이 50% 이상이어야 IRA §30D 세액공제 요건을 충족한다.",
+  "source_docs": [
+    "../text/regulatory/treasury-30d-value-add.md",
+    "../text/regulatory/us-au-critical-minerals-framework.md"
+  ],
+  "logic": "CALCULATE value_added_total = sum(stage.value_added FOR stage IN [\"extraction\",\"processing\",\"recycling\"])\nCALCULATE value_added_fta = sum(stage.value_added FOR stage IN stages WHERE stage.country IN fta_country_list OR stage.country == \"US\")\n\nIF (value_added_fta / value_added_total) >= 0.5\nTHEN fta_eligible = true\nELSE fta_eligible = false",
+  "fields_required": [
+    "stage.country",
+    "stage.value_added",
+    "fta_country_list"
+  ]
+}

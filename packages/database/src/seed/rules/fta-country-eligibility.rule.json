@@ -1,0 +1,12 @@
+{
+  "rule_id": "FTA_COUNTRY_LIST",
+  "name": "적격 FTA 국가 목록",
+  "description": "IRA §30D 에서 부가가치 50% 기준을 적용할 때 '미국 또는 FTA 체결국'으로 간주되는 국가 목록을 정의한다.",
+  "source_docs": [
+    "../text/regulatory/us-au-critical-minerals-framework.md"
+  ],
+  "logic": "fta_country_list = [\"US\",\"AU\",\"CL\",\"KR\",\"CA\",\"MX\",\"JP\"]\n\nIF entity.country IN fta_country_list\nTHEN is_fta_country = true\nELSE is_fta_country = false",
+  "fields_required": [
+    "entity.country"
+  ]
+}

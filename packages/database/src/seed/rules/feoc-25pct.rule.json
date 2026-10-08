@@ -1,0 +1,15 @@
+{
+  "rule_id": "FEOC_25PCT_OWNERSHIP",
+  "name": "FEOC 25% 지분·통제 기준",
+  "description": "해외우려기관 (중국/러시아/이란/북한) 이 특정 기업의 지분·의결권·이사회를 25% 초과하거나 실효적 지배를 행사하는 경우, 해당 기업의 광물·부품은 IRA §30D 세액공제 대상에서 제외된다.",
+  "source_docs": [
+    "../text/regulatory/ira-feoc-guidance-2024.md",
+    "../text/regulatory/irs-notice-2026-15.md"
+  ],
+  "logic": "IF exists(entity IN supply_chain)\n   SUCH THAT entity.jurisdiction IN [\"CN\",\"RU\",\"IR\",\"KP\"]\n   AND (entity.ownership_pct > 25 OR entity.effective_control == true)\nTHEN feoc_disqualified = true\nELSE feoc_disqualified = false",
+  "fields_required": [
+    "entity.jurisdiction",
+    "entity.ownership_pct",
+    "entity.effective_control"
+  ]
+}
