@@ -7,8 +7,7 @@ import { SimulationController } from '../controllers/simulation-controller.js';
 import { DocumentController } from '../controllers/document-controller.js';
 import { TraceabilityController } from '../controllers/traceability-controller.js';
 import { AIInsightsController } from '../controllers/ai-insights-controller.js';
-import { InMemoryVectorStore, createMockEmbeddingProvider } from '@navigator/pipeline';
-import { store } from '../store.js';
+import { store, vectorStore, embeddingProvider } from '../store.js';
 
 const router = Router();
 const riskController = new RiskController(store);
@@ -16,12 +15,10 @@ const graphController = new GraphController(store);
 const simulationController = new SimulationController(store);
 const traceabilityController = new TraceabilityController(store);
 
-// 문서 인덱싱 컨트롤러 초기화
-const vectorStore = new InMemoryVectorStore();
-const embeddingProvider = createMockEmbeddingProvider();
+// 문서 인덱싱 컨트롤러 초기화 (싱글톤 공유)
 const documentController = new DocumentController(vectorStore, embeddingProvider);
 
-// AI 인사이트 컨트롤러 초기화
+// AI 인사이트 컨트롤러 초기화 (싱글톤 공유)
 const aiInsightsController = new AIInsightsController(store, vectorStore, embeddingProvider);
 
 // === 리스크 라우트 ===

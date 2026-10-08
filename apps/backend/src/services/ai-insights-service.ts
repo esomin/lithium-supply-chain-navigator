@@ -180,7 +180,8 @@ ${userQuery}`;
         const cacheKey = this.computeCacheKey(normalized);
         const cached = this.queryCache.get(cacheKey);
 
-        if (cached && Date.now() - cached.cachedAt < CACHE_TTL_MS) {
+        // 캐시된 데이터가 있고, 문서 청크가 0개가 아니었던 유효 응답일 때만 반환
+        if (cached && cached.citations.length > 0 && Date.now() - cached.cachedAt < CACHE_TTL_MS) {
             console.info(`[LLM] ⚡ Exact Match 캐시 적중 (Cache Hit) | key=${cacheKey.substring(0, 10)}... | ${Date.now() - startTime}ms`);
 
             // 사용자 메시지 기록
