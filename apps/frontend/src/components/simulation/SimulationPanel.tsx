@@ -269,6 +269,23 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
         return Math.min((elapsedSeconds / 3) * 100, 100);
     }, [elapsedSeconds]);
 
+    // 전체 시뮬레이션 초기화 핸들러 (결과, 시나리오, 2열 패널 닫기 및 필터/하이라이트 원복)
+    const handleFullReset = useCallback(() => {
+        clearResult();
+        clearDisruptions();
+        setIsSecondColumnOpen(false);
+        setTargetType('node');
+        setSelectedCountry('ALL');
+        setSelectedNodeType('ALL');
+        setSelectedSourceNodeId('ALL');
+        setDisruptionType('export_restriction');
+        setSeverity(0.5);
+        setTargetId('');
+    }, [clearResult, clearDisruptions, setIsSecondColumnOpen, setTargetType, setDisruptionType, setSeverity, setTargetId]);
+
+    // 초기화 버튼 표시 조건 (시뮬레이션 결과가 있거나 적용된 disruption이 있는 경우)
+    const canReset = Boolean(result || disruptions.length > 0 || currentDisruption.targetId);
+
     return (
         <div
             className="absolute top-0 left-0 h-full flex flex-col font-sans z-[20] pointer-events-none"
@@ -282,17 +299,29 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
                     <span className="w-2 h-2 rounded-full bg-primary inline-block"></span>
                     충격 시뮬레이션
                 </h2>
-                {onClose && (
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="p-1 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer flex items-center justify-center"
-                        aria-label="충격 시뮬레이션 패널 접기"
-                        title="패널 접기"
-                    >
-                        <ChevronLeft className="w-5 h-5" />
-                    </button>
-                )}
+                <div className="flex items-center gap-1.5">
+                    {canReset && (
+                        <button
+                            type="button"
+                            onClick={handleFullReset}
+                            className="px-2 py-1 rounded text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors cursor-pointer flex items-center gap-1"
+                            title="시뮬레이션 결과 및 시나리오 전체 초기화"
+                        >
+                            <span>초기화</span>
+                        </button>
+                    )}
+                    {onClose && (
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="p-1 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer flex items-center justify-center"
+                            aria-label="충격 시뮬레이션 패널 접기"
+                            title="패널 접기"
+                        >
+                            <ChevronLeft className="w-5 h-5" />
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* 패널 칼럼 바디 (1열 + 2열) */}

@@ -28,7 +28,7 @@ export function SimulationResultSection({
     onClear,
 }: {
     result: SimulationResult;
-    onClear: () => void;
+    onClear?: () => void;
 }) {
     const { nodes } = useSupplyChainStore();
     const { triggerRerouteCalculation, isRerouteLoading } = useSimulationStore();
@@ -46,22 +46,7 @@ export function SimulationResultSection({
             aria-label="시뮬레이션 결과"
             role="region"
         >
-            <CardHeader className="p-3 pb-1 flex flex-row items-center justify-between space-y-0 shrink-0 border-b border-border/40">
-                <CardTitle className="text-xs font-bold text-primary">
-                </CardTitle>
-                <Button
-                    variant="ghost"
-                    size="xs"
-                    onClick={onClear}
-                    className="h-6 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted font-medium cursor-pointer gap-1 px-1.5"
-                    title="시뮬레이션 결과 닫기 및 그래프 하이라이트 해제"
-                    aria-label="시뮬레이션 결과 초기화 및 하이라이트 해제"
-                >
-                    <X className="w-3.5 h-3.5" />
-                    Clear
-                </Button>
-            </CardHeader>
-            <CardContent className="p-3 pt-2.5 flex-1 min-h-0 flex flex-col overflow-y-auto custom-scrollbar space-y-2.5">
+            <CardContent className="p-3 pt-3 flex-1 min-h-0 flex flex-col overflow-y-auto custom-scrollbar space-y-2.5">
                 <div className="grid grid-cols-3 gap-2 text-xs text-foreground bg-card border border-border/60 rounded-md p-2 shadow-xs shrink-0">
                     <div className="text-center border-r border-border/60">
                         <div className="text-[10px] text-muted-foreground">영향 노드</div>
