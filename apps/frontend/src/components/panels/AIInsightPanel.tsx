@@ -4,6 +4,7 @@ import { GiDiamonds } from 'react-icons/gi';
 import { LuCopy, LuCheck } from 'react-icons/lu';
 import { FiFileText } from 'react-icons/fi';
 import ReactMarkdown from 'react-markdown';
+import { useSupplyChainStore } from '../../store/supply-chain-store';
 
 export interface AIInsightPanelProps {
     onClose: () => void;
@@ -18,6 +19,26 @@ export interface AIInsightPanelProps {
  */
 const STORAGE_KEY_MESSAGES = 'lithium_ai_messages';
 const STORAGE_KEY_SESSION = 'lithium_ai_session_id';
+const STORAGE_KEY_CLIENT_CACHE = 'lithium_ai_client_cache';
+
+/** 질문 문자열 정규화 함수 */
+function normalizeQueryText(text: string): string {
+    return text
+        .trim()
+        .toLowerCase()
+        .replace(/[\s\t\r\n]+/g, ' ')
+        .replace(/[?!.,~;:]+/g, '');
+}
+
+/** 클라이언트 간단 해시 키 생성 (FNV-1a / SHA 스타일) */
+function computeClientHash(str: string): string {
+    let hash = 2166136261;
+    for (let i = 0; i < str.length; i++) {
+        hash ^= str.charCodeAt(i);
+        hash = Math.imul(hash, 16777619);
+    }
+    return (hash >>> 0).toString(16);
+}
 
 export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
     const [messages, setMessages] = useState<ChatMessage[]>(() => {
@@ -45,6 +66,22 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
             return null;
         }
     });
+
+    // 클라이언트 질의응답 Exact Match 캐시 Map
+    const clientCacheRef = useRef<Map<string, { answer: string; citations: Citation[] }>>(() => {
+        const map = new Map<string, { answer: string; citations: Citation[] }>();
+        try {
+            const saved = localStorage.getItem(STORAGE_KEY_CLIENT_CACHE);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                Object.entries(parsed).forEach(([k, v]: [string, any]) => map.set(k, v));
+            }
+        } catch (e) {
+            console.warn('Failed to load client cache', e);
+        }
+        return map;
+    });
+
     // 에러 자동 제거 타이머
     const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     // 메시지 리스트 스크롤 영역
@@ -99,7 +136,7 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
     useEffect(() => {
         if (textareaRef.current) {
             textareaRef.current.style.height = 'auto';
-            textareaRef.current.style.height = `${Math.min(Math.max(textareaRef.current.scrollHeight, 36), 140)}px`;
+            textareaRef.current.style.height = `${Math.min(Math.max(textareaRef.current.scrollHeight, 44), 160)}px`;
         }
     }, [inputValue]);
 
@@ -118,6 +155,28 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
         };
         setMessages((prev) => [...prev, userMessage]);
         setInputValue('');
+
+        // 1단계: 프론트엔드 클라이언트 Exact Match 캐시 확인 (즉각 0ms 응답)
+        const normalized = normalizeQueryText(query);
+        const cacheKey = computeClientHash(normalized);
+        const clientCache = typeof clientCacheRef.current === 'function' ? (clientCacheRef.current as any)() : clientCacheRef.current;
+        const cached = clientCache.get(cacheKey);
+
+        if (cached) {
+            console.info(`[AI Client Cache Hit] 0ms 즉각 반환: "${query.substring(0, 30)}..."`);
+            const assistantMessage: ChatMessage = {
+                role: 'assistant',
+                content: cached.answer,
+                citations: cached.citations,
+                timestamp: new Date(),
+            };
+            // 자연스러운 UI 전환을 위해 미세한 딜레이(50ms) 후 응답 추가
+            setTimeout(() => {
+                setMessages((prev) => [...prev, assistantMessage]);
+            }, 50);
+            return;
+        }
+
         setIsLoading(true);
 
         try {
@@ -150,6 +209,18 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
                 setSessionId(data.sessionId);
             }
 
+            // 클라이언트 캐시에 저장 (최대 100개 유지)
+            clientCache.set(cacheKey, {
+                answer: data.answer,
+                citations: data.citations,
+            });
+            try {
+                const cacheObj = Object.fromEntries(clientCache.entries());
+                localStorage.setItem(STORAGE_KEY_CLIENT_CACHE, JSON.stringify(cacheObj));
+            } catch (e) {
+                console.warn('Failed to save client cache to localStorage', e);
+            }
+
             // 어시스턴트 메시지 추가
             const assistantMessage: ChatMessage = {
                 role: 'assistant',
@@ -165,7 +236,18 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
         }
     }, [sessionId]);
 
-    // 외부에서 질문이 주입되었을 때(예: 시뮬레이션 패널에서 AI 질문 전달) 자동 전송
+    // 외부에서 스토어를 통해 질문이 주입되었을 때 자동 전송
+    const pendingAIQuery = useSupplyChainStore((state) => state.pendingAIQuery);
+    const clearPendingAIQuery = useSupplyChainStore((state) => state.clearPendingAIQuery);
+
+    useEffect(() => {
+        if (pendingAIQuery && pendingAIQuery.trim()) {
+            sendQuery(pendingAIQuery);
+            clearPendingAIQuery();
+        }
+    }, [pendingAIQuery, sendQuery, clearPendingAIQuery]);
+
+    // 외부에서 props로 질문이 주입되었을 때 자동 전송
     useEffect(() => {
         if (initialQuery && initialQuery.trim()) {
             sendQuery(initialQuery);
@@ -311,19 +393,19 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
             >
                 <textarea
                     ref={textareaRef}
-                    rows={1}
+                    rows={2}
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="공급망 분석, 규제 적격성, 우회로 등을 질문하세요... (Enter 전송, Shift+Enter 줄바꿈)"
                     disabled={isLoading}
-                    className="flex-1 px-3 py-2 bg-muted/60 border border-border rounded-lg text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all resize-none max-h-[140px] leading-relaxed custom-scrollbar"
+                    className="flex-1 min-h-[44px] max-h-[160px] px-3 py-2.5 bg-muted/60 border border-border rounded-lg text-xs text-foreground placeholder:text-muted-foreground/80 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all resize-none leading-normal custom-scrollbar"
                     aria-label="AI 인사이트 질문 입력"
                 />
                 <button
                     type="submit"
                     disabled={isLoading || !inputValue.trim()}
-                    className="px-4 py-2 h-[36px] bg-violet-600 text-white font-semibold rounded-lg text-xs hover:bg-violet-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer shrink-0"
+                    className="px-4 py-2 h-[44px] bg-violet-600 text-white font-semibold rounded-lg text-xs hover:bg-violet-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer shrink-0 flex items-center justify-center"
                     aria-label="질문 전송"
                 >
                     전송

@@ -25,6 +25,7 @@ export interface SupplyChainState {
     isLoading: boolean;
     zoomLevel: number;
     showAIPanel: boolean;
+    pendingAIQuery: string | null;
 
     // 액션
     setNodes: (nodes: SupplyChainNode[]) => void;
@@ -36,6 +37,8 @@ export interface SupplyChainState {
     setZoomLevel: (zoomLevel: number) => void;
     setShowAIPanel: (show: boolean) => void;
     toggleAIPanel: () => void;
+    triggerAIQuery: (query: string) => void;
+    clearPendingAIQuery: () => void;
     reset: () => void;
 }
 
@@ -56,6 +59,7 @@ export const useSupplyChainStore = create<SupplyChainState>((set) => ({
     isLoading: false,
     zoomLevel: 1.0,
     showAIPanel: false,
+    pendingAIQuery: null,
 
     // 노드 데이터 설정
     setNodes: (nodes) => set({ nodes }),
@@ -85,6 +89,10 @@ export const useSupplyChainStore = create<SupplyChainState>((set) => ({
     setShowAIPanel: (showAIPanel) => set({ showAIPanel }),
     toggleAIPanel: () => set((state) => ({ showAIPanel: !state.showAIPanel })),
 
+    // 외부에서 AI 패널 열기 및 질의 트리거
+    triggerAIQuery: (query) => set({ showAIPanel: true, pendingAIQuery: query }),
+    clearPendingAIQuery: () => set({ pendingAIQuery: null }),
+
     // 상태 초기화
     reset: () =>
         set({
@@ -96,5 +104,6 @@ export const useSupplyChainStore = create<SupplyChainState>((set) => ({
             isLoading: false,
             zoomLevel: 1.0,
             showAIPanel: false,
+            pendingAIQuery: null,
         }),
 }));

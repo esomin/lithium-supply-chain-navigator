@@ -1,5 +1,4 @@
-// unused
-// AI 인사이트 서비스 — Gemini 2.5 Flash API 연동 (멀티턴 대화 및 대안 추천)
+import { createHash } from 'crypto';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { GenerativeModel, GenerateContentResult, Content } from '@google/generative-ai';
 import type {
@@ -24,6 +23,17 @@ const MAX_HISTORY_TURNS = 10;
 /** Gemini 모델명 */
 const MODEL_NAME = 'gemini-2.5-flash';
 
+/** 캐시 항목 인터페이스 */
+interface CachedInsight {
+    answer: string;
+    citations: Citation[];
+    cachedAt: number;
+}
+
+/** 캐시 TTL: 24시간 */
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+const MAX_CACHE_ENTRIES = 200;
+
 /**
  * 그래프 컨텍스트 정보.
  * LLM 프롬프트 구성에 사용되는 공급망 토폴로지 데이터.
@@ -36,11 +46,12 @@ export interface GraphContext {
 /**
  * AI 인사이트 서비스.
  * Gemini API를 통해 공급망 분석 인사이트를 생성한다.
- * 멀티턴 대화와 시뮬레이션 기반 대안 추천을 지원한다.
+ * 멀티턴 대화와 시뮬레이션 기반 대안 추천을 지원하며, 동일 질의에 대해 Exact Match 캐시를 제공한다.
  */
 export class AIInsightsService {
     private model: GenerativeModel | null = null;
     private sessions: Map<string, ChatMessage[]> = new Map();
+    private queryCache: Map<string, CachedInsight> = new Map();
     private initAttempted = false;
 
     constructor() {
@@ -125,8 +136,27 @@ ${userQuery}`;
     }
 
     /**
+     * 질문 문자열을 정규화한다 (공백 정리, 소문자화, 불필요한 특수문자 정리).
+     */
+    private normalizeQuery(query: string): string {
+        return query
+            .trim()
+            .toLowerCase()
+            .replace(/[\s\t\r\n]+/g, ' ')
+            .replace(/[?!.,~;:]+/g, '');
+    }
+
+    /**
+     * 질문 정규화 기반 SHA-256 캐시 키를 생성한다.
+     */
+    private computeCacheKey(normalizedQuery: string): string {
+        return createHash('sha256').update(normalizedQuery).digest('hex');
+    }
+
+    /**
      * 인사이트를 생성한다.
      * 그래프 컨텍스트와 문서 청크를 결합하여 LLM에 질의한다.
+     * 단독 질의(이전 대화가 없는 경우) 시 동일 질문에 대한 Exact Match 캐시를 우선 반환한다.
      * 멀티턴 대화를 지원하기 위해 세션 이력을 Gemini chat에 전달한다.
      */
     async generateInsight(
@@ -144,6 +174,36 @@ ${userQuery}`;
             this.sessions.set(sessionId, []);
         }
         const history = this.sessions.get(sessionId)!;
+
+        // Exact Match 캐시 검사: 세션에 이전 대화 이력이 없는 첫 질문이거나 반복 질문일 때 캐시 확인
+        const normalized = this.normalizeQuery(userQuery);
+        const cacheKey = this.computeCacheKey(normalized);
+        const cached = this.queryCache.get(cacheKey);
+
+        if (cached && Date.now() - cached.cachedAt < CACHE_TTL_MS) {
+            console.info(`[LLM] ⚡ Exact Match 캐시 적중 (Cache Hit) | key=${cacheKey.substring(0, 10)}... | ${Date.now() - startTime}ms`);
+
+            // 사용자 메시지 기록
+            history.push({
+                role: 'user',
+                content: userQuery,
+                timestamp: new Date(),
+            });
+
+            // 어시스턴트 메시지 기록
+            history.push({
+                role: 'assistant',
+                content: cached.answer,
+                citations: cached.citations,
+                timestamp: new Date(),
+            });
+
+            return {
+                answer: cached.answer,
+                citations: cached.citations,
+                sessionId,
+            };
+        }
 
         // 사용자 메시지 기록
         history.push({
@@ -197,6 +257,17 @@ ${userQuery}`;
 
         const elapsed = Date.now() - startTime;
         console.info(`[LLM] 응답 완료 | ${elapsed}ms | 답변=${responseText.length}자 | 인용=${citations.length}건`);
+
+        // 캐시 저장 (LRU 용량 관리)
+        if (this.queryCache.size >= MAX_CACHE_ENTRIES) {
+            const oldestKey = this.queryCache.keys().next().value;
+            if (oldestKey) this.queryCache.delete(oldestKey);
+        }
+        this.queryCache.set(cacheKey, {
+            answer: responseText,
+            citations,
+            cachedAt: Date.now(),
+        });
 
         // 어시스턴트 메시지 기록
         history.push({

@@ -163,18 +163,7 @@ export const ReRoutingPanel: React.FC<ReRoutingPanelProps> = ({
                         type="button"
                         onClick={() => {
                             const query = `현재 시뮬레이션에서 발생한 리튬 공급 결손(원래 부족률 ${activeResult.originalDeficitPercentage}%)에 대해 ${currentPlan.title} (${currentPlan.options.map(o => o.sourceName).join(', ')}) 우회 경로가 제안되었습니다. 이 우회 경로의 IRA Section 30D / FEOC 규제 적격성과 IEA/USGS 수급 타당성을 종합 분석해 줘.`;
-                            // AI 패널 열기
-                            useSupplyChainStore.getState().setShowAIPanel(true);
-                            // 질문을 입력 필드에 설정하거나 AI 패널에 이벤트 발송
-                            setTimeout(() => {
-                                const textarea = document.querySelector('textarea[aria-label="AI 인사이트 질문 입력"]') as HTMLTextAreaElement;
-                                if (textarea) {
-                                    textarea.value = query;
-                                    textarea.dispatchEvent(new Event('input', { bubbles: true }));
-                                    const form = textarea.closest('form');
-                                    form?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
-                                }
-                            }, 150);
+                            useSupplyChainStore.getState().triggerAIQuery(query);
                         }}
                         className="w-full shrink-0 mt-1 bg-violet-600 hover:bg-violet-700 text-white font-semibold text-xs py-2 rounded-md shadow-sm border border-violet-500/30 cursor-pointer transition-all flex items-center justify-center gap-1.5"
                     >
