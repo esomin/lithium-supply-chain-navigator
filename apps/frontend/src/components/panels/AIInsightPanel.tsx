@@ -605,8 +605,10 @@ function CitationList({
                                 className="p-2.5 bg-slate-950/70 rounded-lg border border-slate-800 text-[11px] hover:border-slate-700 transition-all shadow-xs group/card"
                             >
                                 <div className="flex items-start justify-between gap-2 mb-1.5">
-                                    <div className="flex items-center gap-1.5 min-w-0">
-                                        <FiFileText className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                    <div className="flex items-baseline gap-1.5 min-w-0">
+                                        <span className="text-[11px] font-mono font-medium text-slate-400 shrink-0 select-none">
+                                            [{idx + 1}]
+                                        </span>
                                         <span className="font-semibold text-slate-200 truncate text-[11px]" title={meta.title}>
                                             {meta.title}
                                         </span>
