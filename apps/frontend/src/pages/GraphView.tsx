@@ -7,7 +7,7 @@ import { NodeDetailPanel } from '../components/panels/NodeDetailPanel';
 import { TraceabilityPanel } from '../components/panels/TraceabilityPanel';
 import { SimulationPanel } from '../components/simulation/SimulationPanel';
 import { AIInsightPanel } from '../components/panels/AIInsightPanel';
-import { Play, Pause, Cuboid } from 'lucide-react';
+import { Play } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { toast } from 'sonner';
 import { AppHeader } from '../components/common/AppHeader';
@@ -223,35 +223,35 @@ export function GraphView() {
 
     return (
         <div className="w-screen h-screen flex flex-col bg-background text-foreground">
-            <AppHeader
-                currentView="graph"
-                actions={
-                    <div className="relative">
+            <AppHeader currentView="graph" />
+
+            {/* 필터 컨트롤 바 (상시 렌더링으로 레이아웃 시프트 방지, 시뮬레이션 중에는 disabled 처리) */}
+            <FilterBar
+                nodeCount={filteredNodes.length}
+                totalNodeCount={nodes.length}
+                disabled={showSimulation}
+            />
+
+            <main className="flex-1 relative overflow-hidden bg-background">
+                {/* 캔버스 좌상단 플로팅 충격 시뮬레이션 진입 버튼 */}
+                {!showSimulation && (
+                    <div className="absolute top-4 left-4 z-20 pointer-events-auto">
                         <Button
                             id="tour-sim-button"
                             onClick={() => {
-                                setShowSimulation(!showSimulation);
+                                setShowSimulation(true);
                                 setShowSimTooltip(false);
                             }}
-                            variant={showSimulation ? "outline" : "default"}
-                            className={`font-semibold shadow-md flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer rounded-md px-3.5 py-1.5 text-xs h-[32px] ${
-                                showSimulation
-                                    ? 'bg-muted text-foreground border border-border hover:bg-muted/80'
-                                    : 'bg-primary text-primary-foreground hover:bg-primary/90'
-                            }`}
-                            aria-label={showSimulation ? "충격 시뮬레이션 패널 닫기" : "충격 시뮬레이션 패널 열기"}
-                            aria-pressed={showSimulation}
+                            variant="default"
+                            className="font-semibold shadow-lg flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer rounded-lg px-4 py-2 text-xs h-[36px] bg-primary text-primary-foreground hover:bg-primary/90 border border-primary/20 backdrop-blur-md"
+                            aria-label="충격 시뮬레이션 패널 열기"
                         >
-                            {showSimulation ? (
-                                <Pause className="w-3.5 h-3.5 fill-current" />
-                            ) : (
-                                <Play className="w-3.5 h-3.5 fill-current" />
-                            )}
-                            충격 시뮬레이션
+                            <Play className="w-3.5 h-3.5 fill-current" />
+                            <span>충격 시뮬레이션</span>
                         </Button>
 
                         {/* 시뮬레이션 버튼 안내 말풍선 팝오버 툴팁 */}
-                        {showSimTooltip && !showSimulation && (
+                        {showSimTooltip && (
                             <div
                                 className="absolute left-0 top-full mt-2.5 w-[280px] bg-card/95 backdrop-blur-md border border-primary text-card-foreground rounded-xl shadow-[0_0_16px_rgba(59,130,246,0.25)] p-3.5 z-50 animate-in fade-in slide-in-from-top-2 duration-300 pointer-events-auto select-none group hover:border-2 hover:border-primary hover:shadow-[0_0_24px_rgba(59,130,246,0.45)] transition-all cursor-pointer"
                                 onClick={() => {
@@ -294,17 +294,8 @@ export function GraphView() {
                             </div>
                         )}
                     </div>
-                }
-            />
+                )}
 
-            {/* 필터 컨트롤 바 (상시 렌더링으로 레이아웃 시프트 방지, 시뮬레이션 중에는 disabled 처리) */}
-            <FilterBar
-                nodeCount={filteredNodes.length}
-                totalNodeCount={nodes.length}
-                disabled={showSimulation}
-            />
-
-            <main className="flex-1 relative overflow-hidden bg-background">
                 {/* 로딩 상태 */}
                 {isLoading && (
                     <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-10 text-muted-foreground">
@@ -367,7 +358,7 @@ export function GraphView() {
                 </div>
 
                 {/* 시뮬레이션 제어 패널 */}
-                {showSimulation && <SimulationPanel />}
+                {showSimulation && <SimulationPanel onClose={() => setShowSimulation(false)} />}
 
                 {/* 범례 */}
                 <div

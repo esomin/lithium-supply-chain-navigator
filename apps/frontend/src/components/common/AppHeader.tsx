@@ -1,5 +1,4 @@
-import { ReactNode } from 'react';
-import { Cuboid, Sparkles } from 'lucide-react';
+import { Cuboid } from 'lucide-react';
 import { GiDiamonds } from 'react-icons/gi';
 import { ViewSwitcher } from './ViewSwitcher';
 import { useSupplyChainStore } from '../../store/supply-chain-store';
@@ -7,34 +6,25 @@ import { Button } from '../ui/button';
 
 export interface AppHeaderProps {
     currentView: 'graph' | 'map';
-    actions?: ReactNode;
 }
 
 /**
  * 공통 상단 헤더 컴포넌트.
- * 로고, 애플리케이션 타이틀, 액션 버튼(충격 시뮬레이션), AI 인사이트 토글 버튼, 뷰 전환 네비게이션을 제공한다.
+ * 로고, 애플리케이션 타이틀, AI 인사이트 토글 버튼, 뷰 전환 네비게이션을 제공한다.
  */
 export function AppHeader({
     currentView,
-    actions,
 }: AppHeaderProps) {
     const { showAIPanel, toggleAIPanel } = useSupplyChainStore();
 
     return (
         <header className="px-6 border-b border-border bg-card flex items-center justify-between h-16 min-h-[64px] select-none">
-            {/* 좌측 로고, 타이틀 및 액션 버튼(충격 시뮬레이션) 영역 */}
-            <div className="flex items-center gap-5">
-                <div className="flex items-center gap-3.5">
-                    <Cuboid size={34} strokeWidth={2.5} className="text-foreground shrink-0" />
-                    <h1 className="m-0 text-[24px] font-bold text-foreground tracking-tight">
-                        Lithium Supply Chain Navigator
-                    </h1>
-                </div>
-                {actions && (
-                    <div className="flex items-center pl-1">
-                        {actions}
-                    </div>
-                )}
+            {/* 좌측 로고 및 타이틀 영역 */}
+            <div className="flex items-center gap-3.5">
+                <Cuboid size={34} strokeWidth={2.5} className="text-foreground shrink-0" />
+                <h1 className="m-0 text-[24px] font-bold text-foreground tracking-tight">
+                    Lithium Supply Chain Navigator
+                </h1>
             </div>
 
             {/* 우측 네비게이션 & AI 인사이트 토글 버튼 영역 */}

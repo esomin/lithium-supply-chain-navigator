@@ -26,12 +26,16 @@ import {
 } from './SimulationResultSection';
 import { ReRoutingPanel } from './ReRoutingPanel';
 
+export interface SimulationPanelProps {
+    onClose?: () => void;
+}
+
 /**
  * Simulation Controls 사이드 패널 컴포넌트.
  * 충격 시나리오 구성, 국가 수출 규제 바로가기, 시뮬레이션 실행을 제공한다.
  * Requirements 7.5 구현.
  */
-export function SimulationPanel() {
+export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
     const { nodes, edges, setFilters } = useSupplyChainStore();
     const {
         currentDisruption,
@@ -272,12 +276,23 @@ export function SimulationPanel() {
             aria-label="시뮬레이션 제어 패널 그룹"
         >
             {/* 공통 상단 헤더: 두 패널 전체 가로 영역을 아우르는 타이틀 바 */}
-            <div className={`bg-card border-b border-r border-border px-4 py-3 shadow-sm flex items-center justify-between pointer-events-auto z-10 transition-all duration-300 ease-in-out ${isSecondColumnOpen ? 'w-[760px]' : 'w-[380px]'
+            <div className={`bg-card border-b border-r border-border px-3.5 py-3 shadow-sm flex items-center justify-between pointer-events-auto z-10 transition-all duration-300 ease-in-out ${isSecondColumnOpen ? 'w-[760px]' : 'w-[380px]'
                 }`}>
                 <h2 className="text-sm font-bold text-foreground tracking-tight flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-primary inline-block"></span>
                     충격 시뮬레이션
                 </h2>
+                {onClose && (
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="p-1 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer flex items-center justify-center"
+                        aria-label="충격 시뮬레이션 패널 접기"
+                        title="패널 접기"
+                    >
+                        <ChevronLeft className="w-5 h-5" />
+                    </button>
+                )}
             </div>
 
             {/* 패널 칼럼 바디 (1열 + 2열) */}
