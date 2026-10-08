@@ -13,8 +13,21 @@ import { toast } from 'sonner';
 import { AppHeader } from '../components/common/AppHeader';
 // 공급망 그래프 시각화 페이지 (Phase 1 메인 뷰)
 export function GraphView() {
-    const { nodes, edges, selectedNodeId, filters, riskScores, setNodes, setEdges, setRiskScores, selectNode, setLoading, isLoading } =
-        useSupplyChainStore();
+    const {
+        nodes,
+        edges,
+        selectedNodeId,
+        filters,
+        riskScores,
+        setNodes,
+        setEdges,
+        setRiskScores,
+        selectNode,
+        setLoading,
+        isLoading,
+        showAIPanel,
+        setShowAIPanel,
+    } = useSupplyChainStore();
 
     // 시뮬레이션 결과 및 실행 상태 가져오기
     const { highlightedPath, isRunning, isRerouteApplied, activeRerouteOptions } = useSimulationStore((state) => ({
@@ -27,8 +40,6 @@ export function GraphView() {
     const [error, setError] = useState<string | null>(null);
     // ESG 역추적 패널 표시 상태
     const [showTraceability, setShowTraceability] = useState(false);
-    // AI 인사이트 패널 표시 상태
-    const [showAIPanel, setShowAIPanel] = useState(false);
     // 시뮬레이션 패널 표시 상태
     const [showSimulation, setShowSimulation] = useState(false);
     // 시뮬레이션 버튼 안내 말풍선 표시 상태

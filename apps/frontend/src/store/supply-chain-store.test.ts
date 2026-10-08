@@ -157,5 +157,27 @@ describe('supply-chain-store - 뷰 전환 시 상태 보존', () => {
         const state = useSupplyChainStore.getState();
         expect(state.riskScores).toHaveLength(0);
         expect(state.selectedNodeId).toBeNull();
+        expect(state.showAIPanel).toBe(false);
+    });
+
+    it('showAIPanel 및 toggleAIPanel 상태가 정상 동작하고 뷰 전환 시에도 유지된다', () => {
+        const store = useSupplyChainStore.getState();
+
+        expect(store.showAIPanel).toBe(false);
+
+        // setShowAIPanel 테스트
+        store.setShowAIPanel(true);
+        expect(useSupplyChainStore.getState().showAIPanel).toBe(true);
+
+        // toggleAIPanel 테스트
+        store.toggleAIPanel();
+        expect(useSupplyChainStore.getState().showAIPanel).toBe(false);
+
+        store.toggleAIPanel();
+        expect(useSupplyChainStore.getState().showAIPanel).toBe(true);
+
+        // 뷰 전환 시뮬레이션: 스토어 상태 유지 확인
+        const stateAfterSwitch = useSupplyChainStore.getState();
+        expect(stateAfterSwitch.showAIPanel).toBe(true);
     });
 });

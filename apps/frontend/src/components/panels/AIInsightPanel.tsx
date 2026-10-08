@@ -1,10 +1,13 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import type { ChatMessage, Citation, InsightResponse } from '@navigator/shared';
 import { GiDiamonds } from 'react-icons/gi';
+import { LuCopy, LuCheck } from 'react-icons/lu';
+import { FiFileText } from 'react-icons/fi';
 import ReactMarkdown from 'react-markdown';
 
 export interface AIInsightPanelProps {
     onClose: () => void;
+    initialQuery?: string;
 }
 
 /**
@@ -13,18 +16,65 @@ export interface AIInsightPanelProps {
  * 출처 인용 표시, 에러/재시도 UX 포함.
  * Requirements 9.1, 9.2, 9.5 구현.
  */
-export function AIInsightPanel({ onClose }: AIInsightPanelProps) {
-    const [messages, setMessages] = useState<ChatMessage[]>([]);
+const STORAGE_KEY_MESSAGES = 'lithium_ai_messages';
+const STORAGE_KEY_SESSION = 'lithium_ai_session_id';
+
+export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
+    const [messages, setMessages] = useState<ChatMessage[]>(() => {
+        try {
+            const saved = localStorage.getItem(STORAGE_KEY_MESSAGES);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                return parsed.map((m: any) => ({
+                    ...m,
+                    timestamp: new Date(m.timestamp),
+                }));
+            }
+        } catch (e) {
+            console.warn('Failed to load saved messages from localStorage', e);
+        }
+        return [];
+    });
     const [inputValue, setInputValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [sessionId, setSessionId] = useState<string | null>(null);
+    const [sessionId, setSessionId] = useState<string | null>(() => {
+        try {
+            return localStorage.getItem(STORAGE_KEY_SESSION) || null;
+        } catch {
+            return null;
+        }
+    });
     // 에러 자동 제거 타이머
     const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     // 메시지 리스트 스크롤 영역
     const messagesEndRef = useRef<HTMLDivElement>(null);
     // 마지막 사용자 질의 (재시도용)
     const lastQueryRef = useRef<string>('');
+    // 텍스트에어리어 자동 리사이징 ref
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    // 메시지 변경 시 로컬스토리지 동기화
+    useEffect(() => {
+        try {
+            localStorage.setItem(STORAGE_KEY_MESSAGES, JSON.stringify(messages));
+        } catch (e) {
+            console.warn('Failed to save messages to localStorage', e);
+        }
+    }, [messages]);
+
+    // 세션 ID 변경 시 로컬스토리지 동기화
+    useEffect(() => {
+        try {
+            if (sessionId) {
+                localStorage.setItem(STORAGE_KEY_SESSION, sessionId);
+            } else {
+                localStorage.removeItem(STORAGE_KEY_SESSION);
+            }
+        } catch (e) {
+            console.warn('Failed to save session ID to localStorage', e);
+        }
+    }, [sessionId]);
 
     // 에러 발생 시 10초 후 자동 제거
     useEffect(() => {
@@ -44,6 +94,14 @@ export function AIInsightPanel({ onClose }: AIInsightPanelProps) {
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages, isLoading]);
+
+    // 텍스트에어리어 높이 자동 조절
+    useEffect(() => {
+        if (textareaRef.current) {
+            textareaRef.current.style.height = 'auto';
+            textareaRef.current.style.height = `${Math.min(Math.max(textareaRef.current.scrollHeight, 36), 140)}px`;
+        }
+    }, [inputValue]);
 
     // AI 질의 전송
     const sendQuery = useCallback(async (query: string) => {
@@ -107,10 +165,29 @@ export function AIInsightPanel({ onClose }: AIInsightPanelProps) {
         }
     }, [sessionId]);
 
+    // 외부에서 질문이 주입되었을 때(예: 시뮬레이션 패널에서 AI 질문 전달) 자동 전송
+    useEffect(() => {
+        if (initialQuery && initialQuery.trim()) {
+            sendQuery(initialQuery);
+        }
+    }, [initialQuery, sendQuery]);
+
     // 입력 폼 제출 핸들러
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         sendQuery(inputValue);
+    };
+
+    // 키보드 엔터(전송) / Shift+엔터(줄바꿈) 핸들러
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            if (!e.nativeEvent.isComposing) {
+                e.preventDefault();
+                if (inputValue.trim() && !isLoading) {
+                    sendQuery(inputValue);
+                }
+            }
+        }
     };
 
     // 재시도 핸들러
@@ -121,35 +198,90 @@ export function AIInsightPanel({ onClose }: AIInsightPanelProps) {
         }
     };
 
+    // 대화 내역 초기화 핸들러
+    const handleClearChat = () => {
+        setMessages([]);
+        setSessionId(null);
+        setError(null);
+        try {
+            localStorage.removeItem(STORAGE_KEY_MESSAGES);
+            localStorage.removeItem(STORAGE_KEY_SESSION);
+        } catch (e) {
+            console.warn('Failed to clear localStorage', e);
+        }
+    };
+
     return (
         <aside
-            className="fixed top-0 right-0 w-[600px] max-w-[90vw] h-full bg-white border-l border-gray-200 shadow-lg z-50 flex flex-col animate-slide-in"
+            className="fixed top-0 right-0 w-[580px] max-w-[92vw] h-full bg-card/95 backdrop-blur-md border-l border-border shadow-2xl z-50 flex flex-col animate-slide-in text-foreground"
             aria-label="AI 인사이트 패널"
         >
             {/* 헤더 */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gray-50">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/40">
                 <div className="flex items-center gap-2">
-                    <GiDiamonds color='#4796e3' size={20} />
-                    <h2 className="m-0 text-base font-semibold text-gray-800">AI 인사이트</h2>
+                    <span className="p-1 rounded-md bg-violet-600/10 border border-violet-500/30 text-violet-400">
+                        <GiDiamonds size={18} />
+                    </span>
+                    <div>
+                        <h2 className="m-0 text-sm font-bold text-foreground flex items-center gap-2">
+                            AI 공급망 인사이트
+                            {messages.length > 0 && (
+                                <span className="text-[10px] font-normal px-1.5 py-0.5 rounded bg-violet-500/15 text-violet-300 border border-violet-500/20">
+                                    세션 유지 중
+                                </span>
+                            )}
+                        </h2>
+                        <p className="m-0 text-[10px] text-muted-foreground">그래프 토폴로지 &amp; RAG 규제/시장 정보 분석</p>
+                    </div>
                 </div>
-                <button
-                    onClick={onClose}
-                    className="bg-transparent border-none text-lg cursor-pointer text-gray-400 hover:text-gray-600 transition-colors"
-                    aria-label="AI 인사이트 패널 접기"
-                >
-                    ▶
-                </button>
+                <div className="flex items-center gap-1">
+                    {messages.length > 0 && (
+                        <button
+                            type="button"
+                            onClick={handleClearChat}
+                            className="px-2 py-1 rounded text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors cursor-pointer"
+                            title="새 대화 시작 (대화 초기화)"
+                        >
+                            새 대화
+                        </button>
+                    )}
+                    <button
+                        onClick={onClose}
+                        className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer text-sm font-medium"
+                        aria-label="AI 인사이트 패널 닫기"
+                        title="패널 닫기"
+                    >
+                        ✕
+                    </button>
+                </div>
             </div>
 
             {/* 메시지 리스트 */}
-            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 custom-scrollbar">
                 {/* 초기 안내 메시지 */}
                 {messages.length === 0 && !isLoading && (
-                    <div className="text-center text-gray-400 text-sm mt-8">
-                        <p className="mb-2">리튬 공급망에 대해 질문해 보세요.</p>
-                        <p className="text-xs text-gray-300">
-                            예: &quot;칠레에서 한국까지 리튬 공급 경로를 설명해 줘&quot;
+                    <div className="text-center text-muted-foreground text-xs mt-10 p-6 bg-muted/20 border border-dashed border-border rounded-xl">
+                        <GiDiamonds className="w-8 h-8 mx-auto mb-2 text-violet-400 opacity-80" />
+                        <p className="font-semibold text-foreground mb-1">리튬 공급망에 대해 질문해 보세요</p>
+                        <p className="text-[11px] text-muted-foreground leading-relaxed mb-4">
+                            공급망 리스크, 노드 간 의존도, IRA/FEOC 규제 적격성 및 대체 우회로를 실시간으로 질의할 수 있습니다.
                         </p>
+                        <div className="flex flex-col gap-1.5 text-left max-w-sm mx-auto">
+                            <button
+                                type="button"
+                                onClick={() => sendQuery('칠레에서 한국까지 리튬 공급 경로 및 주요 제련소 현황을 설명해 줘')}
+                                className="text-[11px] p-2 rounded-lg bg-card border border-border hover:border-violet-500/50 hover:bg-violet-500/5 text-foreground transition-all text-left cursor-pointer"
+                            >
+                                "칠레에서 한국까지 리튬 공급 경로 및 주요 제련소 현황을 설명해 줘"
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => sendQuery('중국 지분이 30% 포함된 합작 제련소를 통한 조달 시 IRA FEOC 세액공제에 미치는 영향은?')}
+                                className="text-[11px] p-2 rounded-lg bg-card border border-border hover:border-violet-500/50 hover:bg-violet-500/5 text-foreground transition-all text-left cursor-pointer"
+                            >
+                                "중국 지분이 30% 포함된 합작 제련소를 통한 조달 시 IRA FEOC 영향은?"
+                            </button>
+                        </div>
                     </div>
                 )}
 
@@ -172,24 +304,26 @@ export function AIInsightPanel({ onClose }: AIInsightPanelProps) {
                 <div ref={messagesEndRef} />
             </div>
 
-            {/* 입력 영역 */}
+            {/* 입력 영역: 자동 높이 조절 멀티라인 Textarea 지원 */}
             <form
                 onSubmit={handleSubmit}
-                className="flex items-center gap-2 px-4 py-3 border-t border-gray-200 bg-gray-50"
+                className="flex items-end gap-2 px-4 py-3 border-t border-border bg-card/80 backdrop-blur-xs"
             >
-                <input
-                    type="text"
+                <textarea
+                    ref={textareaRef}
+                    rows={1}
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
-                    placeholder="질문을 입력하세요..."
+                    onKeyDown={handleKeyDown}
+                    placeholder="공급망 분석, 규제 적격성, 우회로 등을 질문하세요... (Enter 전송, Shift+Enter 줄바꿈)"
                     disabled={isLoading}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    className="flex-1 px-3 py-2 bg-muted/60 border border-border rounded-lg text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all resize-none max-h-[140px] leading-relaxed custom-scrollbar"
                     aria-label="AI 인사이트 질문 입력"
                 />
                 <button
                     type="submit"
                     disabled={isLoading || !inputValue.trim()}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                    className="px-4 py-2 h-[36px] bg-violet-600 text-white font-semibold rounded-lg text-xs hover:bg-violet-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer shrink-0"
                     aria-label="질문 전송"
                 >
                     전송
@@ -220,25 +354,30 @@ function MessageBubble({ message }: { message: ChatMessage }) {
     return (
         <div className={`group flex ${isUser ? 'justify-end' : 'justify-start'}`}>
             <div
-                className={`max-w-[85%] rounded-lg px-3 py-2 text-sm relative ${isUser
-                    ? 'bg-blue-500 text-white rounded-br-sm'
-                    : 'bg-gray-100 text-gray-800 rounded-bl-sm'
+                className={`max-w-[88%] rounded-xl text-xs relative border shadow-sm ${isUser
+                    ? 'bg-primary text-primary-foreground border-primary/50 rounded-br-xs px-3.5 py-2.5'
+                    : 'bg-muted/70 text-foreground border-border/80 rounded-bl-xs pl-3.5 pr-9 py-2.5'
                     }`}
             >
-                {/* 복사 버튼 (어시스턴트 메시지에만 표시) */}
+                {/* 복사 버튼 (어시스턴트 메시지에만 표시 - 아이콘 단독 및 겹침 방지) */}
                 {!isUser && (
                     <button
+                        type="button"
                         onClick={handleCopy}
-                        className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded bg-white/80 hover:bg-white text-gray-500 hover:text-gray-700 text-xs border-none cursor-pointer"
+                        className="absolute top-2.5 right-2 p-1 rounded-md bg-card/80 hover:bg-card text-muted-foreground hover:text-foreground border border-border/70 opacity-60 group-hover:opacity-100 transition-all cursor-pointer shadow-2xs flex items-center justify-center"
                         aria-label="답변 복사"
-                        title={copied ? '복사됨!' : '복사'}
+                        title={copied ? '복사 완료' : '답변 복사'}
                     >
-                        {copied ? '✓' : '📋'}
+                        {copied ? (
+                            <LuCheck className="w-3.5 h-3.5 text-emerald-400" />
+                        ) : (
+                            <LuCopy className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground" />
+                        )}
                     </button>
                 )}
 
                 {/* 메시지 내용 */}
-                <div className="m-0 prose prose-sm max-w-none break-words [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+                <div className="m-0 leading-relaxed break-words space-y-1.5 [&>p]:mb-1.5 [&>ul]:list-disc [&>ul]:pl-4 [&>ol]:list-decimal [&>ol]:pl-4 [&>h3]:text-xs [&>h3]:font-bold [&>h3]:text-primary [&>h4]:text-xs [&>h4]:font-bold">
                     <ReactMarkdown>{message.content}</ReactMarkdown>
                 </div>
 
@@ -249,7 +388,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
 
                 {/* 타임스탬프 */}
                 <span
-                    className={`block text-[0.65rem] mt-1 ${isUser ? 'text-blue-100' : 'text-gray-400'
+                    className={`block text-[9px] mt-1.5 font-mono ${isUser ? 'text-primary-foreground/70 text-right' : 'text-muted-foreground'
                         }`}
                 >
                     {new Date(message.timestamp).toLocaleTimeString('ko-KR', {
@@ -267,33 +406,35 @@ function CitationList({ citations }: { citations: Citation[] }) {
     const [isExpanded, setIsExpanded] = useState(false);
 
     return (
-        <div className="mt-2 pt-2 border-t border-gray-200">
+        <div className="mt-2.5 pt-2 border-t border-border/60">
             <button
+                type="button"
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="flex items-center gap-1 text-xs text-gray-500 bg-transparent border-none cursor-pointer hover:text-gray-700 p-0"
+                className="flex items-center gap-1.5 text-[11px] font-medium text-primary bg-transparent border-none cursor-pointer hover:underline p-0"
                 aria-expanded={isExpanded}
                 aria-label="출처 목록 토글"
             >
-                <span className="text-[0.7rem]">{isExpanded ? '▼' : '▶'}</span>
-                <span>출처 ({citations.length})</span>
+                <span className="text-[9px]">{isExpanded ? '▼' : '▶'}</span>
+                <span>참조 정책/보고서 원문 ({citations.length}건)</span>
             </button>
 
             {isExpanded && (
-                <ul className="mt-1.5 m-0 p-0 list-none space-y-1.5">
+                <ul className="mt-2 m-0 p-0 list-none space-y-1.5">
                     {citations.map((citation, idx) => (
                         <li
                             key={idx}
-                            className="p-1.5 bg-white rounded border border-gray-200 text-xs"
+                            className="p-2 bg-card/90 rounded-md border border-border/80 text-[11px]"
                         >
-                            <div className="flex items-center justify-between mb-0.5">
-                                <span className="font-medium text-gray-700 truncate">
-                                    📄 {citation.source}
+                            <div className="flex items-center justify-between mb-1">
+                                <span className="font-semibold text-foreground truncate flex items-center gap-1.5">
+                                    <FiFileText className="w-3 h-3 text-sky-400 shrink-0" />
+                                    {citation.source}
                                 </span>
-                                <span className="text-[0.6rem] text-gray-400 ml-1 whitespace-nowrap">
+                                <span className="text-[10px] font-mono text-primary bg-primary/10 border border-primary/20 px-1.5 py-0.2 rounded shrink-0 ml-1">
                                     관련도 {Math.round(citation.relevance * 100)}%
                                 </span>
                             </div>
-                            <p className="m-0 text-gray-500 line-clamp-2">
+                            <p className="m-0 text-muted-foreground text-[10px] leading-relaxed line-clamp-3">
                                 {citation.content}
                             </p>
                         </li>
@@ -308,11 +449,12 @@ function CitationList({ citations }: { citations: Citation[] }) {
 function TypingIndicator() {
     return (
         <div className="flex justify-start">
-            <div className="bg-gray-100 rounded-lg px-4 py-2 rounded-bl-sm">
-                <div className="flex items-center gap-1" aria-label="응답 생성 중">
-                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:0ms]" />
-                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:150ms]" />
-                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:300ms]" />
+            <div className="bg-muted/70 border border-border rounded-xl px-4 py-2.5 rounded-bl-xs">
+                <div className="flex items-center gap-1.5" aria-label="응답 생성 중">
+                    <span className="text-[11px] text-muted-foreground font-medium mr-1">AI 분석 중</span>
+                    <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:0ms]" />
+                    <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:150ms]" />
+                    <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:300ms]" />
                 </div>
             </div>
         </div>
@@ -330,19 +472,19 @@ function ErrorDisplay({
     hasLastQuery: boolean;
 }) {
     return (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm" role="alert">
-            <p className="m-0 text-red-700 mb-2">⚠️ {error}</p>
+        <div className="p-3 bg-destructive/10 border border-destructive/40 text-destructive rounded-xl text-xs" role="alert">
+            <p className="m-0 font-medium mb-2">⚠️ {error}</p>
             <div className="flex items-center gap-2 flex-wrap">
                 {hasLastQuery && (
                     <button
                         onClick={onRetry}
-                        className="px-3 py-1 bg-red-100 text-red-700 border border-red-300 rounded text-xs cursor-pointer hover:bg-red-200 transition-colors"
+                        className="px-2.5 py-1 bg-destructive/20 text-destructive border border-destructive/40 rounded text-xs cursor-pointer hover:bg-destructive/30 transition-colors font-medium"
                     >
                         다시 시도
                     </button>
                 )}
-                <span className="text-xs text-gray-500">
-                    다른 질문을 해 보세요
+                <span className="text-[11px] text-muted-foreground">
+                    네트워크 또는 API 키 설정을 확인해 주세요.
                 </span>
             </div>
         </div>

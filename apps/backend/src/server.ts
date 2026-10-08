@@ -3,8 +3,9 @@ import dotenv from 'dotenv';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
-// 모노레포 루트의 .env 파일 로딩
+// 환경변수 로딩 (시스템 환경변수 우선, 모노레포 루트 .env 폴백)
 const __dirname = dirname(fileURLToPath(import.meta.url));
+dotenv.config();
 dotenv.config({ path: resolve(__dirname, '../../../.env') });
 
 import express from 'express';

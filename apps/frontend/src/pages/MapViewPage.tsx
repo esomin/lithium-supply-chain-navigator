@@ -3,6 +3,7 @@ import { useSupplyChainStore } from '../store/supply-chain-store';
 import { MapView } from '../components/views/MapView';
 import { FilterBar } from '../components/common/FilterBar';
 import { NodeDetailPanel } from '../components/panels/NodeDetailPanel';
+import { AIInsightPanel } from '../components/panels/AIInsightPanel';
 import { AppHeader } from '../components/common/AppHeader';
 import { RiskScore } from '@navigator/shared/src/types/risk';
 
@@ -24,6 +25,8 @@ export function MapViewPage() {
         selectNode,
         setLoading,
         isLoading,
+        showAIPanel,
+        setShowAIPanel,
     } = useSupplyChainStore();
 
     const [error, setError] = useState<string | null>(null);
@@ -222,6 +225,11 @@ export function MapViewPage() {
                         onClose={handleClosePanel}
                     />
                 )}
+
+                {/* AI 인사이트 패널 — 항상 렌더링, CSS로 표시/숨김 (채팅 기록 유지) */}
+                <div className={showAIPanel ? '' : 'hidden'}>
+                    <AIInsightPanel onClose={() => setShowAIPanel(false)} />
+                </div>
             </main>
         </div>
     );

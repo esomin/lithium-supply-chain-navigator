@@ -6,9 +6,12 @@ services:
       context: .
       dockerfile: Dockerfile.backend
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
       - PORT=3001
       - NODE_ENV=production
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
     networks:
       - lithium-network
 

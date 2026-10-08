@@ -24,6 +24,7 @@ export interface SupplyChainState {
     filters: GraphFilters;
     isLoading: boolean;
     zoomLevel: number;
+    showAIPanel: boolean;
 
     // 액션
     setNodes: (nodes: SupplyChainNode[]) => void;
@@ -33,6 +34,8 @@ export interface SupplyChainState {
     setFilters: (filters: Partial<GraphFilters>) => void;
     setLoading: (isLoading: boolean) => void;
     setZoomLevel: (zoomLevel: number) => void;
+    setShowAIPanel: (show: boolean) => void;
+    toggleAIPanel: () => void;
     reset: () => void;
 }
 
@@ -52,6 +55,7 @@ export const useSupplyChainStore = create<SupplyChainState>((set) => ({
     filters: initialFilters,
     isLoading: false,
     zoomLevel: 1.0,
+    showAIPanel: false,
 
     // 노드 데이터 설정
     setNodes: (nodes) => set({ nodes }),
@@ -77,6 +81,10 @@ export const useSupplyChainStore = create<SupplyChainState>((set) => ({
     // 줌 레벨 설정
     setZoomLevel: (zoomLevel) => set({ zoomLevel }),
 
+    // AI 인사이트 패널 표시 제어
+    setShowAIPanel: (showAIPanel) => set({ showAIPanel }),
+    toggleAIPanel: () => set((state) => ({ showAIPanel: !state.showAIPanel })),
+
     // 상태 초기화
     reset: () =>
         set({
@@ -87,5 +95,6 @@ export const useSupplyChainStore = create<SupplyChainState>((set) => ({
             filters: initialFilters,
             isLoading: false,
             zoomLevel: 1.0,
+            showAIPanel: false,
         }),
 }));
