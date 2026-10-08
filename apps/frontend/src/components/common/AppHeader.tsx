@@ -32,10 +32,10 @@ export function AppHeader({
                 <Button
                     onClick={toggleAIPanel}
                     variant={showAIPanel ? "outline" : "default"}
-                    className={`font-semibold shadow-md flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer rounded-md px-3.5 py-1.5 text-xs h-[32px] ${
+                    className={`font-semibold shadow-xs flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer rounded-[4px] px-3 py-1.5 text-xs h-8 ${
                         showAIPanel
                             ? 'bg-violet-950/60 text-violet-200 border border-violet-500/50 hover:bg-violet-900/50'
-                            : 'bg-violet-600 text-white hover:bg-violet-700 border border-violet-500/30 shadow-violet-900/20'
+                            : 'bg-violet-600 text-white hover:bg-violet-700 border border-violet-500/30'
                     }`}
                     aria-label={showAIPanel ? "AI 인사이트 패널 닫기" : "AI 인사이트 패널 열기"}
                     aria-pressed={showAIPanel}

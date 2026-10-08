@@ -42,78 +42,79 @@ export function SimulationResultSection({
 
     return (
         <div
-            className="border border-border/40 bg-muted/20 rounded-lg shadow-xs shrink-0 h-[400px] max-h-[400px] flex flex-col overflow-hidden"
+            className="flex flex-col space-y-3 shrink-0"
             aria-label="시뮬레이션 결과"
             role="region"
         >
-            <div className="p-3 flex-1 min-h-0 flex flex-col overflow-y-auto custom-scrollbar space-y-2.5">
-                <div className="grid grid-cols-3 gap-2 text-xs text-foreground bg-card/80 border border-border/40 rounded-lg p-2.5 shadow-2xs shrink-0">
-                    <div className="text-center border-r border-border/40">
-                        <div className="text-[10px] text-muted-foreground">영향 노드</div>
-                        <div className="font-semibold text-foreground mt-0.5">{result.deficits.length}개</div>
-                    </div>
-                    <div className="text-center border-r border-border/40">
-                        <div className="text-[10px] text-muted-foreground">최대 부족률</div>
-                        <div className="font-semibold text-red-400 mt-0.5">{maxDeficit.toFixed(1)}%</div>
-                    </div>
-                    <div className="text-center">
-                        <div className="text-[10px] text-muted-foreground">실행 시간</div>
-                        <div className="font-mono text-muted-foreground mt-0.5">{formatExecutionTime(result.executionTimeMs)}</div>
-                    </div>
+            {/* 상단 핵심 메트릭 3종 */}
+            <div className="grid grid-cols-3 divide-x divide-border/40 text-xs text-foreground bg-muted/30 border border-border/40 rounded-[4px] p-0 shadow-2xs shrink-0 overflow-hidden">
+                <div className="text-center py-2 px-1 flex flex-col justify-center">
+                    <div className="text-[10px] text-muted-foreground">영향 노드</div>
+                    <div className="font-semibold text-foreground mt-0.5">{result.deficits.length}개</div>
                 </div>
-
-                {sortedDeficits.length > 0 && (
-                    <div className="border border-border/40 rounded-lg bg-card/60 shadow-2xs flex-1 min-h-0 overflow-y-auto custom-scrollbar">
-                        <table className="w-full text-xs border-collapse" aria-label="부족률 테이블">
-                            <thead>
-                                <tr className="bg-muted/40 border-b border-border/40 text-muted-foreground sticky top-0">
-                                    <th className="text-left py-1.5 px-2.5 font-medium">노드</th>
-                                    <th className="text-right py-1.5 px-2.5 font-medium">부족률</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {sortedDeficits.map((d, index) => {
-                                    const node = nodes.find((n) => n.id === d.nodeId);
-                                    const nameStr = node
-                                        ? `${node.name} (${node.country === 'NA' ? '' : getCountryDisplayName(node.country) + ', '}${getNodeTypeLabel(node.type)})`
-                                        : d.nodeId;
-                                    const hasDeficit = d.deficitPercentage > 0;
-                                    return (
-                                        <tr key={`${d.nodeId}-${index}`} className="border-b border-border/30 last:border-b-0 text-foreground hover:bg-muted/40">
-                                            <td className="py-1.5 px-2.5 font-normal text-[11px] truncate max-w-[190px]" title={nameStr}>
-                                                {nameStr}
-                                            </td>
-                                            <td className="text-right py-1.5 px-2.5">
-                                                {hasDeficit ? (
-                                                    <span className="inline-block text-[10px] font-semibold text-red-400 bg-red-950/30 border border-red-800/30 px-1.5 py-0.5 rounded">
-                                                        {d.deficitPercentage.toFixed(1)}%
-                                                    </span>
-                                                ) : (
-                                                    <span className="inline-block text-[10px] text-muted-foreground bg-muted/20 px-1.5 py-0.5 rounded">
-                                                        0.0%
-                                                    </span>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-
-                {/* Step 2: 대안 탐색 메인 CTA 버튼 */}
-                {deficitCount > 0 && (
-                    <Button
-                        onClick={triggerRerouteCalculation}
-                        disabled={isRerouteLoading}
-                        className="w-full shrink-0 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs py-2 rounded-lg shadow-sm cursor-pointer transition-all flex items-center justify-center gap-2"
-                    >
-                        <Route className="w-3.5 h-3.5" />
-                        대체 공급망 최적화 시나리오 추천 ({deficitCount}개 노드 해소)
-                    </Button>
-                )}
+                <div className="text-center py-2 px-1 flex flex-col justify-center">
+                    <div className="text-[10px] text-muted-foreground">최대 부족률</div>
+                    <div className="font-semibold text-red-400 mt-0.5">{maxDeficit.toFixed(1)}%</div>
+                </div>
+                <div className="text-center py-2 px-1 flex flex-col justify-center">
+                    <div className="text-[10px] text-muted-foreground">실행 시간</div>
+                    <div className="font-mono text-muted-foreground mt-0.5">{formatExecutionTime(result.executionTimeMs)}</div>
+                </div>
             </div>
+
+            {/* 부족률 테이블 (보더 최소화) */}
+            {sortedDeficits.length > 0 && (
+                <div className="max-h-[170px] overflow-y-auto custom-scrollbar shrink-0 px-0.5">
+                    <table className="w-full text-xs border-collapse" aria-label="부족률 테이블">
+                        <thead>
+                            <tr className="border-b border-border/30 text-muted-foreground sticky top-0 bg-card">
+                                <th className="text-left py-1.5 px-2 font-medium text-[11px]">노드</th>
+                                <th className="text-right py-1.5 px-2 font-medium text-[11px]">부족률</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border/20">
+                            {sortedDeficits.map((d, index) => {
+                                const node = nodes.find((n) => n.id === d.nodeId);
+                                const nameStr = node
+                                    ? `${node.name} (${node.country === 'NA' ? '' : getCountryDisplayName(node.country) + ', '}${getNodeTypeLabel(node.type)})`
+                                    : d.nodeId;
+                                const hasDeficit = d.deficitPercentage > 0;
+                                return (
+                                    <tr key={`${d.nodeId}-${index}`} className="text-foreground hover:bg-slate-700/30 transition-colors rounded-[3px]">
+                                        <td className="py-1.5 px-2 font-normal text-[11px] truncate max-w-[200px]" title={nameStr}>
+                                            {nameStr}
+                                        </td>
+                                        <td className="text-right py-1.5 px-2">
+                                            {hasDeficit ? (
+                                                <span className="inline-block text-[10px] font-semibold text-red-400 bg-red-950/20 px-1.5 py-0.5 rounded-[3px]">
+                                                    {d.deficitPercentage.toFixed(1)}%
+                                                </span>
+                                            ) : (
+                                                <span className="inline-block text-[10px] text-muted-foreground/70 px-1.5 py-0.5">
+                                                    0.0%
+                                                </span>
+                                            )}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+
+            {/* Step 2: 대안 탐색 메인 CTA 버튼 */}
+            {deficitCount > 0 && (
+                <Button
+                    onClick={triggerRerouteCalculation}
+                    disabled={isRerouteLoading}
+                    className="w-full shrink-0 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs py-2 rounded-[4px] shadow-sm cursor-pointer transition-all flex items-center justify-center gap-1.5"
+                >
+                    <Route className="w-3.5 h-3.5" />
+                    <span>대체 공급망 최적안 추천</span>
+                    <span className="text-[10px] font-normal opacity-85">({deficitCount}개 노드 해소)</span>
+                </Button>
+            )}
         </div>
     );
 }
@@ -132,44 +133,41 @@ export function SimulationHistorySection({
     onEntryClick: (scenarioId: string) => void;
 }) {
     return (
-        <Card className="border border-border bg-muted/40 flex-1 min-h-0 flex flex-col shadow-xs">
-            <CardHeader className="p-3.5 pb-0">
-                <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                    시뮬레이션 이력 ({entries.length})
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="p-3.5 pt-3 flex-1 min-h-0 flex flex-col">
-                {isLoading && (
-                    <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
-                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
-                        이력 로드 중...
-                    </div>
-                )}
+        <div className="flex-1 min-h-0 flex flex-col">
+            <div className="text-[11px] font-semibold text-muted-foreground px-0.5 mb-2">
+                시뮬레이션 이력 ({entries.length})
+            </div>
 
-                <ul
-                    className="m-0 p-0 list-none flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-1"
-                    aria-label="시뮬레이션 이력 목록"
-                    role="list"
-                >
-                    {entries.map((entry, index) => (
-                        <li key={`${entry.scenarioId}-${index}`}>
-                            <button
-                                onClick={() => onEntryClick(entry.scenarioId)}
-                                disabled={isLoading}
-                                className="w-full flex flex-col items-start gap-1 p-2 bg-card hover:bg-muted border border-border rounded-md cursor-pointer transition-colors disabled:cursor-not-allowed disabled:opacity-50 text-left shadow-xs"
-                                aria-label={`이력: ${entry.name}, 실행 시간 ${formatExecutionTime(entry.result.executionTimeMs)}`}
-                            >
-                                <span className="text-xs font-semibold text-foreground">
-                                    {entry.name}
-                                </span>
-                                <span className="text-[10px] text-muted-foreground">
-                                    {entry.executedAt.toLocaleString('ko-KR')} • {formatExecutionTime(entry.result.executionTimeMs)}
-                                </span>
-                            </button>
-                        </li>
-                    ))}
-                </ul>
-            </CardContent>
-        </Card>
+            {isLoading && (
+                <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5 px-0.5">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+                    이력 로드 중...
+                </div>
+            )}
+
+            <ul
+                className="m-0 p-0 list-none flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-1"
+                aria-label="시뮬레이션 이력 목록"
+                role="list"
+            >
+                {entries.map((entry, index) => (
+                    <li key={`${entry.scenarioId}-${index}`}>
+                        <button
+                            onClick={() => onEntryClick(entry.scenarioId)}
+                            disabled={isLoading}
+                            className="w-full flex flex-col items-start gap-1 p-2 bg-transparent hover:bg-slate-700/40 rounded-[4px] cursor-pointer transition-colors disabled:cursor-not-allowed disabled:opacity-50 text-left"
+                            aria-label={`이력: ${entry.name}, 실행 시간 ${formatExecutionTime(entry.result.executionTimeMs)}`}
+                        >
+                            <span className="text-xs font-semibold text-foreground">
+                                {entry.name}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground">
+                                {entry.executedAt.toLocaleString('ko-KR')} • {formatExecutionTime(entry.result.executionTimeMs)}
+                            </span>
+                        </button>
+                    </li>
+                ))}
+            </ul>
+        </div>
     );
 }

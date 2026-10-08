@@ -84,7 +84,7 @@ export const SupplyDetailModal: React.FC<SupplyDetailModalProps> = ({
                 <div className="p-5 flex-1 min-h-0 overflow-y-auto space-y-4">
                     {/* 상단 핵심 메트릭 3종 카세트 */}
                     <div className="grid grid-cols-3 gap-3">
-                        <div className="p-3 rounded-lg border border-border/50 bg-muted/30 flex flex-col space-y-1">
+                        <div className="p-3 rounded-[4px] border border-border/50 bg-muted/30 flex flex-col space-y-1">
                             <span className="text-[10px] font-semibold text-muted-foreground flex items-center gap-1">
                                 <Layers className="w-3 h-3 text-primary" /> 총 공급 물량
                             </span>
@@ -96,7 +96,7 @@ export const SupplyDetailModal: React.FC<SupplyDetailModalProps> = ({
                             </span>
                         </div>
 
-                        <div className="p-3 rounded-lg border border-border/50 bg-muted/30 flex flex-col space-y-1">
+                        <div className="p-3 rounded-[4px] border border-border/50 bg-muted/30 flex flex-col space-y-1">
                             <span className="text-[10px] font-semibold text-muted-foreground flex items-center gap-1">
                                 <DollarSign className="w-3 h-3 text-emerald-400" /> 추가 단가
                             </span>
@@ -108,7 +108,7 @@ export const SupplyDetailModal: React.FC<SupplyDetailModalProps> = ({
                             </span>
                         </div>
 
-                        <div className="p-3 rounded-lg border border-border/50 bg-muted/30 flex flex-col space-y-1">
+                        <div className="p-3 rounded-[4px] border border-border/50 bg-muted/30 flex flex-col space-y-1">
                             <span className="text-[10px] font-semibold text-muted-foreground flex items-center gap-1">
                                 <Clock className="w-3 h-3 text-emerald-400" /> 평균 리드타임
                             </span>
@@ -133,7 +133,7 @@ export const SupplyDetailModal: React.FC<SupplyDetailModalProps> = ({
                             </span>
                         </div>
 
-                        <div className="border border-border/60 rounded-lg overflow-hidden bg-accent shadow-xs">
+                        <div className="border border-border/60 rounded-[4px] overflow-hidden bg-accent shadow-xs">
                             <table className="w-full text-xs border-collapse">
                                 <thead>
                                     <tr className="bg-muted/70 border-b border-border/60 text-muted-foreground font-medium text-[11px]">

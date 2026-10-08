@@ -13,7 +13,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from '../ui/select';
-import { ChevronLeft, ChevronRight, ChevronDown, RotateCcw, Sparkles, SlidersHorizontal, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, RotateCcw, Sparkles, SlidersHorizontal, X, Info } from 'lucide-react';
+import { RiLightbulbLine } from 'react-icons/ri';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/tabs';
 import {
     DISRUPTION_TYPE_CONFIGS,
@@ -297,14 +298,14 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
                 }`}>
                 <h2 className="text-sm font-bold text-foreground tracking-tight flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-primary inline-block"></span>
-                    충격 시뮬레이션
+                    공급망 충격 시뮬레이션
                 </h2>
                 <div className="flex items-center gap-1.5">
                     {canReset && (
                         <button
                             type="button"
                             onClick={handleFullReset}
-                            className="px-2 py-1 rounded text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors cursor-pointer flex items-center gap-1"
+                            className="px-2 py-1 rounded-[3px] text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors cursor-pointer flex items-center gap-1"
                             title="시뮬레이션 결과 및 시나리오 전체 초기화"
                         >
                             <span>초기화</span>
@@ -314,8 +315,8 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
                         <button
                             type="button"
                             onClick={onClose}
-                            className="p-1 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer flex items-center justify-center"
-                            aria-label="충격 시뮬레이션 패널 접기"
+                            className="p-1 rounded-[3px] hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer flex items-center justify-center"
+                            aria-label="공급망 충격 시뮬레이션 패널 접기"
                             title="패널 접기"
                         >
                             <ChevronLeft className="w-5 h-5" />
@@ -336,13 +337,13 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
                         <div className="space-y-2">
                             <div className="flex items-center justify-between px-0.5">
                                 <h3 className="text-xs font-semibold text-foreground flex items-center gap-1.5 tracking-normal">
-                                    <Sparkles className="w-3.5 h-3.5 text-muted-foreground" />
+                                    <RiLightbulbLine className="w-3.5 h-3.5 text-muted-foreground" />
                                     추천 시나리오 프리셋
                                 </h3>
                                 <span className="text-[10px] text-muted-foreground font-normal">빠른 충격 적용</span>
                             </div>
 
-                            <div className="flex flex-col gap-1.5">
+                            <div className="flex flex-col gap-0.5">
                                 {SCENARIO_PRESETS.map((preset, index) => {
                                     const isSelected =
                                         currentDisruption.disruptionType === preset.config.disruptionType &&
@@ -358,47 +359,76 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
                                         ) ?? '';
 
                                     return (
-                                        <div key={preset.id} className="relative group hover:z-50">
-                                            <button
-                                                type="button"
+                                            <div
                                                 onClick={() => handleApplyPreset(preset)}
-                                                className={`w-full text-left p-2.5 rounded-lg border transition-all duration-150 cursor-pointer flex flex-col gap-1 ${
+                                                className={`w-full text-left p-2.5 rounded-[4px] transition-colors duration-150 cursor-pointer flex flex-col gap-1 ${
                                                     isSelected
-                                                        ? 'bg-primary/10 border-primary/60 text-foreground font-medium shadow-xs ring-1 ring-primary/40 hover:border-primary/80'
-                                                        : 'bg-muted/30 border-border/40 text-muted-foreground hover:bg-muted/60 hover:text-foreground hover:border-primary/50 hover:shadow-2xs'
+                                                        ? 'bg-slate-700/80 text-foreground font-medium shadow-2xs'
+                                                        : 'bg-transparent text-muted-foreground hover:bg-slate-700/40 hover:text-foreground'
                                                 }`}
+                                                role="button"
+                                                tabIndex={0}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter' || e.key === ' ') {
+                                                        e.preventDefault();
+                                                        handleApplyPreset(preset);
+                                                    }
+                                                }}
                                                 aria-label={`프리셋 적용: ${preset.name}`}
                                             >
                                                 <div className="flex items-center justify-between gap-2">
-                                                    <div className="flex items-center gap-2 min-w-0">
+                                                    <div className="flex items-center gap-1.5 min-w-0">
                                                         <span
-                                                            className={`text-[10px] font-medium py-0.5 px-1.5 rounded border shrink-0 transition-colors ${
+                                                            className={`text-[10px] font-medium py-0.5 px-1.5 rounded-[3px] shrink-0 transition-colors ${
                                                                 isSelected
-                                                                    ? 'bg-primary/15 text-primary border-primary/30'
-                                                                    : 'bg-muted/80 text-muted-foreground border-border/50 group-hover:border-primary/30 group-hover:text-foreground'
+                                                                    ? 'bg-primary/25 text-primary font-semibold'
+                                                                    : 'bg-muted-foreground/15 text-muted-foreground group-hover:text-foreground group-hover:bg-muted-foreground/25'
                                                             }`}
                                                         >
                                                             {preset.badge}
                                                         </span>
                                                         <span
-                                                            className={`text-xs font-semibold leading-tight truncate transition-colors ${
-                                                                isSelected ? 'text-foreground font-bold' : 'text-foreground/90 group-hover:text-foreground'
+                                                            className={`text-xs font-medium leading-tight truncate transition-colors ${
+                                                                isSelected ? 'text-foreground font-semibold' : 'text-foreground/80 group-hover:text-foreground'
                                                             }`}
                                                         >
                                                             {preset.name}
                                                         </span>
+
+                                                        {/* 안내 아이콘 및 툴팁 영역 (아이콘 호버 시에만 툴팁 노출) */}
+                                                        <div
+                                                            className="relative inline-flex items-center group/info shrink-0"
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        >
+                                                            <button
+                                                                type="button"
+                                                                className="p-0.5 text-muted-foreground/60 hover:text-foreground transition-colors cursor-help rounded-[2px]"
+                                                                aria-label={`${preset.name} 설명`}
+                                                            >
+                                                                <Info className="w-3.5 h-3.5" />
+                                                            </button>
+
+                                                            {/* 안내 아이콘 호버 시 나오는 상세 설명 툴팁 */}
+                                                            <div
+                                                                className={`absolute hidden group-hover/info:block z-50 w-60 p-2.5 bg-popover text-popover-foreground text-[10px] leading-relaxed rounded-[4px] border border-border/80 shadow-2xl pointer-events-none ${
+                                                                    isLast ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
+                                                                } left-0`}
+                                                            >
+                                                                <div>{preset.description}</div>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                     <div className="flex items-center gap-1 shrink-0">
-                                                        <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded border transition-colors shrink-0 ${
+                                                        <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded-[3px] transition-colors shrink-0 ${
                                                             isSelected
-                                                                ? 'bg-primary/15 border-primary/30 text-primary font-bold'
-                                                                : 'bg-background/80 border-border/60 text-muted-foreground group-hover:border-border group-hover:text-foreground'
+                                                                ? 'bg-background text-foreground font-semibold shadow-2xs'
+                                                                : 'text-muted-foreground/80 group-hover:text-foreground group-hover:bg-background/60'
                                                         }`}>
                                                             {severityVal}
                                                         </span>
                                                     </div>
                                                 </div>
-                                                <div className="text-[10px] text-muted-foreground/80 leading-tight pl-0.5">
+                                                <div className="text-[10px] text-muted-foreground/80 leading-tight pl-0.5 group-hover:text-muted-foreground">
                                                     <span>
                                                         {preset.config.targetType === 'node'
                                                             ? preset.config.country === 'ALL'
@@ -409,31 +439,19 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
                                                         {DISRUPTION_TYPE_CONFIGS[preset.config.disruptionType]?.label}
                                                     </span>
                                                 </div>
-                                            </button>
-                                            {/* 마우스 호버 시 나오는 상세 설명 툴팁 */}
-                                            <div
-                                                className={`absolute hidden group-hover:block z-50 w-64 p-2.5 bg-popover text-popover-foreground text-[10px] leading-relaxed rounded-lg border border-border shadow-xl pointer-events-none ${
-                                                    isLast ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
-                                                } left-0`}
-                                            >
-                                                <div className="font-semibold text-foreground mb-0.5">
-                                                    {preset.name}
-                                                </div>
-                                                <div className="text-muted-foreground">{preset.description}</div>
                                             </div>
-                                        </div>
                                     );
                                 })}
                             </div>
                         </div>
 
-                        {/* 시나리오 구성 UI (아코디언 접기 형태) */}
-                        <div className="border border-border/40 bg-muted/20 rounded-lg overflow-hidden transition-all duration-200">
+                        {/* 시나리오 구성 UI (카드 테두리 형태) */}
+                        <div className="border border-border/40 bg-muted/20 rounded-[4px] overflow-hidden transition-all duration-200">
                             <div
                                 className="p-2.5 px-3 flex flex-row items-center justify-between cursor-pointer hover:bg-muted/40 transition-colors select-none"
                                 onClick={() => setIsCustomConfigOpen(!isCustomConfigOpen)}
                             >
-                                <div className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                                <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                                     <SlidersHorizontal className="w-3.5 h-3.5 opacity-70" />
                                     시나리오 조건 직접 구성
                                 </div>
@@ -444,7 +462,7 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
                                 )}
                             </div>
                             {isCustomConfigOpen && (
-                                <CardContent className="p-2.5 pt-2 border-t border-border/40">
+                                <div className="p-2.5 pt-2 border-t border-border/40 space-y-2">
                                     {/* 대상 유형 선택 */}
                                     <div className="mb-2">
                                         <div className="flex items-center justify-between mb-1">
@@ -459,7 +477,7 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
                                                 variant="ghost"
                                                 size="xs"
                                                 onClick={handleResetScenario}
-                                                className="h-5 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted font-medium cursor-pointer gap-1 px-1.5 py-0"
+                                                className="h-5 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted font-medium cursor-pointer gap-1 px-1.5 py-0 rounded-[3px]"
                                                 title="시나리오 구성 초기화"
                                                 aria-label="시나리오 구성 초기화"
                                             >
@@ -474,12 +492,12 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
                                                 setTargetId('');
                                             }}
                                         >
-                                            <SelectTrigger id="sim-target-type" size="sm" className="w-full bg-muted border border-border text-[11px] text-foreground">
+                                            <SelectTrigger id="sim-target-type" size="sm" className="w-full bg-muted border border-border text-[11px] text-foreground rounded-[4px]">
                                                 <SelectValue />
                                             </SelectTrigger>
-                                            <SelectContent position="popper" className="bg-card border border-border text-foreground">
-                                                <SelectItem value="node" className="text-[11px]">시설 (노드)</SelectItem>
-                                                <SelectItem value="edge" className="text-[11px]">경로 (엣지)</SelectItem>
+                                            <SelectContent position="popper" className="bg-card border border-border text-foreground rounded-[4px]">
+                                                <SelectItem value="node" className="text-[11px] rounded-[3px]">시설 (노드)</SelectItem>
+                                                <SelectItem value="edge" className="text-[11px] rounded-[3px]">경로 (엣지)</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
@@ -495,7 +513,7 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
 
                                         {/* 노드 타겟팅 활성화 및 국가/시설유형 가로 필터 렌더링 */}
                                         {currentDisruption.targetType === 'node' && (
-                                            <div className="flex gap-2 mb-1.5">
+                                             <div className="flex gap-2 mb-1.5">
                                                 <div className="flex-1">
                                                     <Select
                                                         value={selectedCountry}
@@ -506,12 +524,12 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
                                                     >
                                                         <SelectTrigger
                                                             size="sm"
-                                                            className="w-full bg-muted border border-border text-[11px] text-foreground">
+                                                            className="w-full bg-muted border border-border text-[11px] text-foreground rounded-[4px]">
                                                             <SelectValue placeholder="국가 필터" />
                                                         </SelectTrigger>
-                                                        <SelectContent position="popper" className="bg-card border border-border text-foreground">
+                                                        <SelectContent position="popper" className="bg-card border border-border text-foreground rounded-[4px]">
                                                             {countryOptions.map((opt) => (
-                                                                <SelectItem key={opt.value} value={opt.value} className="text-[11px]">
+                                                                <SelectItem key={opt.value} value={opt.value} className="text-[11px] rounded-[3px]">
                                                                     {opt.label}
                                                                 </SelectItem>
                                                             ))}
@@ -526,12 +544,12 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
                                                             setTargetId('');
                                                         }}
                                                     >
-                                                        <SelectTrigger size="sm" className="w-full bg-muted border border-border text-[11px] text-foreground">
+                                                        <SelectTrigger size="sm" className="w-full bg-muted border border-border text-[11px] text-foreground rounded-[4px]">
                                                             <SelectValue placeholder="시설 종류 필터" />
                                                         </SelectTrigger>
-                                                        <SelectContent position="popper" className="bg-card border border-border text-foreground">
+                                                        <SelectContent position="popper" className="bg-card border border-border text-foreground rounded-[4px]">
                                                             {nodeTypeOptions.map((opt) => (
-                                                                <SelectItem key={opt.value} value={opt.value} className="text-[11px]">
+                                                                <SelectItem key={opt.value} value={opt.value} className="text-[11px] rounded-[3px]">
                                                                     {opt.label}
                                                                 </SelectItem>
                                                             ))}
@@ -545,7 +563,7 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
                                         {currentDisruption.targetType === 'node' && (
                                             <>
                                                 {targetOptions.length === 0 ? (
-                                                    <div className="p-2 bg-red-950/40 border border-red-800 rounded-md text-xs font-semibold text-red-400 flex items-center gap-1.5">
+                                                    <div className="p-2 bg-red-950/40 border border-red-800 rounded-[4px] text-xs font-semibold text-red-400 flex items-center gap-1.5">
                                                         <span>⚠ 조건에 일치하는 시설이 없습니다.</span>
                                                     </div>
                                                 ) : (
@@ -553,12 +571,12 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
                                                         value={currentDisruption.targetId}
                                                         onValueChange={(val) => setTargetId(val)}
                                                     >
-                                                        <SelectTrigger id="sim-target-id" size="sm" className="w-full bg-muted border border-border text-[11px] text-foreground">
+                                                        <SelectTrigger id="sim-target-id" size="sm" className="w-full bg-muted border border-border text-[11px] text-foreground rounded-[4px]">
                                                             <SelectValue placeholder="-- 선택 --" />
                                                         </SelectTrigger>
-                                                        <SelectContent position="popper" className="bg-card border border-border text-foreground">
+                                                        <SelectContent position="popper" className="bg-card border border-border text-foreground rounded-[4px]">
                                                             {targetOptions.map((opt) => (
-                                                                <SelectItem key={opt.id} value={opt.id} className="text-[11px]">
+                                                                <SelectItem key={opt.id} value={opt.id} className="text-[11px] rounded-[3px]">
                                                                     {opt.label}
                                                                 </SelectItem>
                                                             ))}
@@ -580,13 +598,13 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
                                                             setTargetId('');
                                                         }}
                                                     >
-                                                        <SelectTrigger size="sm" className="w-full bg-muted border border-border text-[11px] text-foreground">
+                                                        <SelectTrigger size="sm" className="w-full bg-muted border border-border text-[11px] text-foreground rounded-[4px]">
                                                             <SelectValue placeholder="-- 출발 시설 선택 --" />
                                                         </SelectTrigger>
-                                                        <SelectContent position="popper" className="bg-card border border-border text-foreground">
-                                                            <SelectItem value="ALL" className="text-[11px]">-- 출발 시설 선택 --</SelectItem>
+                                                        <SelectContent position="popper" className="bg-card border border-border text-foreground rounded-[4px]">
+                                                            <SelectItem value="ALL" className="text-[11px] rounded-[3px]">-- 출발 시설 선택 --</SelectItem>
                                                             {sourceNodeOptions.map((opt) => (
-                                                                <SelectItem key={opt.id} value={opt.id} className="text-[11px]">
+                                                                <SelectItem key={opt.id} value={opt.id} className="text-[11px] rounded-[3px]">
                                                                     {opt.label}
                                                                 </SelectItem>
                                                             ))}
@@ -597,11 +615,11 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
                                                 {/* 2. 도착 시설(최종 엣지) 선택 */}
                                                 <div>
                                                     {selectedSourceNodeId === 'ALL' ? (
-                                                        <div className="p-2 bg-muted border border-border rounded-md text-xs text-muted-foreground text-center">
+                                                        <div className="p-2 bg-muted border border-border rounded-[4px] text-xs text-muted-foreground text-center">
                                                             출발 시설을 먼저 선택해주세요.
                                                         </div>
                                                     ) : targetEdgeOptions.length === 0 ? (
-                                                        <div className="p-2 bg-red-950/40 border border-red-800 rounded-md text-xs font-semibold text-red-400 flex items-center gap-1.5">
+                                                        <div className="p-2 bg-red-950/40 border border-red-800 rounded-[4px] text-xs font-semibold text-red-400 flex items-center gap-1.5">
                                                             <span>⚠ 해당 출발 시설에서 연결된 물류 경로가 없습니다.</span>
                                                         </div>
                                                     ) : (
@@ -609,12 +627,12 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
                                                             value={currentDisruption.targetId}
                                                             onValueChange={(val) => setTargetId(val)}
                                                         >
-                                                            <SelectTrigger size="sm" className="w-full bg-muted border border-border text-[11px] text-foreground">
+                                                            <SelectTrigger size="sm" className="w-full bg-muted border border-border text-[11px] text-foreground rounded-[4px]">
                                                                 <SelectValue placeholder="-- 도착 시설 선택 --" />
                                                             </SelectTrigger>
-                                                            <SelectContent position="popper" className="bg-card border border-border text-foreground">
+                                                            <SelectContent position="popper" className="bg-card border border-border text-foreground rounded-[4px]">
                                                                 {targetEdgeOptions.map((opt) => (
-                                                                    <SelectItem key={opt.edgeId} value={opt.edgeId} className="text-[11px]">
+                                                                    <SelectItem key={opt.edgeId} value={opt.edgeId} className="text-[11px] rounded-[3px]">
                                                                         {opt.targetLabel}
                                                                     </SelectItem>
                                                                 ))}
@@ -635,10 +653,10 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
                                             value={currentDisruption.disruptionType}
                                             onValueChange={(val) => setDisruptionType(val as DisruptionType)}
                                         >
-                                            <SelectTrigger size="sm" className="w-full bg-muted border border-border text-[11px] text-foreground">
+                                            <SelectTrigger size="sm" className="w-full bg-muted border border-border text-[11px] text-foreground rounded-[4px]">
                                                 <SelectValue placeholder="-- 충격 유형 선택 --" />
                                             </SelectTrigger>
-                                            <SelectContent position="popper" className="bg-card border border-border text-foreground">
+                                            <SelectContent position="popper" className="bg-card border border-border text-foreground rounded-[4px]">
                                                 {(Object.keys(DISRUPTION_TYPE_CONFIGS) as DisruptionType[]).map((typeKey) => {
                                                     const config = DISRUPTION_TYPE_CONFIGS[typeKey]!;
                                                     const badgeText =
@@ -649,7 +667,7 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
                                                                 : '물류';
 
                                                     return (
-                                                        <SelectItem key={typeKey} value={typeKey} className="text-[11px] py-1 cursor-pointer">
+                                                        <SelectItem key={typeKey} value={typeKey} className="text-[11px] py-1 cursor-pointer rounded-[3px]">
                                                             <div className="flex items-center justify-between w-full gap-2 text-[11px]">
                                                                 <span className="text-[11px] font-normal">{config.label}</span>
                                                                 <span className="text-[10px] text-muted-foreground font-normal">[{badgeText}]</span>
@@ -693,38 +711,37 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
 
                                     {/* 충격 추가 버튼 */}
                                     <Button
-                                        type="button"
-                                        onClick={handleAddDisruption}
-                                        disabled={!currentDisruption.targetId}
-                                        variant="secondary"
-                                        className="w-full h-8 text-xs font-semibold shadow-xs cursor-pointer border border-border/50 text-secondary-foreground hover:border-primary/50 disabled:border-border/30 disabled:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                                    >
-                                        + 충격 조건 추가
-                                    </Button>
-                                </CardContent>
+                                         type="button"
+                                         onClick={handleAddDisruption}
+                                         disabled={!currentDisruption.targetId}
+                                         variant="secondary"
+                                         className="w-full h-8 text-xs font-semibold shadow-xs cursor-pointer border border-border/50 text-secondary-foreground hover:border-primary/50 disabled:border-border/30 disabled:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-all rounded-[4px]"
+                                     >
+                                         + 충격 조건 추가
+                                     </Button>
+                                 </div>
                             )}
                         </div>
 
-                        {/* 구성된 충격 리스트 */}
+                        {/* 구성된 충격 리스트 (디바이더 구분 형태) */}
                         {disruptions.length > 0 && (
-                            <div className="p-2.5 bg-muted/20 border border-border/40 rounded-lg">
-                                <div className="text-[11px] font-semibold text-foreground mb-1.5 flex justify-between items-center">
+                            <div className="border-t border-border/40 pt-3">
+                                <div className="text-[11px] font-semibold text-foreground mb-2 px-0.5 flex justify-between items-center">
                                     <span>적용될 충격 목록 ({disruptions.length})</span>
                                     <Button
                                         variant="ghost"
                                         size="xs"
                                         onClick={clearDisruptions}
-                                        className="h-5 text-[10px] text-muted-foreground hover:text-foreground font-medium cursor-pointer gap-1 px-1.5"
-                                        title="적용될 충격 목록 전체 삭제"
-                                        aria-label="적용될 충격 목록 전체 삭제"
+                                        className="h-5 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted/40 font-medium cursor-pointer px-1.5 rounded-[3px]"
+                                        title="적용될 충격 목록 초기화"
+                                        aria-label="적용될 충격 목록 초기화"
                                     >
-                                        <X className="w-3.5 h-3.5" />
-                                        Clear
+                                        초기화
                                     </Button>
                                 </div>
                                 <ul className="space-y-1 max-h-32 overflow-y-auto custom-scrollbar pr-1">
                                     {disruptions.map((d, idx) => (
-                                        <li key={idx} className="flex justify-between items-center p-1.5 px-2 bg-card/70 border border-border/40 rounded-md text-[11px]">
+                                        <li key={idx} className="flex justify-between items-center p-2 bg-muted/30 border border-border/30 rounded-[3px] text-[11px]">
                                             <span className="truncate pr-2 text-foreground">
                                                 {d.targetType === 'node' ? '시설: ' : '경로: '}
                                                 {d.targetId === 'ALL_NODES'
@@ -739,7 +756,7 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
                                                 variant="ghost"
                                                 size="icon-xs"
                                                 onClick={() => removeDisruption(idx)}
-                                                className="h-4 w-4 text-muted-foreground hover:text-destructive p-0"
+                                                className="h-4 w-4 text-muted-foreground hover:text-destructive p-0 rounded-[2px]"
                                             >
                                                 ✕
                                             </Button>
@@ -754,7 +771,7 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
                             onClick={handleRunSimulation}
                             disabled={isRunning || disruptions.length === 0}
                             variant="default"
-                            className="w-full h-9 mb-3 shadow-sm font-bold bg-primary text-primary-foreground hover:bg-primary-hover cursor-pointer transition-colors"
+                            className="w-full h-8 mb-3 shadow-xs text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary-hover cursor-pointer transition-colors rounded-[4px]"
                             aria-label="시뮬레이션 실행"
                         >
                             {isRunning ? '실행 중...' : '▶ 시뮬레이션 실행'}
@@ -786,7 +803,7 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
                         {/* 에러 메시지 */}
                         {error && (
                             <div
-                                className="p-3 bg-destructive/10 border border-destructive text-destructive rounded-md text-xs mb-3 font-medium flex items-center gap-1.5"
+                                className="p-3 bg-destructive/10 border border-destructive text-destructive rounded-[4px] text-xs mb-3 font-medium flex items-center gap-1.5"
                                 role="alert"
                                 aria-live="assertive"
                             >
@@ -805,17 +822,23 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
                 >
                     <div className="w-[380px] h-full p-4 flex flex-col min-h-0">
                         <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as 'result' | 'history')} className="w-full h-full flex flex-col">
-                            <TabsList className="w-full grid grid-cols-2 p-1 bg-muted/40 border border-border/40 rounded-lg">
-                                <TabsTrigger value="result" className="gap-1.5 font-semibold text-xs data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-xs">
+                            <TabsList className="w-full h-10 grid grid-cols-2 p-0 bg-transparent border-b border-border/40 rounded-none shrink-0">
+                                <TabsTrigger
+                                    value="result"
+                                    className="h-full gap-1.5 font-medium text-xs rounded-none border-b-2 border-transparent bg-transparent text-muted-foreground transition-all hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=active]:bg-transparent data-[state=active]:shadow-none -mb-[1px] cursor-pointer"
+                                >
                                     <span>시뮬레이션 결과</span>
                                     {result && (
                                         <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block" />
                                     )}
                                 </TabsTrigger>
-                                <TabsTrigger value="history" className="gap-1.5 font-semibold text-xs data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-xs">
+                                <TabsTrigger
+                                    value="history"
+                                    className="h-full gap-1.5 font-medium text-xs rounded-none border-b-2 border-transparent bg-transparent text-muted-foreground transition-all hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=active]:bg-transparent data-[state=active]:shadow-none -mb-[1px] cursor-pointer"
+                                >
                                     <span>시뮬레이션 이력</span>
                                     {historyEntries.length > 0 && (
-                                        <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-muted-foreground/15 text-muted-foreground font-mono">
+                                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted-foreground/15 text-muted-foreground font-mono">
                                             {historyEntries.length}
                                         </span>
                                     )}
@@ -838,7 +861,7 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
                                         />
                                     </>
                                 ) : (
-                                    <div className="flex-1 flex flex-col items-center justify-center text-center p-6 bg-muted/20 border border-dashed border-border rounded-lg text-muted-foreground">
+                                    <div className="flex-1 flex flex-col items-center justify-center text-center p-6 bg-muted/20 border border-dashed border-border rounded-[4px] text-muted-foreground">
                                         <p className="text-xs font-medium">실행된 시뮬레이션 결과가 없습니다.</p>
                                         <p className="text-[11px] text-muted-foreground/70 mt-1">좌측 패널에서 시나리오를 구성하고 '시뮬레이션 실행'을 누르세요.</p>
                                     </div>
@@ -853,7 +876,7 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
                                         onEntryClick={handleHistoryClick}
                                     />
                                 ) : (
-                                    <div className="flex-1 flex flex-col items-center justify-center text-center p-6 bg-muted/20 border border-dashed border-border rounded-lg text-muted-foreground">
+                                    <div className="flex-1 flex flex-col items-center justify-center text-center p-6 bg-muted/20 border border-dashed border-border rounded-[4px] text-muted-foreground">
                                         <p className="text-xs font-medium">저장된 시뮬레이션 이력이 없습니다.</p>
                                     </div>
                                 )}
@@ -866,7 +889,7 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
                 {(historyEntries.length > 0 || result) && (
                     <button
                         onClick={() => setIsSecondColumnOpen(!isSecondColumnOpen)}
-                        className="absolute top-1/2 -translate-y-1/2 w-6 h-12 bg-card hover:bg-accent border border-border border-l-0 rounded-r-md shadow-md z-10 flex items-center justify-center cursor-pointer pointer-events-auto text-muted-foreground hover:text-foreground transition-all duration-300 ease-in-out"
+                        className="absolute top-1/2 -translate-y-1/2 w-6 h-12 bg-card hover:bg-accent border border-border border-l-0 rounded-r-[4px] shadow-md z-10 flex items-center justify-center cursor-pointer pointer-events-auto text-muted-foreground hover:text-foreground transition-all duration-300 ease-in-out"
                         style={{ left: isSecondColumnOpen ? '760px' : '380px' }}
                         title={isSecondColumnOpen ? "결과/이력 패널 접기" : "결과/이력 패널 펼치기"}
                         aria-label={isSecondColumnOpen ? "결과/이력 패널 접기" : "결과/이력 패널 펼치기"}
