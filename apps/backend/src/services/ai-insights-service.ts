@@ -158,7 +158,7 @@ ${documentContext}
 ## 답변 규칙
 1. 배터리 부문 소비 비중, 주요 소비국 순위 등 정량적 통계 수치를 명확하게 제시하세요. (필요 시 마크다운 표나 글머리 기호 활용)
 2. 제공된 문서에 특정 세부 수치가 없더라도, 당신이 가진 배터리 산업 전문 지식을 적극 활용하여 완결성 있고 풍부하게 설명하세요.
-3. 문서의 특정 내용을 인용한 경우에만 [출처: 소스명] 형식으로 표기하세요.
+3. 문서의 특정 내용을 인용한 경우, 본문에 명시된 출처명(예: [출처: iea-lithium-outlook-2025.txt], [출처: usgs-lithium-2025.txt])을 그대로 정확히 인라인 표기하세요.
 
 ## 사용자 질문
 ${userQuery}`;
@@ -768,7 +768,7 @@ JSON 블록 아래에 각 대안에 대한 상세 분석도 포함하세요.`;
         let match: RegExpExecArray | null;
 
         while ((match = citationPattern.exec(responseText)) !== null) {
-            const sourceName = match[1].trim();
+            const sourceName = match[1].trim().toLowerCase();
             if (!citedSources.has(sourceName)) {
                 citedSources.add(sourceName);
             }
@@ -780,11 +780,24 @@ JSON 블록 아래에 각 대안에 대한 상세 분석도 포함하세요.`;
         for (const chunk of documentChunks) {
             const source = chunk.metadata.source;
             const docType = chunk.metadata.documentType;
+            const cleanSource = source.toLowerCase().replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
 
-            // LLM 답변에 출처명, 키워드 또는 본문 주요 문구가 포함되었는지 확인
-            const isExplicitlyCited = citedSources.has(source) ||
-                [...citedSources].some(cited => source.toLowerCase().includes(cited.toLowerCase()) || cited.toLowerCase().includes(source.toLowerCase()));
-            const isContentMentioned = responseText.includes(source) || (docType && responseText.includes(docType));
+            // LLM 답변에서 파일명, 변환된 영문명(iea, usgs, ira, notice 등) 또는 키워드 매칭
+            const isExplicitlyCited = [...citedSources].some(cited => {
+                const c = cited.toLowerCase();
+                return source.toLowerCase().includes(c) ||
+                    c.includes(source.toLowerCase()) ||
+                    cleanSource.includes(c) ||
+                    c.includes(cleanSource) ||
+                    (c.includes('iea') && source.includes('iea')) ||
+                    (c.includes('usgs') && source.includes('usgs')) ||
+                    (c.includes('ira') && source.includes('ira')) ||
+                    (c.includes('irs') && source.includes('irs')) ||
+                    (c.includes('treasury') && source.includes('treasury'));
+            });
+
+            const isContentMentioned = responseText.includes(source) || 
+                (docType && responseText.includes(docType));
 
             if ((isExplicitlyCited || isContentMentioned) && !addedSources.has(source)) {
                 addedSources.add(source);
@@ -796,13 +809,12 @@ JSON 블록 아래에 각 대안에 대한 상세 분석도 포함하세요.`;
             }
         }
 
-        // 그래프 데이터 인용 (LLM 답변에 그래프/노드/공장/제련소 등이 참조된 경우)
-        const isGraphReferenced = responseText.includes('공급망') || 
-            responseText.includes('그래프') || 
-            responseText.includes('토폴로지') ||
-            [...citedSources].some(c => c.includes('공급망') || c.includes('그래프') || c.includes('토폴로지'));
+        // 그래프 데이터 인용 (순수 그래프나 명시적으로 공급망/토폴로지/경로를 인용한 경우에만 포함)
+        const hasGraphExplicitCitation = [...citedSources].some(c => 
+            c.includes('그래프') || c.includes('토폴로지') || c.includes('네트워크')
+        );
 
-        if (graphContext.nodes.length > 0 && isGraphReferenced) {
+        if (graphContext.nodes.length > 0 && hasGraphExplicitCitation) {
             citations.unshift({
                 source: '공급망 그래프 토폴로지',
                 content: `${graphContext.nodes.length}개 노드, ${graphContext.edges.length}개 엣지 실시간 연결망 분석`,
