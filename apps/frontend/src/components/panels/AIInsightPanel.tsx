@@ -6,6 +6,7 @@ import { LuCopy, LuCheck } from 'react-icons/lu';
 import { FiFileText, FiSend, FiChevronRight, FiExternalLink, FiX, FiSearch } from 'react-icons/fi';
 import ReactMarkdown from 'react-markdown';
 import { useSupplyChainStore } from '../../store/supply-chain-store';
+import React from 'react';
 
 export interface AIInsightPanelProps {
     onClose: () => void;
@@ -69,7 +70,7 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
     });
 
     // 클라이언트 질의응답 Exact Match 캐시 Map
-    const clientCacheRef = useRef<Map<string, { answer: string; citations: Citation[] }>>(() => {
+    const clientCacheRef = useRef<Map<string, { answer: string; citations: Citation[] }>>((() => {
         const map = new Map<string, { answer: string; citations: Citation[] }>();
         try {
             const saved = localStorage.getItem(STORAGE_KEY_CLIENT_CACHE);
@@ -81,7 +82,7 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
             console.warn('Failed to load client cache', e);
         }
         return map;
-    });
+    })());
 
     // 에러 자동 제거 타이머
     const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -160,7 +161,7 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
         // 1단계: 프론트엔드 클라이언트 Exact Match 캐시 확인 (즉각 0ms 응답)
         const normalized = normalizeQueryText(query);
         const cacheKey = computeClientHash(normalized);
-        const clientCache = typeof clientCacheRef.current === 'function' ? (clientCacheRef.current as any)() : clientCacheRef.current;
+        const clientCache = clientCacheRef.current;
         const cached = clientCache.get(cacheKey);
 
         if (cached) {
@@ -286,10 +287,7 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
         setMessages([]);
         setSessionId(null);
         setError(null);
-        const clientCache = typeof clientCacheRef.current === 'function' ? (clientCacheRef.current as any)() : clientCacheRef.current;
-        if (clientCache && typeof clientCache.clear === 'function') {
-            clientCache.clear();
-        }
+        clientCacheRef.current.clear();
         try {
             localStorage.removeItem(STORAGE_KEY_MESSAGES);
             localStorage.removeItem(STORAGE_KEY_SESSION);
@@ -573,9 +571,19 @@ function MessageBubble({ message }: { message: ChatMessage }) {
                 return part;
             });
         }
+        if (React.isValidElement(node)) {
+            const element = node as React.ReactElement<{ children?: React.ReactNode }>;
+            if (element.props && element.props.children) {
+                return React.cloneElement(element, {
+                    ...element.props,
+                    children: renderNodeWithBadges(element.props.children),
+                });
+            }
+            return node;
+        }
         if (Array.isArray(node)) {
             return node.map((child, idx) => (
-                <span key={idx}>{renderNodeWithBadges(child)}</span>
+                <React.Fragment key={idx}>{renderNodeWithBadges(child)}</React.Fragment>
             ));
         }
         return node;
@@ -612,6 +620,8 @@ function MessageBubble({ message }: { message: ChatMessage }) {
                         components={{
                             p: ({ children }) => <p className="mb-1.5 leading-relaxed">{renderNodeWithBadges(children)}</p>,
                             li: ({ children }) => <li>{renderNodeWithBadges(children)}</li>,
+                            strong: ({ children }) => <strong className="font-bold text-white">{renderNodeWithBadges(children)}</strong>,
+                            em: ({ children }) => <em className="italic text-slate-200">{renderNodeWithBadges(children)}</em>,
                             td: ({ children }) => <td>{renderNodeWithBadges(children)}</td>,
                         }}
                     >
