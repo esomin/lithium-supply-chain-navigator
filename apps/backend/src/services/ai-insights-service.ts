@@ -158,7 +158,7 @@ ${documentContext}
 ## 답변 규칙
 1. 배터리 부문 소비 비중, 주요 소비국 순위 등 정량적 통계 수치를 명확하게 제시하세요. (필요 시 마크다운 표나 글머리 기호 활용)
 2. 제공된 문서에 특정 세부 수치가 없더라도, 당신이 가진 배터리 산업 전문 지식을 적극 활용하여 완결성 있고 풍부하게 설명하세요.
-3. 문서의 특정 내용을 인용한 경우, 본문에 명시된 출처명(예: [출처: iea-lithium-outlook-2025.txt], [출처: usgs-lithium-2025.txt])을 그대로 정확히 인라인 표기하세요.
+3. 문서의 내용을 인용할 때는 해당 문서의 식별 번호(예: [문서 1], [문서 2]) 또는 문서 출처명(예: [출처: 소스명])을 본문에 인라인으로 표기하세요.
 
 ## 사용자 질문
 ${userQuery}`;
@@ -174,7 +174,7 @@ ${graphSummary}
 ## 답변 규칙
 1. 그래프 상에 실제로 존재하는 출발 광산(Mine) → 중간 제련소(Refinery) → 도착 공장(Factory)의 연결 경로를 명확히 제시하세요.
 2. 각 시설의 이름, 국가, 생산 용량(Capacity)을 함께 언급하여 신뢰성을 높이세요.
-3. 출처는 [공급망 그래프 토폴로지]로 표기하세요.
+3. 출처는 [출처: 공급망 그래프 토폴로지]로 표기하세요.
 
 ## 사용자 질문
 ${userQuery}`;
@@ -191,7 +191,7 @@ ${documentContext}
 
 ## 답변 규칙
 1. 제공된 데이터와 문서를 최우선 근거로 활용하되, 당신의 통상 법률 및 산업 지식을 결합하여 전문적이고 실무적인 분석을 제공하세요.
-2. 규제 조항이나 문서를 참조한 경우 [출처: 소스명] 형식으로 인라인 표기하세요.
+2. 문서 인용 시 [문서 1] 또는 [출처: 소스명] 형식으로 인라인 표기하세요.
 3. 불확실하거나 해석의 여지가 있는 부분은 유의사항으로 명시하세요.
 
 ## 사용자 질문
@@ -753,7 +753,9 @@ JSON 블록 아래에 각 대안에 대한 상세 분석도 포함하세요.`;
 
     /**
      * LLM 응답에서 출처 인용을 추출한다.
-     * 응답 내 [출처: ...] 패턴을 파싱하고, 문서 청크 관련도를 계산한다.
+     * 1) [문서 1], [1] 등의 문서 인덱스 번호 기반 동적 매핑
+     * 2) [출처: ...] 명칭 및 본문 내 문서명/출처명 출현 기반 동적 매핑
+     * 하드코딩 없이 새 문서가 추가되어도 100% 자동 확장 지원.
      */
     private extractCitations(
         responseText: string,
@@ -761,45 +763,55 @@ JSON 블록 아래에 각 대안에 대한 상세 분석도 포함하세요.`;
         graphContext: GraphContext,
     ): Citation[] {
         const citations: Citation[] = [];
-        const citedSources = new Set<string>();
+        const addedSources = new Set<string>();
 
-        // [출처: ...] 또는 [공급망...] 등 대괄호 인용 패턴 추출
-        const citationPattern = /\[(?:출처:\s*)?([^\]]+)\]/g;
-        let match: RegExpExecArray | null;
-
-        while ((match = citationPattern.exec(responseText)) !== null) {
-            const sourceName = match[1].trim().toLowerCase();
-            if (!citedSources.has(sourceName)) {
-                citedSources.add(sourceName);
+        // 1. [문서 1], [문서 2], [1], [2] 인덱스 패턴 추출
+        const docIndexMatches = [...responseText.matchAll(/\[문서\s*(\d+)\]|\[(\d+)\]/g)];
+        const citedIndices = new Set<number>();
+        for (const match of docIndexMatches) {
+            const num = parseInt(match[1] || match[2], 10);
+            if (!isNaN(num) && num >= 1 && num <= documentChunks.length) {
+                citedIndices.add(num - 1); // 0-indexed
             }
         }
 
-        // 문서 청크 중 실제로 본문에 인용/언급된 문서만 추출 (중복 문서명 제거)
-        const addedSources = new Set<string>();
+        // 2. [출처: ...] 명시적 대괄호 패턴 추출
+        const citationPattern = /\[(?:출처:\s*)?([^\]]+)\]/g;
+        const citedNames: string[] = [];
+        let nameMatch: RegExpExecArray | null;
 
-        for (const chunk of documentChunks) {
+        while ((nameMatch = citationPattern.exec(responseText)) !== null) {
+            const text = nameMatch[1].trim().toLowerCase();
+            if (text && !text.startsWith('문서')) {
+                citedNames.push(text);
+            }
+        }
+
+        // 3. DocumentChunk 순회하며 인덱스 또는 출처명과 동적 매칭
+        for (let i = 0; i < documentChunks.length; i++) {
+            const chunk = documentChunks[i];
             const source = chunk.metadata.source;
             const docType = chunk.metadata.documentType;
-            const cleanSource = source.toLowerCase().replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
 
-            // LLM 답변에서 파일명, 변환된 영문명(iea, usgs, ira, notice 등) 또는 키워드 매칭
-            const isExplicitlyCited = [...citedSources].some(cited => {
-                const c = cited.toLowerCase();
-                return source.toLowerCase().includes(c) ||
-                    c.includes(source.toLowerCase()) ||
-                    cleanSource.includes(c) ||
-                    c.includes(cleanSource) ||
-                    (c.includes('iea') && source.includes('iea')) ||
-                    (c.includes('usgs') && source.includes('usgs')) ||
-                    (c.includes('ira') && source.includes('ira')) ||
-                    (c.includes('irs') && source.includes('irs')) ||
-                    (c.includes('treasury') && source.includes('treasury'));
+            // 파일명에서 확장자를 뗀 순수 이름 및 단어 토큰 분리
+            const baseFilename = source.split('/').pop()?.replace(/\.[^/.]+$/, '').toLowerCase() || '';
+            const sourceTokens = baseFilename.split(/[-_\s.]+/).filter(t => t.length >= 2);
+
+            // A. 번호 기반 인용 매칭 ([문서 1], [1])
+            const isIndexMatched = citedIndices.has(i);
+
+            // B. 명시적 출처명 매칭 (LLM이 [출처: ...] 안에 파일명이나 핵심 토큰을 언급한 경우)
+            const isNameMatched = citedNames.some(cited => {
+                return cited.includes(baseFilename) || 
+                    baseFilename.includes(cited) ||
+                    sourceTokens.some(token => cited.includes(token));
             });
 
+            // C. 본문 텍스트 내 원본 파일명 직접 언급 여부
             const isContentMentioned = responseText.includes(source) || 
                 (docType && responseText.includes(docType));
 
-            if ((isExplicitlyCited || isContentMentioned) && !addedSources.has(source)) {
+            if ((isIndexMatched || isNameMatched || isContentMentioned) && !addedSources.has(source)) {
                 addedSources.add(source);
                 citations.push({
                     source,
@@ -809,12 +821,12 @@ JSON 블록 아래에 각 대안에 대한 상세 분석도 포함하세요.`;
             }
         }
 
-        // 그래프 데이터 인용 (순수 그래프나 명시적으로 공급망/토폴로지/경로를 인용한 경우에만 포함)
-        const hasGraphExplicitCitation = [...citedSources].some(c => 
-            c.includes('그래프') || c.includes('토폴로지') || c.includes('네트워크')
+        // 4. 그래프 데이터 인용 (명시적으로 [출처: 공급망...] 또는 [공급망 그래프...] 인용한 경우만 포함)
+        const isGraphExplicitlyCited = citedNames.some(name => 
+            name.includes('공급망') || name.includes('그래프') || name.includes('토폴로지') || name.includes('네트워크')
         );
 
-        if (graphContext.nodes.length > 0 && hasGraphExplicitCitation) {
+        if (graphContext.nodes.length > 0 && isGraphExplicitlyCited) {
             citations.unshift({
                 source: '공급망 그래프 토폴로지',
                 content: `${graphContext.nodes.length}개 노드, ${graphContext.edges.length}개 엣지 실시간 연결망 분석`,
