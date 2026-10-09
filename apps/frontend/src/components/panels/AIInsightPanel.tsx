@@ -365,6 +365,13 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
                             </button>
                             <button
                                 type="button"
+                                onClick={() => sendQuery('글로벌 리튬 소비량 중 배터리가 차지하는 비중과 주요 소비국은?')}
+                                className="text-[11px] p-2 rounded-lg bg-card border border-border hover:border-primary/50 hover:bg-primary/5 text-foreground transition-all text-left cursor-pointer"
+                            >
+                                "글로벌 리튬 소비량 중 배터리가 차지하는 비중과 주요 소비국은?"
+                            </button>
+                            <button
+                                type="button"
                                 onClick={() => sendQuery('중국 지분이 섞인 원료를 쓰면 미국 보조금을 못 받나요?')}
                                 className="text-[11px] p-2 rounded-lg bg-card border border-border hover:border-primary/50 hover:bg-primary/5 text-foreground transition-all text-left cursor-pointer"
                             >

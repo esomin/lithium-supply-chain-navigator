@@ -108,28 +108,91 @@ export class AIInsightsService {
     }
 
     /**
-     * 그래프 토폴로지 + 문서 컨텍스트를 결합한 시스템 프롬프트를 구성한다.
+     * 질문의 의도(Intent)를 분류한다 (Adaptive Routing).
+     */
+    classifyIntent(userQuery: string): 'GENERAL_MARKET' | 'GRAPH_TOPOLOGY' | 'REGULATION_POLICY' | 'HYBRID_ANALYSIS' {
+        const q = userQuery.toLowerCase();
+
+        // 1. 규제 및 법률 키워드
+        if (/ira|feoc|crma|보조금|세액공제|지분|우려기관|우려단체|통상|관세|조약/.test(q)) {
+            return 'REGULATION_POLICY';
+        }
+
+        // 2. 그래프 토폴로지 키워드 (특정 시설, 물리적 이동 경로)
+        if (/경로|공장|제련소|광산|운송|포스코|에코프로|엘지|lg|유미코아|sqm|아타카마|어떻게 들어|어디로/.test(q)) {
+            return 'GRAPH_TOPOLOGY';
+        }
+
+        // 3. 일반 시장 통계, 기술 개념, 수요/소비 질문
+        if (/비중|소비량|전망|시장 규모|소비국|수요|생산량|lfp|ncm|차이|원리|배터리 종류|가격|추이/.test(q)) {
+            return 'GENERAL_MARKET';
+        }
+
+        return 'HYBRID_ANALYSIS';
+    }
+
+    /**
+     * 그래프 토폴로지 + 문서 컨텍스트를 결합한 적응형(Adaptive) 시스템 프롬프트를 구성한다.
      */
     buildContextPrompt(graphContext: GraphContext, documentChunks: DocumentChunk[], userQuery: string): string {
-        // 그래프 토폴로지 요약 생성
-        const graphSummary = this.buildGraphSummary(graphContext);
+        const intent = this.classifyIntent(userQuery);
+        console.info(`[Adaptive RAG] 질문 의도 라우팅: ${intent}`);
 
-        // 문서 컨텍스트 구성
-        const documentContext = this.buildDocumentContext(documentChunks);
+        // 그래프 요약 (시장 질문일 경우 노이즈 방지를 위해 최소화)
+        const graphSummary = intent === 'GENERAL_MARKET' 
+            ? '일반 시장 통계 질문이므로 그래프 토폴로지 세부 연결 정보는 생략되었습니다.'
+            : this.buildGraphSummary(graphContext);
 
-        return `당신은 리튬 공급망 분석 전문가입니다. 아래 제공된 공급망 그래프 데이터와 관련 문서를 기반으로 사용자의 질문에 정확하고 구체적으로 답변하세요.
+        // 문서 컨텍스트 (순수 그래프 경로 질문일 경우 규제 문서 노이즈 방지)
+        const documentContext = intent === 'GRAPH_TOPOLOGY'
+            ? '순수 시설 경로 질문이므로 관련 외부 규제 문서는 생략되었습니다.'
+            : this.buildDocumentContext(documentChunks);
+
+        if (intent === 'GENERAL_MARKET') {
+            return `당신은 글로벌 배터리 및 핵심 광물 시장 최고 분석가입니다.
+사용자의 질문에 대해 최신 글로벌 통계(예: IEA, USGS 기준 통계)와 산업 전문 지식을 바탕으로 명쾌하고 풍부하게 답변하세요.
+
+## 참조 시장 문서
+${documentContext}
+
+## 답변 규칙
+1. 배터리 부문 소비 비중, 주요 소비국 순위 등 정량적 통계 수치를 명확하게 제시하세요. (필요 시 마크다운 표나 글머리 기호 활용)
+2. 제공된 문서에 특정 세부 수치가 없더라도, 당신이 가진 배터리 산업 전문 지식을 적극 활용하여 완결성 있고 풍부하게 설명하세요.
+3. 문서의 특정 내용을 인용한 경우에만 [출처: 소스명] 형식으로 표기하세요.
+
+## 사용자 질문
+${userQuery}`;
+        }
+
+        if (intent === 'GRAPH_TOPOLOGY') {
+            return `당신은 리튬 공급망 물류 및 토폴로지 네트워크 분석가입니다.
+아래 제공된 공급망 그래프 데이터의 실제 연결 관계만을 기반으로 노드 간의 이동 경로를 구체적으로 설명하세요.
 
 ## 공급망 그래프 토폴로지
 ${graphSummary}
 
-## 관련 문서 컨텍스트
+## 답변 규칙
+1. 그래프 상에 실제로 존재하는 출발 광산(Mine) → 중간 제련소(Refinery) → 도착 공장(Factory)의 연결 경로를 명확히 제시하세요.
+2. 각 시설의 이름, 국가, 생산 용량(Capacity)을 함께 언급하여 신뢰성을 높이세요.
+3. 출처는 [공급망 그래프 토폴로지]로 표기하세요.
+
+## 사용자 질문
+${userQuery}`;
+        }
+
+        return `당신은 글로벌 통상 규제(IRA/FEOC/CRMA) 및 공급망 컴플라이언스 전문가입니다.
+제공된 공급망 데이터와 관련 규제/시장 문서를 교차 분석하여 사용자의 질문에 전문적으로 답변하세요.
+
+## 공급망 그래프 토폴로지
+${graphSummary}
+
+## 관련 규제 및 시장 문서 컨텍스트
 ${documentContext}
 
 ## 답변 규칙
-1. 반드시 제공된 데이터와 문서에 기반하여 답변하세요.
-2. 답변에 사용한 출처를 명시하세요. 각 출처는 [출처: 소스명] 형식으로 인라인 표기하세요.
-3. 확실하지 않은 정보는 추측이라고 명시하세요.
-4. 숫자나 통계를 인용할 때는 데이터 출처와 기준 연도를 명시하세요.
+1. 제공된 데이터와 문서를 최우선 근거로 활용하되, 당신의 통상 법률 및 산업 지식을 결합하여 전문적이고 실무적인 분석을 제공하세요.
+2. 규제 조항이나 문서를 참조한 경우 [출처: 소스명] 형식으로 인라인 표기하세요.
+3. 불확실하거나 해석의 여지가 있는 부분은 유의사항으로 명시하세요.
 
 ## 사용자 질문
 ${userQuery}`;
