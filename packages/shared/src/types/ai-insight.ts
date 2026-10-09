@@ -26,6 +26,8 @@ export interface Citation {
     content: string;
     /** 관련도 점수 (0-1) */
     relevance: number;
+    /** 주입 당시의 문서 번호 ([문서 1], [문서 2] 등, 1-based) */
+    docIndex?: number;
 }
 
 /**

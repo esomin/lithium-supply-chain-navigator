@@ -618,8 +618,8 @@ function CitationList({
                             >
                                 <div className="flex items-start justify-between gap-2 mb-1.5">
                                     <div className="flex items-baseline gap-1.5 min-w-0">
-                                        <span className="text-[11px] font-mono font-medium text-slate-400 shrink-0 select-none">
-                                            [{idx + 1}]
+                                        <span className="text-[11px] font-mono font-bold text-primary shrink-0 select-none">
+                                            [{citation.docIndex ?? idx + 1}]
                                         </span>
                                         <span className="font-semibold text-slate-200 truncate text-[11px]" title={meta.title}>
                                             {meta.title}

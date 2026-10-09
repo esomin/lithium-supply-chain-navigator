@@ -819,6 +819,7 @@ JSON 블록 아래에 각 대안에 대한 상세 분석도 포함하세요.`;
                     source,
                     content: chunk.content.substring(0, 200), // 요약용 200자
                     relevance: 1.0,
+                    docIndex: i + 1, // 주입 당시의 문서 번호 ([문서 1], [문서 2] 등, 1-based)
                 });
             }
         }
