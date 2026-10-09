@@ -345,25 +345,25 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
                 {/* 초기 안내 메시지 */}
                 {messages.length === 0 && !isLoading && (
                     <div className="text-center text-muted-foreground text-xs mt-10 p-6 bg-muted/20 border border-dashed border-border rounded-xl">
-                        <GiDiamonds className="w-8 h-8 mx-auto mb-2 text-violet-400 opacity-80" />
+                        <GiDiamonds className="w-8 h-8 mx-auto mb-2 text-primary opacity-80" />
                         <p className="font-semibold text-foreground mb-1">리튬 공급망에 대해 질문해 보세요</p>
                         <p className="text-[11px] text-muted-foreground leading-relaxed mb-4">
-                            공급망 리스크, 노드 간 의존도, IRA/FEOC 규제 적격성 및 대체 우회로를 실시간으로 질의할 수 있습니다.
+                            실제 공급망 지도와 글로벌 통상 규정을 결합해 조달 리스크와 규제 적격성을 실시간으로 분석해 드립니다.
                         </p>
                         <div className="flex flex-col gap-1.5 text-left max-w-sm mx-auto">
                             <button
                                 type="button"
-                                onClick={() => sendQuery('칠레에서 한국까지 리튬 공급 경로 및 주요 제련소 현황을 설명해 줘')}
-                                className="text-[11px] p-2 rounded-lg bg-card border border-border hover:border-violet-500/50 hover:bg-violet-500/5 text-foreground transition-all text-left cursor-pointer"
+                                onClick={() => sendQuery('칠레산 리튬이 한국 공장까지 어떻게 들어오나요?')}
+                                className="text-[11px] p-2 rounded-lg bg-card border border-border hover:border-primary/50 hover:bg-primary/5 text-foreground transition-all text-left cursor-pointer"
                             >
-                                "칠레에서 한국까지 리튬 공급 경로 및 주요 제련소 현황을 설명해 줘"
+                                "칠레산 리튬이 한국 공장까지 어떻게 들어오나요?"
                             </button>
                             <button
                                 type="button"
-                                onClick={() => sendQuery('중국 지분이 30% 포함된 합작 제련소를 통한 조달 시 IRA FEOC 세액공제에 미치는 영향은?')}
-                                className="text-[11px] p-2 rounded-lg bg-card border border-border hover:border-violet-500/50 hover:bg-violet-500/5 text-foreground transition-all text-left cursor-pointer"
+                                onClick={() => sendQuery('중국 지분이 섞인 원료를 쓰면 미국 보조금을 못 받나요?')}
+                                className="text-[11px] p-2 rounded-lg bg-card border border-border hover:border-primary/50 hover:bg-primary/5 text-foreground transition-all text-left cursor-pointer"
                             >
-                                "중국 지분이 30% 포함된 합작 제련소를 통한 조달 시 IRA FEOC 영향은?"
+                                "중국 지분이 섞인 원료를 쓰면 미국 보조금을 못 받나요?"
                             </button>
                         </div>
                     </div>

@@ -700,8 +700,8 @@ JSON 블록 아래에 각 대안에 대한 상세 분석도 포함하세요.`;
         const citations: Citation[] = [];
         const citedSources = new Set<string>();
 
-        // [출처: ...] 패턴 추출
-        const citationPattern = /\[출처:\s*([^\]]+)\]/g;
+        // [출처: ...] 또는 [공급망...] 등 대괄호 인용 패턴 추출
+        const citationPattern = /\[(?:출처:\s*)?([^\]]+)\]/g;
         let match: RegExpExecArray | null;
 
         while ((match = citationPattern.exec(responseText)) !== null) {
@@ -711,25 +711,39 @@ JSON 블록 아래에 각 대안에 대한 상세 분석도 포함하세요.`;
             }
         }
 
-        // 문서 청크에서 인용 정보 생성
+        // 문서 청크 중 실제로 본문에 인용/언급된 문서만 추출 (중복 문서명 제거)
+        const addedSources = new Set<string>();
+
         for (const chunk of documentChunks) {
             const source = chunk.metadata.source;
-            const isCited = citedSources.has(source) ||
-                [...citedSources].some(cited => source.includes(cited) || cited.includes(source));
+            const docType = chunk.metadata.documentType;
 
-            citations.push({
-                source,
-                content: chunk.content.substring(0, 200), // 요약용 200자
-                relevance: isCited ? 1.0 : 0.5,
-            });
+            // LLM 답변에 출처명, 키워드 또는 본문 주요 문구가 포함되었는지 확인
+            const isExplicitlyCited = citedSources.has(source) ||
+                [...citedSources].some(cited => source.toLowerCase().includes(cited.toLowerCase()) || cited.toLowerCase().includes(source.toLowerCase()));
+            const isContentMentioned = responseText.includes(source) || (docType && responseText.includes(docType));
+
+            if ((isExplicitlyCited || isContentMentioned) && !addedSources.has(source)) {
+                addedSources.add(source);
+                citations.push({
+                    source,
+                    content: chunk.content.substring(0, 200), // 요약용 200자
+                    relevance: 1.0,
+                });
+            }
         }
 
-        // 그래프 데이터 인용 (그래프 데이터가 참조된 경우)
-        if (graphContext.nodes.length > 0 && responseText.includes('공급망')) {
-            citations.push({
-                source: '공급망 그래프 데이터',
-                content: `${graphContext.nodes.length}개 노드, ${graphContext.edges.length}개 엣지 기반 분석`,
-                relevance: 0.8,
+        // 그래프 데이터 인용 (LLM 답변에 그래프/노드/공장/제련소 등이 참조된 경우)
+        const isGraphReferenced = responseText.includes('공급망') || 
+            responseText.includes('그래프') || 
+            responseText.includes('토폴로지') ||
+            [...citedSources].some(c => c.includes('공급망') || c.includes('그래프') || c.includes('토폴로지'));
+
+        if (graphContext.nodes.length > 0 && isGraphReferenced) {
+            citations.unshift({
+                source: '공급망 그래프 토폴로지',
+                content: `${graphContext.nodes.length}개 노드, ${graphContext.edges.length}개 엣지 실시간 연결망 분석`,
+                relevance: 1.0,
             });
         }
 
