@@ -403,7 +403,7 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
                 onSubmit={handleSubmit}
                 className="px-4 py-3 border-t border-border bg-card/95 backdrop-blur-xs"
             >
-                <div className="relative flex flex-col bg-slate-900/90 border border-slate-700/80 rounded-xl p-2.5 focus-within:border-violet-500 focus-within:ring-1 focus-within:ring-violet-500 shadow-inner transition-all">
+                <div className="relative flex flex-col bg-slate-900/90 border border-slate-700/80 rounded-xl p-2.5 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/50 shadow-inner transition-all">
                     <textarea
                         ref={textareaRef}
                         rows={2}
@@ -419,7 +419,7 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
                         <button
                             type="submit"
                             disabled={isLoading || !inputValue.trim()}
-                            className="p-2 rounded-lg bg-violet-600 text-white hover:bg-violet-500 disabled:bg-slate-800 disabled:text-slate-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer shrink-0 flex items-center justify-center"
+                            className="p-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:bg-slate-800 disabled:text-slate-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm cursor-pointer shrink-0 flex items-center justify-center"
                             aria-label="질문 전송"
                             title="전송"
                         >
