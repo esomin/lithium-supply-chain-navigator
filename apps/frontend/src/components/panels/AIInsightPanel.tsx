@@ -523,6 +523,64 @@ function MessageBubble({ message }: { message: ChatMessage }) {
         }
     };
 
+    // 인용구 클릭 시 해당 출처 모달 열기
+    const handleBadgeClick = (matchedText: string) => {
+        if (!message.citations || message.citations.length === 0) return;
+
+        // [문서 2], [2] 등 숫자 추출
+        const numMatch = matchedText.match(/\d+/);
+        if (numMatch) {
+            const num = parseInt(numMatch[0], 10);
+            const found = message.citations.find(c => c.docIndex === num);
+            if (found) {
+                setSelectedCitation(found);
+                return;
+            }
+        }
+
+        // 출처명 매칭
+        const foundByName = message.citations.find(c => {
+            const clean = matchedText.replace(/[\[\]]/g, '').replace(/^출처:\s*/, '').trim().toLowerCase();
+            return c.source.toLowerCase().includes(clean) || clean.includes(c.source.toLowerCase());
+        });
+        if (foundByName) {
+            setSelectedCitation(foundByName);
+        }
+    };
+
+    // 텍스트 내 [문서 N], [N], [출처: ...] 패턴을 감지하여 시안 뱃지로 변환
+    const renderNodeWithBadges = (node: React.ReactNode): React.ReactNode => {
+        if (typeof node === 'string') {
+            const parts = node.split(/(\[문서\s*\d+\]|\[\d+\]|\[출처:\s*[^\]]+\])/g);
+            if (parts.length === 1) return node;
+
+            return parts.map((part, i) => {
+                if (/^\[(문서\s*\d+|\d+|출처:\s*[^\]]+)\]$/.test(part)) {
+                    return (
+                        <span
+                            key={i}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleBadgeClick(part);
+                            }}
+                            className="inline-flex items-center px-1.5 py-0.2 mx-0.5 text-[11px] font-mono font-bold rounded bg-primary/15 text-primary select-none hover:bg-primary/25 hover:underline transition-all cursor-pointer"
+                            title="클릭하여 참조 원문 보기"
+                        >
+                            {part}
+                        </span>
+                    );
+                }
+                return part;
+            });
+        }
+        if (Array.isArray(node)) {
+            return node.map((child, idx) => (
+                <span key={idx}>{renderNodeWithBadges(child)}</span>
+            ));
+        }
+        return node;
+    };
+
     return (
         <div className={`group flex ${isUser ? 'justify-end' : 'justify-start'}`}>
             <div
@@ -549,8 +607,16 @@ function MessageBubble({ message }: { message: ChatMessage }) {
                 )}
 
                 {/* 메시지 내용 (선명한 명도 대비와 가독성) */}
-                <div className="m-0 leading-relaxed break-words space-y-2 [&>p]:mb-1.5 [&>p]:leading-relaxed [&>ul]:list-disc [&>ul]:pl-4 [&>ul]:space-y-1 [&>ol]:list-decimal [&>ol]:pl-4 [&>ol]:space-y-1 [&>h3]:text-[13px] [&>h3]:font-bold [&>h3]:text-violet-400 [&>h3]:mt-2 [&>h4]:text-xs [&>h4]:font-bold [&>h4]:text-slate-200 [&>strong]:text-white [&>code]:bg-slate-800 [&>code]:px-1 [&>code]:py-0.5 [&>code]:rounded [&>code]:text-violet-300">
-                    <ReactMarkdown>{message.content}</ReactMarkdown>
+                <div className="m-0 leading-relaxed break-words space-y-2 [&>p]:mb-1.5 [&>p]:leading-relaxed [&>ul]:list-disc [&>ul]:pl-4 [&>ul]:space-y-1 [&>ol]:list-decimal [&>ol]:pl-4 [&>ol]:space-y-1 [&>h3]:text-[13px] [&>h3]:font-bold [&>h3]:text-primary [&>h3]:mt-2 [&>h4]:text-xs [&>h4]:font-bold [&>h4]:text-slate-200 [&>strong]:text-white [&>code]:bg-slate-800 [&>code]:px-1 [&>code]:py-0.5 [&>code]:rounded [&>code]:text-primary/90">
+                    <ReactMarkdown
+                        components={{
+                            p: ({ children }) => <p className="mb-1.5 leading-relaxed">{renderNodeWithBadges(children)}</p>,
+                            li: ({ children }) => <li>{renderNodeWithBadges(children)}</li>,
+                            td: ({ children }) => <td>{renderNodeWithBadges(children)}</td>,
+                        }}
+                    >
+                        {message.content}
+                    </ReactMarkdown>
                 </div>
 
                 {/* 출처 인용 (어시스턴트 메시지에만 표시) */}
