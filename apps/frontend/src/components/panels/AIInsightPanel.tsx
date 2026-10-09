@@ -286,9 +286,14 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
         setMessages([]);
         setSessionId(null);
         setError(null);
+        const clientCache = typeof clientCacheRef.current === 'function' ? (clientCacheRef.current as any)() : clientCacheRef.current;
+        if (clientCache && typeof clientCache.clear === 'function') {
+            clientCache.clear();
+        }
         try {
             localStorage.removeItem(STORAGE_KEY_MESSAGES);
             localStorage.removeItem(STORAGE_KEY_SESSION);
+            localStorage.removeItem(STORAGE_KEY_CLIENT_CACHE);
         } catch (e) {
             console.warn('Failed to clear localStorage', e);
         }
