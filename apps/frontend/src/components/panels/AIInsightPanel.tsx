@@ -635,6 +635,89 @@ const GLOSSARY_REGEX = new RegExp(
     'gi'
 );
 
+interface GlossaryTooltipProps {
+    term: string;
+    def: TermDefinition;
+    anchorRect: DOMRect | null;
+}
+
+function GlossaryTooltipPortal({ term, def, anchorRect }: GlossaryTooltipProps) {
+    if (!anchorRect) return null;
+
+    const tooltipWidth = 288; // w-72 = 18rem = 288px
+    // 화면 우측 및 좌측 경계 보정
+    let left = anchorRect.left + anchorRect.width / 2 - tooltipWidth / 2;
+    if (left < 16) left = 16;
+    if (left + tooltipWidth > window.innerWidth - 16) {
+        left = window.innerWidth - 16 - tooltipWidth;
+    }
+
+    // 상단 공간 부족 시 아래로 띄우기
+    const isTop = anchorRect.top > 160;
+    const top = isTop ? anchorRect.top - 8 : anchorRect.bottom + 8;
+
+    return createPortal(
+        <div
+            role="tooltip"
+            style={{
+                position: 'fixed',
+                top: `${top}px`,
+                left: `${left}px`,
+                transform: isTop ? 'translateY(-100%)' : 'none',
+                width: `${tooltipWidth}px`,
+                zIndex: 99999,
+            }}
+            className="pointer-events-none flex flex-col p-3 rounded-xl bg-slate-900/98 border border-primary/40 text-slate-100 shadow-[0_10px_25px_-5px_rgba(0,0,0,0.8),0_0_20px_rgba(30,144,255,0.2)] animate-fade-in backdrop-blur-xl text-left"
+        >
+            <div className="border-b border-slate-700/80 pb-1.5 mb-1.5">
+                <span className="text-primary font-bold text-xs block">
+                    {def.title}
+                </span>
+            </div>
+            <span className="text-[10px] text-slate-400 font-medium mb-1">
+                기관: {def.organization}
+            </span>
+            <span className="text-[11px] text-slate-200 leading-relaxed font-normal">
+                {def.desc}
+            </span>
+        </div>,
+        document.body
+    );
+}
+
+function GlossaryTerm({ part, termDef }: { part: string; termDef: TermDefinition }) {
+    const [isHovered, setIsHovered] = useState(false);
+    const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
+    const spanRef = useRef<HTMLSpanElement>(null);
+
+    const handleMouseEnter = () => {
+        if (spanRef.current) {
+            setAnchorRect(spanRef.current.getBoundingClientRect());
+        }
+        setIsHovered(true);
+    };
+
+    const handleMouseLeave = () => {
+        setIsHovered(false);
+    };
+
+    return (
+        <span
+            ref={spanRef}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+            className="inline-block"
+        >
+            <span className="underline decoration-dotted decoration-primary/60 underline-offset-3 cursor-help text-foreground hover:text-primary transition-colors font-medium">
+                {part}
+            </span>
+            {isHovered && anchorRect && (
+                <GlossaryTooltipPortal term={part} def={termDef} anchorRect={anchorRect} />
+            )}
+        </span>
+    );
+}
+
 /** 텍스트 내 핵심 용어(GLOSSARY_TERMS)를 감지하여 툴팁 컴포넌트로 분할 렌더링 */
 function renderTextWithGlossary(text: string): React.ReactNode {
     const parts = text.split(GLOSSARY_REGEX);
@@ -647,30 +730,7 @@ function renderTextWithGlossary(text: string): React.ReactNode {
             return part;
         }
 
-        return (
-            <span key={index} className="relative group/term inline-block">
-                <span className="underline decoration-dotted decoration-primary/60 underline-offset-3 cursor-help text-foreground hover:text-primary transition-colors font-medium">
-                    {part}
-                </span>
-                {/* 호버 팝오버 툴팁 (말풍선 배경과 명확히 구분되는 딥 테크 다크톤 & 패널 좌측 잘림 방지 스타일) */}
-                <span
-                    role="tooltip"
-                    className="pointer-events-none absolute bottom-full left-0 mb-2 hidden group-hover/term:flex flex-col w-72 max-w-[80vw] p-3 rounded-xl bg-slate-900/98 border border-primary/40 text-slate-100 shadow-[0_10px_25px_-5px_rgba(0,0,0,0.6),0_0_15px_rgba(30,144,255,0.15)] z-50 animate-fade-in backdrop-blur-lg text-left"
-                >
-                    <div className="border-b border-slate-700/80 pb-1.5 mb-1.5">
-                        <span className="text-primary font-bold text-xs block">
-                            {termDef.title}
-                        </span>
-                    </div>
-                    <span className="text-[10px] text-slate-400 font-medium mb-1">
-                        기관: {termDef.organization}
-                    </span>
-                    <span className="text-[11px] text-slate-200 leading-relaxed font-normal">
-                        {termDef.desc}
-                    </span>
-                </span>
-            </span>
-        );
+        return <GlossaryTerm key={index} part={part} termDef={termDef} />;
     });
 }
 
