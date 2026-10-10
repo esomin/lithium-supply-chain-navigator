@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import type { ChatMessage, Citation, InsightResponse, SimulationContextPayload } from '@navigator/shared';
 import { GiDiamonds } from 'react-icons/gi';
 import { LuCopy, LuCheck } from 'react-icons/lu';
-import { FiFileText, FiSend, FiChevronRight, FiExternalLink, FiX, FiSearch, FiGlobe } from 'react-icons/fi';
+import { FiFileText, FiSend, FiChevronRight, FiExternalLink, FiX, FiSearch, FiGlobe, FiPlus, FiCheck } from 'react-icons/fi';
 import ReactMarkdown from 'react-markdown';
 import { useSupplyChainStore } from '../../store/supply-chain-store';
 import { useSimulationStore } from '../../store/simulation-store';
@@ -18,7 +18,6 @@ export interface AIInsightPanelProps {
  * AI 인사이트 사이드 패널.
  * 그래프 토폴로지 + 문서 컨텍스트 기반 LLM 인사이트를 대화 형태로 제공한다.
  * 출처 인용 표시, 에러/재시도 UX 포함.
- * Requirements 9.1, 9.2, 9.5 구현.
  */
 const STORAGE_KEY_MESSAGES = 'lithium_ai_messages';
 const STORAGE_KEY_SESSION = 'lithium_ai_session_id';
@@ -83,8 +82,28 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
         || activeResult?.plans?.[0]
         || null;
 
-    // 현재 화면 시뮬레이션 맥락 객체 생성 (시뮬레이션 결과 존재 시 항상 연동)
-    const activeSimulationContext: SimulationContextPayload | null = simulationResult
+    // 시뮬레이션 Context 연동 활성화 여부 (사용자가 일시 해제/재연동 가능)
+    const [isContextEnabled, setIsContextEnabled] = useState(true);
+    const [isContextScopeMenuOpen, setIsContextScopeMenuOpen] = useState(false);
+    const contextMenuRef = useRef<HTMLDivElement>(null);
+
+    // 외부 클릭 시 컨텍스트 메뉴 닫기
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (contextMenuRef.current && !contextMenuRef.current.contains(e.target as Node)) {
+                setIsContextScopeMenuOpen(false);
+            }
+        };
+        if (isContextScopeMenuOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isContextScopeMenuOpen]);
+
+    // 현재 화면 시뮬레이션 Context 객체 생성 (시뮬레이션 결과 존재 및 사용자가 활성화한 경우에만 연동)
+    const activeSimulationContext: SimulationContextPayload | null = (simulationResult && isContextEnabled)
         ? {
             scenarioId: simulationResult.scenarioId,
             scenarioName: activeResult?.isGlobalCombined ? '글로벌 복합 공급망 위기 시나리오' : `공급망 차질 시나리오 (${simulationResult.scenarioId})`,
@@ -469,25 +488,96 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
                         aria-label="AI 인사이트 질문 입력"
                     />
                     <div className="flex items-center justify-between pt-1.5 border-t border-slate-800/60 mt-1">
-                        {/* 하단 왼쪽: 맥락 상태 뱃지 (프라이머리 색상 테마 적용) */}
-                        <div className="flex items-center gap-1.5 overflow-hidden pr-2">
+                        {/* 하단 왼쪽: 컨텍스트 범위 선택기 (+ 버튼 & 드롭다운 팝오버) */}
+                        <div ref={contextMenuRef} className="relative flex items-center gap-1.5 overflow-visible pr-2">
+                            {/* + 컨텍스트 선택 트리거 버튼 (레퍼런스 스타일: 보더 없음, 흰색 텍스트/아이콘) */}
+                            <button
+                                type="button"
+                                onClick={() => setIsContextScopeMenuOpen((prev) => !prev)}
+                                className={`p-1.5 rounded-lg transition-colors cursor-pointer flex items-center justify-center text-white ${isContextScopeMenuOpen
+                                        ? 'bg-slate-700'
+                                        : 'bg-slate-800/80 hover:bg-slate-700'
+                                    }`}
+                                aria-label="질의 분석 범위 및 Context 데이터 선택"
+                                title="분석 범위 설정 (글로벌 마스터 vs 시뮬레이션 연동)"
+                            >
+                                <FiPlus size={15} className={`text-white transition-transform duration-200 ${isContextScopeMenuOpen ? 'rotate-45' : ''}`} />
+                            </button>
+
+                            {/* 활성 범위 라벨 칩 (간결하게 현재 상태만 표기) */}
                             {activeSimulationContext ? (
-                                <div
-                                    className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/15 border border-primary/30 text-primary text-[11px] font-medium shadow-xs select-none cursor-help"
-                                    title={currentActivePlan ? `[${currentActivePlan.title}]\n질문 시 화면의 세부 수급 할당량 및 대체 공급망 데이터가 AI 분석에 자동으로 포함됩니다.` : '질문 시 현재 화면의 노드별 수급 할당량 및 대체 공급망 데이터가 AI 분석에 자동으로 포함됩니다.'}
-                                >
+                                <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-primary/10 border border-primary/25 text-primary text-[11px] font-medium select-none">
                                     <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse shrink-0" />
-                                    <span className="truncate">
-                                        현재 시뮬레이션 데이터 반영 중
+                                    <span className="truncate max-w-[190px]">
+                                        {currentActivePlan ? `시뮬레이션 ${currentActivePlan.title}` : '시뮬레이션 연동'}
                                     </span>
                                 </div>
                             ) : (
-                                <div
-                                    className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-800/80 border border-slate-700/80 text-slate-400 text-[11px] font-medium select-none"
-                                    title="현재 17개 시설의 기본 생산 용량 및 연결망 데이터를 기반으로 질의합니다."
-                                >
-                                    <FiGlobe className="w-3 h-3 text-slate-400 shrink-0" />
-                                    <span className="truncate">글로벌 마스터 공급망 기준</span>
+                                <span className="text-[11px] text-slate-400 select-none">
+                                    글로벌 공급망 기준
+                                </span>
+                            )}
+
+                            {/* 레퍼런스 스타일의 상단 팝오버 컨텍스트 메뉴 */}
+                            {isContextScopeMenuOpen && (
+                                <div className="absolute left-0 bottom-full mb-2 w-72 bg-slate-950/95 border border-slate-800 rounded-xl shadow-2xl backdrop-blur-md p-1.5 z-50 text-xs animate-in fade-in slide-in-from-bottom-2 duration-150 select-none">
+                                    <div className="px-2.5 py-1.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-800/70 mb-1">
+                                        분석 컨텍스트 범위
+                                    </div>
+
+                                    {/* 1. 글로벌 마스터 공급망 옵션 */}
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setIsContextEnabled(false);
+                                            setIsContextScopeMenuOpen(false);
+                                        }}
+                                        className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left transition-colors cursor-pointer ${!activeSimulationContext
+                                                ? 'bg-slate-800/90 text-white font-medium'
+                                                : 'text-slate-300 hover:bg-slate-900 hover:text-white'
+                                            }`}
+                                    >
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            <FiGlobe className="w-4 h-4 text-slate-400 shrink-0" />
+                                            <div className="truncate">
+                                                <div className="text-[11px]">글로벌 마스터 공급망</div>
+                                                <div className="text-[9.5px] text-slate-400">17개 글로벌 시설 및 전체 연결망</div>
+                                            </div>
+                                        </div>
+                                        {!activeSimulationContext && (
+                                            <FiCheck className="w-4 h-4 text-primary shrink-0 ml-2" />
+                                        )}
+                                    </button>
+
+                                    {/* 2. 현재 시뮬레이션 연동 옵션 (시뮬레이션 결과가 있을 때 활성화) */}
+                                    {simulationResult && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setIsContextEnabled(true);
+                                                setIsContextScopeMenuOpen(false);
+                                            }}
+                                            className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left transition-colors cursor-pointer mt-0.5 ${activeSimulationContext
+                                                    ? 'bg-primary/15 text-primary font-medium border border-primary/30'
+                                                    : 'text-slate-300 hover:bg-slate-900 hover:text-white'
+                                                }`}
+                                        >
+                                            <div className="flex items-center gap-2 min-w-0">
+                                                <GiDiamonds className="w-4 h-4 text-primary shrink-0" />
+                                                <div className="truncate">
+                                                    <div className="text-[11px] font-semibold text-white">
+                                                        {currentActivePlan ? `시뮬레이션 (${currentActivePlan.title})` : '시뮬레이션 결과'}
+                                                    </div>
+                                                    <div className="text-[9.5px] text-slate-400 truncate">
+                                                        부족률 {activeResult?.originalDeficitPercentage}% ➔ {currentActivePlan?.remainingDeficitPercentage}% (대안 수급처 포함)
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {activeSimulationContext && (
+                                                <FiCheck className="w-4 h-4 text-primary shrink-0 ml-2" />
+                                            )}
+                                        </button>
+                                    )}
                                 </div>
                             )}
                         </div>

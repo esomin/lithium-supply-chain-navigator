@@ -79,7 +79,7 @@ export const ReRoutingPanel: React.FC<ReRoutingPanelProps> = ({
                 <div className="flex items-center justify-between px-0.5">
                     <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                         <Route className="w-3.5 h-3.5 text-muted-foreground" />
-                        전역 통합 대체 공급망 시나리오
+                        통합 대체 공급망 시나리오
                     </div>
                 </div>
 
