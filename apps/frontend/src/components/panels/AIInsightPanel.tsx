@@ -966,9 +966,11 @@ function CitationList({
                                     <span>{meta.organization}</span>
                                 </div>
 
-                                <p className="m-0 text-slate-300 text-[11px] leading-relaxed line-clamp-3 bg-slate-900/60 p-2 rounded border border-slate-800/50 font-sans">
-                                    "{citation.content}"
-                                </p>
+                                <div className="m-0 text-slate-300 text-[11px] leading-relaxed line-clamp-3 bg-slate-900/60 p-2 rounded border border-slate-800/50 font-sans prose prose-invert prose-xs max-w-none [&>p]:m-0 [&>p]:leading-relaxed [&>ul]:m-0 [&>ul]:pl-3.5 [&>ol]:m-0 [&>ol]:pl-3.5 [&>li]:m-0 [&>strong]:text-white [&>strong]:font-semibold">
+                                    <ReactMarkdown>
+                                        {citation.content}
+                                    </ReactMarkdown>
+                                </div>
 
                                 {!meta.isGraph && (
                                     <div className="mt-2 flex justify-end">
@@ -1082,10 +1084,12 @@ function DocumentViewerModal({
 
                 {/* 인용 요약 배너 */}
                 <div className="px-5 py-2.5 bg-slate-950/60 border-b border-slate-800 flex items-start gap-2 text-xs">
-                    <span className="font-medium text-slate-400 shrink-0 text-[11px]">[참조 단락]</span>
-                    <p className="m-0 text-slate-300 line-clamp-2 text-[11px] leading-relaxed">
-                        "{citation.content}"
-                    </p>
+                    <span className="font-medium text-slate-400 shrink-0 text-[11px] mt-0.5">[참조 단락]</span>
+                    <div className="m-0 text-slate-300 line-clamp-3 text-[11px] leading-relaxed prose prose-invert prose-xs max-w-none [&>p]:m-0 [&>p]:leading-relaxed [&>ul]:m-0 [&>ul]:pl-3.5 [&>ol]:m-0 [&>ol]:pl-3.5 [&>li]:m-0 [&>strong]:text-white [&>strong]:font-semibold [&>h1]:text-xs [&>h1]:font-bold [&>h2]:text-xs [&>h2]:font-bold [&>h3]:text-xs [&>h3]:font-semibold [&>hr]:my-1">
+                        <ReactMarkdown>
+                            {citation.content}
+                        </ReactMarkdown>
+                    </div>
                 </div>
 
                 {/* 모달 본문 영역 (패널 텍스트 크기인 text-xs, line-height 통일) */}
