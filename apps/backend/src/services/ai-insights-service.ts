@@ -184,7 +184,11 @@ ${plan.allocations.map(a => `  * [${a.rank ? `${a.rank}차 ` : ''}대체 공급�
    - **Mine (광산)**: 원광 및 스포듀민 정광(SC6) / 염수 채굴
    - **Refinery (제련소/정제소)**: 정광/염수를 배터리급 수산화리튬(LiOH) 및 탄산리튬(Li2CO3) 화합물로 정제
    - **Plant / CAM (양극재 플랜트)**: 정제된 리튬 화합물과 전구체를 결합하여 최종 양극활물질(tons_cathode) 생산
-   - (참고: Umicore Cheonan Plant, LG Chem Cheongju, EcoPro BM Pohang, POSCO Future M Gwangyang 등은 정제소가 아닌 **양극재 플랜트(Plant)**입니다)`;
+   - (참고: Umicore Cheonan Plant, LG Chem Cheongju, EcoPro BM Pohang, POSCO Future M Gwangyang 등은 정제소가 아닌 **양극재 플랜트(Plant)**입니다)
+3. **글로벌 통계 기준 단위 (USGS/IEA: 리튬 순수 원소 함량 vs LCE)**:
+   - USGS 등의 2024년 전 세계 리튬 생산량 **약 240,000톤은 순수 리튬 원소(Lithium Content/Metal)** 기준입니다.
+   - 이를 배터리 업계 표준인 **탄산리튬 등가물(LCE)로 환산하면 약 127.7만~130만 톤 LCE** (환산 계수 5.323)입니다.
+   - 240,000톤(원소 기준)을 LCE로 직접 오인하여 글로벌 생산량 비율을 왜곡(예: 68만 톤이 글로벌의 2.8배라는 식의 계산)하지 말고, LCE 환산 총량(128만 톤)을 분모로 비교하세요.`;
 
         if (intent === 'GENERAL_MARKET') {
             return `## Role & Instructions

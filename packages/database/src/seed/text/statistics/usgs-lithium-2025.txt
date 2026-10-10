@@ -35,13 +35,14 @@ Other 2836.91.0050 3.7% ad valorem.
 Depletion Allowance: 22% (domestic), 14% (foreign).
 Government Stockpile: Not available.
 Events, Trends, and Issues: Excluding U.S. production, worldwide lithium production in 2024 increased by 18% to
-approximately 240,000 tons from 204,000 tons in 2023 in response to strong demand from the lithium-ion battery
+approximately 240,000 tons of lithium metal content (equivalent to approximately 1,277,500 tons of Lithium Carbonate Equivalent / LCE, using the industry standard conversion factor of 1 ton Li content = 5.323 tons LCE) from 204,000 tons of lithium metal content (approx. 1,085,900 tons LCE) in 2023 in response to strong demand from the lithium-ion battery
 market, high lithium prices from 2021 to early 2023, and an increase in global lithium production capacity. Global
-consumption of lithium in 2024 was estimated to be 220,000 tons, a 29% increase from revised consumption of
-170,000 tons in 2023. Concern about a short-term lithium oversupply and weaker-than-expected EV sales worldwide
+consumption of lithium in 2024 was estimated to be 220,000 tons of lithium metal content (approx. 1,171,000 tons LCE), a 29% increase from revised consumption of
+170,000 tons (approx. 905,000 tons LCE) in 2023. Concern about a short-term lithium oversupply and weaker-than-expected EV sales worldwide
 during the first half of 2024 caused the price for lithium to decrease considerably throughout the year. Owing in part to
 incentives and discounts, EV sales in the third quarter of 2024 saw considerable growth in Canada, China, and the
 United States.
+[Note for Value Chain & Capacity Conversion: USGS figures are reported on a pure Lithium (Li) metal content basis. To compare with refined chemicals (LCE/LiOH) produced by cathode plants or refineries, multiply Li content by 5.323. Conversely, spodumene concentrate (SC6, 6% Li2O) contains approximately 2.8% Li content, meaning 1 ton LCE requires ~7.5 to 8.0 tons of SC6.]
 Spot lithium carbonate prices in China [cost, insurance, and freight (c.i.f.)] decreased from approximately $14,500 per
 ton in January to approximately $9,400 per ton in November. For fixed contracts, the annual average U.S. lithium
 carbonate price was $14,000 per ton in 2024, a decrease of 66% from that in 2023. Spot lithium hydroxide prices in
