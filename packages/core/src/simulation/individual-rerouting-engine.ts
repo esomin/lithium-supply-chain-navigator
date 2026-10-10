@@ -47,7 +47,28 @@ export function computeIndividualReroutingOptions(
         return results;
     }
 
-    for (const deficit of deficitItems) {
+    // 상하류 중복 방지 (순 결손 대상 노드 필터링)
+    // 결손 노드들 중 하류에 다른 결손 소비 노드(예: Factory)가 연결된 중간 정제소/광산은
+    // 개별 우회 할당에서 제외하고, 실제 원자재를 최종 소비하는 하류 말단 노드 위주로 대안을 도출합니다.
+    const deficitNodeIdSet = new Set(deficitItems.map((d) => d.nodeId));
+
+    // 특정 결손 노드가 다른 결손 노드의 상류(Upstream) 공급자인지 판별
+    const isUpstreamOfAnotherDeficitNode = (nodeId: string): boolean => {
+        return allEdges.some(
+            (e) => e.sourceNodeId === nodeId && deficitNodeIdSet.has(e.targetNodeId),
+        );
+    };
+
+    // 하류에 결손 소비 노드가 있는 경우 해당 상류 노드는 제외, 말단 노드가 있는 경우 말단 노드 우선 선택
+    const targetDeficitItems = deficitItems.filter((d) => {
+        // 단일 노드 결손이거나 하류에 연결된 결손 노드가 없으면 대상에 포함
+        return !isUpstreamOfAnotherDeficitNode(d.nodeId);
+    });
+
+    // 만약 순환 구조 등으로 모든 노드가 상류로 판별되었다면 기존 전체 deficitItems 사용 (Fallback)
+    const effectiveDeficitItems = targetDeficitItems.length > 0 ? targetDeficitItems : deficitItems;
+
+    for (const deficit of effectiveDeficitItems) {
         const targetNode = nodeMap.get(deficit.nodeId);
         if (!targetNode) continue;
 
@@ -181,7 +202,7 @@ export function computeIndividualReroutingOptions(
             topCandidates.forEach((item, index) => {
                 const ratio = allocations[index];
                 const coveredDeficit = Math.round(totalDeficitPercentage * ratio * 10) / 10;
-                
+
                 // 후보 정제소/광산의 생산 용량 한도
                 const candidateCapacity = Number(item.candidateNode.metadata?.productionCapacity) || 100000;
                 // 정제소는 여유 가용 캐파 범위(보통 연산의 20~30% 또는 결손량) 내에서 안전하게 공급
