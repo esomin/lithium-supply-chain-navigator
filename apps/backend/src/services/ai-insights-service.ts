@@ -877,49 +877,40 @@ JSON 블록 아래에 각 대안에 대한 상세 분석도 포함하세요.`;
             }
         }
 
-        // 4. 원래 주입 번호(originalIndex) -> 새로운 1부터 시작하는 순차 번호(newDocIndex) 매핑 테이블 구성
-        const indexMapping = new Map<number, number>();
+        // 4. 인용된 문서들을 citations 목록에 추가 (원래 주입된 번호 originalIndex를 docIndex로 유지)
         const citations: Citation[] = [];
 
-        matchedChunks.forEach((item, idx) => {
-            const newDocIndex = idx + 1;
-            indexMapping.set(item.originalIndex, newDocIndex);
+        matchedChunks.forEach((item) => {
             citations.push({
                 source: item.chunk.metadata.source,
                 content: item.chunk.content.substring(0, 200), // 요약용 200자
                 relevance: 1.0,
-                docIndex: newDocIndex,
+                docIndex: item.originalIndex,
             });
         });
 
-        // 5. 본문 텍스트 내의 [원래번호]를 [새순차번호]로 교체하여 불일치 해소
-        let normalizedResponseText = responseText;
-        if (citations.length > 0) {
-            normalizedResponseText = responseText.replace(/\[(?:문서\s*)?(\d+)\]/g, (fullMatch, numStr) => {
-                const num = parseInt(numStr, 10);
-                const mapped = indexMapping.get(num);
-                if (mapped !== undefined) {
-                    return `[${mapped}]`;
-                }
-                // 매핑되지 않은(유효 범위를 벗어났거나 검색에 없던) 번호는 가장 가까운 번호 또는 원본 유지
-                return fullMatch;
-            });
-        }
-
-        // 6. 그래프 데이터 인용 (명시적으로 [출처: 공급망...] 또는 [공급망 그래프...] 인용한 경우만 포함)
-        const isGraphExplicitlyCited = citedNames.some(name => 
+        // 5. 그래프 데이터 인용 (명시적으로 [공급망...] 등을 인용했거나, 본문에 [공급망 토폴로지] 또는 노드/생산능력 분석이 포함된 경우)
+        const isGraphMentioned = citedNames.some(name => 
             name.includes('공급망') || name.includes('그래프') || name.includes('토폴로지') || name.includes('네트워크')
-        );
+        ) || responseText.includes('공급망 토폴로지') || responseText.includes('공급망') || responseText.includes('생산능력');
 
-        if (graphContext.nodes.length > 0 && isGraphExplicitlyCited) {
-            citations.unshift({
+        if (graphContext.nodes.length > 0 && isGraphMentioned) {
+            citations.push({
                 source: '공급망 그래프 토폴로지',
                 content: `${graphContext.nodes.length}개 노드, ${graphContext.edges.length}개 엣지 실시간 연결망 분석`,
                 relevance: 1.0,
             });
         }
 
-        return { citations, normalizedResponseText };
+        // docIndex가 있는 항목들을 번호 순으로 정렬 (번호 없는 그래프 등은 마지막에 위치)
+        citations.sort((a, b) => {
+            if (a.docIndex !== undefined && b.docIndex !== undefined) return a.docIndex - b.docIndex;
+            if (a.docIndex !== undefined) return -1;
+            if (b.docIndex !== undefined) return 1;
+            return 0;
+        });
+
+        return { citations, normalizedResponseText: responseText };
     }
 
     /**
