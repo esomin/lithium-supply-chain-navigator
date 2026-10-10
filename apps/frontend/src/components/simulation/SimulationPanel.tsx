@@ -311,7 +311,7 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
 
     return (
         <div
-            className="absolute top-0 left-0 h-full flex flex-col font-sans z-[20] pointer-events-none"
+            className="absolute top-0 left-0 h-full flex flex-col font-sans z-[20] pointer-events-none animate-slide-in-left"
             role="region"
             aria-label="시뮬레이션 제어 패널 그룹"
         >
@@ -365,7 +365,7 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
                                 <span className="text-[10px] text-muted-foreground font-normal">빠른 충격 적용</span>
                             </div>
 
-                            <div className="flex flex-col gap-0.5">
+                            <div className="border border-border/40 bg-muted/20 rounded-[4px] overflow-hidden divide-y divide-border/30">
                                 {SCENARIO_PRESETS.map((preset, index) => {
                                     const isSelected =
                                         currentDisruption.disruptionType === preset.config.disruptionType &&
@@ -382,8 +382,9 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
 
                                     return (
                                             <div
+                                                key={preset.id}
                                                 onClick={() => handleApplyPreset(preset)}
-                                                className={`w-full text-left p-2.5 rounded-[4px] transition-colors duration-150 cursor-pointer flex flex-col gap-1 ${
+                                                className={`w-full text-left p-2.5 transition-colors duration-150 cursor-pointer flex flex-col gap-1 ${
                                                     isSelected
                                                         ? 'bg-slate-700/80 text-foreground font-medium shadow-2xs'
                                                         : 'bg-transparent text-muted-foreground hover:bg-slate-700/40 hover:text-foreground'

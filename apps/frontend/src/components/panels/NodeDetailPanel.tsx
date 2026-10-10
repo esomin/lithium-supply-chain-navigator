@@ -96,16 +96,18 @@ export function NodeDetailPanel({ node, connectedEdges, riskScore, onClose, onOp
                                 )}
                                 <tr className="hover:bg-muted/20 transition-colors">
                                     <td className="py-2 px-3 text-muted-foreground font-medium">리스크 점수</td>
-                                    <td className="py-2 px-3 font-bold text-foreground">
+                                    <td className="py-2 px-3 font-bold font-mono">
                                         {riskScore !== undefined ? (
-                                            <span className={`px-2 py-0.5 rounded-[3px] text-[11px] font-mono ${
-                                                riskScore > 0.6 ? 'bg-destructive/15 text-destructive border border-destructive/30' :
-                                                riskScore > 0.3 ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' :
-                                                'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                                            }`}>
+                                            <span className={
+                                                riskScore > 0.6 ? 'text-destructive' :
+                                                riskScore > 0.3 ? 'text-amber-400' :
+                                                'text-emerald-400'
+                                            }>
                                                 {riskScore.toFixed(1)}
                                             </span>
-                                        ) : 'N/A'}
+                                        ) : (
+                                            <span className="text-muted-foreground">N/A</span>
+                                        )}
                                     </td>
                                 </tr>
                                 <tr className="hover:bg-muted/20 transition-colors">

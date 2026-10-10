@@ -63,13 +63,13 @@ export function ConnectedEdgesList({ connectedEdges }: ConnectedEdgesListProps) 
                         >
                             <div className="flex justify-between items-center">
                                 <span
-                                    className={`text-[10px] font-bold px-1.5 py-0.5 rounded-[3px] border ${
+                                    className={`text-[10px] font-bold px-1.5 py-0 rounded-[3px] border ${
                                         isSupply
                                             ? 'bg-sky-500/15 text-sky-400 border-sky-500/30'
                                             : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
                                     }`}
                                 >
-                                    {isSupply ? '공급 (Supply)' : '배송 (Delivery)'}
+                                    {isSupply ? '공급' : '납품'}
                                 </span>
                                 {edge.attributes.volume && (
                                     <span className="text-xs font-bold text-primary font-mono">
