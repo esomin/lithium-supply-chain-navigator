@@ -59,11 +59,11 @@ export function ConnectedEdgesList({ connectedEdges }: ConnectedEdgesListProps) 
                     return (
                         <div
                             key={edge.id}
-                            className="bg-muted/40 border border-border rounded-lg p-2.5 flex flex-col gap-2 shadow-xs transition-colors hover:bg-muted/60"
+                            className="bg-muted/30 border border-border/70 rounded-[4px] p-2.5 flex flex-col gap-2 shadow-xs transition-colors hover:bg-muted/50"
                         >
                             <div className="flex justify-between items-center">
                                 <span
-                                    className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
+                                    className={`text-[10px] font-bold px-1.5 py-0.5 rounded-[3px] border ${
                                         isSupply
                                             ? 'bg-sky-500/15 text-sky-400 border-sky-500/30'
                                             : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
@@ -78,7 +78,7 @@ export function ConnectedEdgesList({ connectedEdges }: ConnectedEdgesListProps) 
                                 )}
                             </div>
 
-                            <div className="flex flex-col gap-1.5 text-xs pt-1 border-t border-border/50">
+                            <div className="flex flex-col gap-1.5 text-xs pt-1.5 border-t border-border/40">
                                 {/* From 노드 */}
                                 <div className="flex items-start gap-2">
                                     <span className="text-[10px] font-bold text-muted-foreground uppercase w-8 shrink-0 pt-0.5">From</span>

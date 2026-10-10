@@ -50,7 +50,7 @@ export function NodeDetailPanel({ node, connectedEdges, riskScore, onClose, onOp
 
                 <div className="space-y-4 flex-1">
                     {/* 노드 이름 및 설명 카드 */}
-                    <div className="p-3 bg-muted/40 border border-border rounded-lg shadow-xs space-y-1">
+                    <div className="p-3 bg-muted/30 border border-border rounded-[4px] shadow-xs space-y-1">
                         <h3 className="text-sm font-bold text-foreground tracking-tight">{node.name}</h3>
                         {node.description && (
                             <p className="text-xs text-muted-foreground leading-relaxed">
@@ -59,57 +59,57 @@ export function NodeDetailPanel({ node, connectedEdges, riskScore, onClose, onOp
                         )}
                     </div>
 
-                    {/* 노드 속성 테이블 */}
-                    <div className="border border-border rounded-lg overflow-hidden bg-card shadow-xs">
+                    {/* 노드 속성 테이블 (보더 라운드 축소 및 내부 보더 수 축소로 미니멀화) */}
+                    <div className="border border-border/70 rounded-[4px] overflow-hidden bg-card shadow-xs">
                         <table className="w-full text-xs border-collapse">
-                            <tbody className="divide-y divide-border/60">
-                                <tr className="hover:bg-muted/30">
-                                    <td className="py-2 px-3 text-muted-foreground font-medium w-28 bg-muted/20">ID</td>
+                            <tbody className="divide-y divide-border/40">
+                                <tr className="hover:bg-muted/20 transition-colors">
+                                    <td className="py-2 px-3 text-muted-foreground font-medium w-28">ID</td>
                                     <td className="py-2 px-3 font-mono font-semibold text-foreground">{node.id}</td>
                                 </tr>
-                                <tr className="hover:bg-muted/30">
-                                    <td className="py-2 px-3 text-muted-foreground font-medium bg-muted/20">타입</td>
+                                <tr className="hover:bg-muted/20 transition-colors">
+                                    <td className="py-2 px-3 text-muted-foreground font-medium">타입</td>
                                     <td className="py-2 px-3 font-medium text-foreground">
                                         {node.type} ({getNodeTypeLabel(node.type)})
                                     </td>
                                 </tr>
-                                <tr className="hover:bg-muted/30">
-                                    <td className="py-2 px-3 text-muted-foreground font-medium bg-muted/20">국가</td>
+                                <tr className="hover:bg-muted/20 transition-colors">
+                                    <td className="py-2 px-3 text-muted-foreground font-medium">국가</td>
                                     <td className="py-2 px-3 font-medium text-foreground">
                                         {getCountryDisplayName(node.country)}
                                     </td>
                                 </tr>
-                                <tr className="hover:bg-muted/30">
-                                    <td className="py-2 px-3 text-muted-foreground font-medium bg-muted/20">생산능력</td>
+                                <tr className="hover:bg-muted/20 transition-colors">
+                                    <td className="py-2 px-3 text-muted-foreground font-medium">생산능력</td>
                                     <td className="py-2 px-3 font-semibold text-primary">
                                         {node.metadata.productionCapacity.toLocaleString()}{' '}
                                         {node.metadata.capacityUnit}
                                     </td>
                                 </tr>
                                 {node.metadata.hsCodeCategory && (
-                                    <tr className="hover:bg-muted/30">
-                                        <td className="py-2 px-3 text-muted-foreground font-medium bg-muted/20">HS 코드 분류</td>
+                                    <tr className="hover:bg-muted/20 transition-colors">
+                                        <td className="py-2 px-3 text-muted-foreground font-medium">HS 코드 분류</td>
                                         <td className="py-2 px-3 text-foreground">
                                             {getHsCodeCategoryLabel(node.metadata.hsCodeCategory)}
                                         </td>
                                     </tr>
                                 )}
-                                <tr className="hover:bg-muted/30">
-                                    <td className="py-2 px-3 text-muted-foreground font-medium bg-muted/20">리스크 점수</td>
+                                <tr className="hover:bg-muted/20 transition-colors">
+                                    <td className="py-2 px-3 text-muted-foreground font-medium">리스크 점수</td>
                                     <td className="py-2 px-3 font-bold text-foreground">
                                         {riskScore !== undefined ? (
-                                            <span className={`px-2 py-0.5 rounded text-[11px] ${
-                                                riskScore > 0.6 ? 'bg-destructive/20 text-destructive border border-destructive/30' :
-                                                riskScore > 0.3 ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
-                                                'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                            <span className={`px-2 py-0.5 rounded-[3px] text-[11px] font-mono ${
+                                                riskScore > 0.6 ? 'bg-destructive/15 text-destructive border border-destructive/30' :
+                                                riskScore > 0.3 ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' :
+                                                'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
                                             }`}>
                                                 {riskScore.toFixed(1)}
                                             </span>
                                         ) : 'N/A'}
                                     </td>
                                 </tr>
-                                <tr className="hover:bg-muted/30">
-                                    <td className="py-2 px-3 text-muted-foreground font-medium bg-muted/20">좌표</td>
+                                <tr className="hover:bg-muted/20 transition-colors">
+                                    <td className="py-2 px-3 text-muted-foreground font-medium">좌표</td>
                                     <td className="py-2 px-3 font-mono text-muted-foreground">
                                         {node.coordinates.latitude.toFixed(2)},{' '}
                                         {node.coordinates.longitude.toFixed(2)}
@@ -128,7 +128,7 @@ export function NodeDetailPanel({ node, connectedEdges, riskScore, onClose, onOp
                             <button
                                 id="tour-esg-trace-button"
                                 onClick={onOpenTraceability}
-                                className="w-full py-2.5 px-3 bg-primary text-primary-foreground hover:bg-primary-hover border-none rounded-lg cursor-pointer text-xs font-bold shadow-md transition-all duration-150 flex items-center justify-center gap-1.5 group relative overflow-hidden ring-2 ring-primary/30 hover:ring-primary/60"
+                                className="w-full py-2 px-3 bg-primary text-primary-foreground hover:bg-primary-hover border-none rounded-[4px] cursor-pointer text-xs font-bold shadow-xs transition-all duration-150 flex items-center justify-center gap-1.5 group relative overflow-hidden"
                                 aria-label="ESG 역추적 보기"
                             >
                                 {/* 반짝이는 펄스 점 비콘 아이콘 */}
