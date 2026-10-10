@@ -517,6 +517,99 @@ function getSourceMeta(source: string): SourceMeta {
     };
 }
 
+/** 통상 규제 및 시장 통계 핵심 용어 해설 사전 (이모지 미사용) */
+interface TermDefinition {
+    title: string;
+    organization: string;
+    desc: string;
+}
+
+const GLOSSARY_TERMS: Record<string, TermDefinition> = {
+    'ira section 30d': {
+        title: '미국 IRA Section 30D (핵심광물 세액공제)',
+        organization: '미국 재무부 (IRS / US Treasury)',
+        desc: '전기차 1대당 최대 $3,750 세액공제를 받기 위해 배터리 핵심광물의 50% 이상을 미국 또는 FTA 체결국(한국, 호주, 칠레 등)에서 추출·가공해야 하는 요건입니다.',
+    },
+    'ira §30d': {
+        title: '미국 IRA §30D (핵심광물 세액공제)',
+        organization: '미국 재무부 (IRS / US Treasury)',
+        desc: '전기차 1대당 최대 $3,750 세액공제를 받기 위해 배터리 핵심광물의 50% 이상을 미국 또는 FTA 체결국(한국, 호주, 칠레 등)에서 추출·가공해야 하는 요건입니다.',
+    },
+    'ira 30d': {
+        title: '미국 IRA §30D (핵심광물 세액공제)',
+        organization: '미국 재무부 (IRS / US Treasury)',
+        desc: '전기차 1대당 최대 $3,750 세액공제를 받기 위해 배터리 핵심광물의 50% 이상을 미국 또는 FTA 체결국(한국, 호주, 칠레 등)에서 추출·가공해야 하는 요건입니다.',
+    },
+    'feoc': {
+        title: 'FEOC (해외우려기관, Foreign Entity of Concern)',
+        organization: '미국 에너지부 (DOE) / 재무부',
+        desc: '중국, 러시아, 이란, 북한 관할에 있거나 해당 정부/국유기업 지분이 25% 이상인 기업입니다. 2025년부터 핵심광물 공급망에 FEOC가 포함되면 세액공제 대상에서 전면 제외됩니다.',
+    },
+    '해외우려기관': {
+        title: '해외우려기관 (FEOC, Foreign Entity of Concern)',
+        organization: '미국 에너지부 (DOE) / 재무부',
+        desc: '중국, 러시아, 이란, 북한 관할에 있거나 해당 정부/국유기업 지분이 25% 이상인 기업입니다. 2025년부터 핵심광물 공급망에 FEOC가 포함되면 세액공제 대상에서 전면 제외됩니다.',
+    },
+    'iea': {
+        title: 'IEA (국제에너지기구, International Energy Agency)',
+        organization: 'OECD 산하 에너지 국제기구',
+        desc: '글로벌 청정에너지 전환 및 핵심 광물(리튬, 니켈 등)의 글로벌 공급망 수요·공급 전망과 시장 동향을 공인 분석하는 국제기구입니다.',
+    },
+    'usgs': {
+        title: 'USGS (미국 지질조사국, US Geological Survey)',
+        organization: '미국 내무부 (US Department of the Interior)',
+        desc: '전 세계 국가별 광물 매장량(Reserves), 연간 채굴 생산량 및 교역 통계를 공식 집계·발간하는 최고 권위의 지질조사기관입니다.',
+    },
+};
+
+// 정규식 매칭용 키워드 패턴 생성 (긴 단어 우선 정렬)
+const GLOSSARY_REGEX = new RegExp(
+    `\\b(${Object.keys(GLOSSARY_TERMS)
+        .sort((a, b) => b.length - a.length)
+        .map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+        .join('|')})\\b`,
+    'gi'
+);
+
+/** 텍스트 내 핵심 용어(GLOSSARY_TERMS)를 감지하여 툴팁 컴포넌트로 분할 렌더링 */
+function renderTextWithGlossary(text: string): React.ReactNode {
+    const parts = text.split(GLOSSARY_REGEX);
+    if (parts.length === 1) return text;
+
+    return parts.map((part, index) => {
+        const lower = part.toLowerCase();
+        const termDef = GLOSSARY_TERMS[lower];
+        if (!termDef) {
+            return part;
+        }
+
+        return (
+            <span key={index} className="relative group/term inline-block">
+                <span className="underline decoration-dotted decoration-primary/60 underline-offset-3 cursor-help text-foreground hover:text-primary transition-colors font-medium">
+                    {part}
+                </span>
+                {/* 호버 팝오버 툴팁 (말풍선 배경과 명확히 구분되는 딥 테크 다크톤 & 사이안 테두리 하이라이트) */}
+                <span
+                    role="tooltip"
+                    className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/term:flex flex-col w-72 p-3 rounded-xl bg-slate-900/98 border border-primary/40 text-slate-100 shadow-[0_10px_25px_-5px_rgba(0,0,0,0.6),0_0_15px_rgba(30,144,255,0.15)] z-50 animate-fade-in backdrop-blur-lg text-left"
+                >
+                    <div className="border-b border-slate-700/80 pb-1.5 mb-1.5">
+                        <span className="text-primary font-bold text-xs block">
+                            {termDef.title}
+                        </span>
+                    </div>
+                    <span className="text-[10px] text-slate-400 font-medium mb-1">
+                        기관: {termDef.organization}
+                    </span>
+                    <span className="text-[11px] text-slate-200 leading-relaxed font-normal">
+                        {termDef.desc}
+                    </span>
+                </span>
+            </span>
+        );
+    });
+}
+
 /** 메시지 버블 컴포넌트 */
 function MessageBubble({ message }: { message: ChatMessage }) {
     const isUser = message.role === 'user';
@@ -569,11 +662,13 @@ function MessageBubble({ message }: { message: ChatMessage }) {
         }
     };
 
-    // 텍스트 내 [문서 N], [N], [출처: ...] 패턴을 감지하여 시안 뱃지로 변환
+    // 텍스트 내 [문서 N], [N], [출처: ...] 패턴을 감지하여 시안 뱃지로 변환하고, 일반 텍스트 부분은 용어 툴팁 파싱 적용
     const renderNodeWithBadges = (node: React.ReactNode): React.ReactNode => {
         if (typeof node === 'string') {
             const parts = node.split(/(\[문서\s*\d+\]|\[\d+\]|\[출처:\s*[^\]]+\])/g);
-            if (parts.length === 1) return node;
+            if (parts.length === 1) {
+                return renderTextWithGlossary(node);
+            }
 
             return parts.map((part, i) => {
                 if (/^\[(문서\s*\d+|\d+|출처:\s*[^\]]+)\]$/.test(part)) {
@@ -591,7 +686,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
                         </span>
                     );
                 }
-                return part;
+                return renderTextWithGlossary(part);
             });
         }
         if (React.isValidElement(node)) {
