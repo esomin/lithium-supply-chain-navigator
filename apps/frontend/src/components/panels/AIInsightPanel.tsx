@@ -495,8 +495,8 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
                                 type="button"
                                 onClick={() => setIsContextScopeMenuOpen((prev) => !prev)}
                                 className={`p-1.5 rounded-lg transition-colors cursor-pointer flex items-center justify-center text-white ${isContextScopeMenuOpen
-                                        ? 'bg-slate-700'
-                                        : 'bg-slate-800/80 hover:bg-slate-700'
+                                    ? 'bg-slate-700'
+                                    : 'bg-slate-800/80 hover:bg-slate-700'
                                     }`}
                                 aria-label="질의 분석 범위 및 Context 데이터 선택"
                                 title="분석 범위 설정 (글로벌 마스터 vs 시뮬레이션 연동)"
@@ -533,8 +533,8 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
                                             setIsContextScopeMenuOpen(false);
                                         }}
                                         className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left transition-colors cursor-pointer ${!activeSimulationContext
-                                                ? 'bg-slate-800/90 text-white font-medium'
-                                                : 'text-slate-300 hover:bg-slate-900 hover:text-white'
+                                            ? 'bg-slate-800/90 text-white font-medium'
+                                            : 'text-slate-300 hover:bg-slate-900 hover:text-white'
                                             }`}
                                     >
                                         <div className="flex items-center gap-2 min-w-0">
@@ -558,8 +558,8 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
                                                 setIsContextScopeMenuOpen(false);
                                             }}
                                             className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left transition-colors cursor-pointer mt-0.5 ${activeSimulationContext
-                                                    ? 'bg-primary/15 text-primary font-medium border border-primary/30'
-                                                    : 'text-slate-300 hover:bg-slate-900 hover:text-white'
+                                                ? 'bg-primary/15 text-primary font-medium border border-primary/30'
+                                                : 'text-slate-300 hover:bg-slate-900 hover:text-white'
                                                 }`}
                                         >
                                             <div className="flex items-center gap-2 min-w-0">
@@ -760,7 +760,7 @@ function GlossaryTooltipPortal({ term, def, anchorRect }: GlossaryTooltipProps) 
             className="pointer-events-none flex flex-col p-3 rounded-xl bg-slate-900/98 border border-primary/40 text-slate-100 shadow-[0_10px_25px_-5px_rgba(0,0,0,0.8),0_0_20px_rgba(30,144,255,0.2)] animate-fade-in backdrop-blur-xl text-left"
         >
             <div className="border-b border-slate-700/80 pb-1.5 mb-1.5">
-                <span className="text-primary font-bold text-xs block">
+                <span className="text-foreground font-bold text-xs block">
                     {def.title}
                 </span>
             </div>
@@ -952,36 +952,16 @@ function MessageBubble({ message }: { message: ChatMessage }) {
                 <div className="m-0 leading-relaxed break-words space-y-2 [&>p]:mb-1.5 [&>p]:leading-relaxed [&>ul]:list-disc [&>ul]:pl-4 [&>ul]:space-y-1 [&>ol]:list-decimal [&>ol]:pl-4 [&>ol]:space-y-1 [&>h3]:text-[13px] [&>h3]:font-bold [&>h3]:text-primary [&>h3]:mt-2 [&>h4]:text-xs [&>h4]:font-bold [&>h4]:text-slate-200 [&>strong]:text-white [&>code]:bg-slate-800 [&>code]:px-1 [&>code]:py-0.5 [&>code]:rounded [&>code]:text-primary/90">
                     <ReactMarkdown
                         components={{
-                            p: ({ children }) => <p className="mb-1.5 leading-relaxed">{renderNodeWithBadges(children)}</p>,
-                            li: ({ children }) => <li>{renderNodeWithBadges(children)}</li>,
+                            p: ({ children }) => <p className="mb-1.5 leading-relaxed">{isUser ? children : renderNodeWithBadges(children)}</p>,
+                            li: ({ children }) => <li>{isUser ? children : renderNodeWithBadges(children)}</li>,
                             strong: ({ children }) => <strong className="font-bold text-white">{children}</strong>,
                             em: ({ children }) => <em className="italic text-slate-200">{children}</em>,
-                            td: ({ children }) => <td>{renderNodeWithBadges(children)}</td>,
+                            td: ({ children }) => <td>{isUser ? children : renderNodeWithBadges(children)}</td>,
                         }}
                     >
                         {message.content}
                     </ReactMarkdown>
                 </div>
-
-                {/* 메시지 내용 우하단 복사 버튼 (텍스트 하단 / 참조 원문 디바이더 바로 위) */}
-                {!isUser && (
-                    <div className="flex justify-end pt-1 -mb-1">
-                        <button
-                            type="button"
-                            onClick={handleCopy}
-                            className={`p-1.5 rounded-md transition-all cursor-pointer flex items-center justify-center ${copied ? 'opacity-100 bg-slate-800 text-emerald-400' : 'opacity-0 group-hover:opacity-100 bg-slate-800/90 hover:bg-slate-700 text-slate-400 hover:text-white'
-                                }`}
-                            aria-label="답변 복사"
-                            title={copied ? '복사 완료' : '답변 복사'}
-                        >
-                            {copied ? (
-                                <LuCheck className="w-3.5 h-3.5 text-emerald-400" />
-                            ) : (
-                                <LuCopy className="w-3.5 h-3.5" />
-                            )}
-                        </button>
-                    </div>
-                )}
 
                 {/* 출처 인용 (어시스턴트 메시지에만 표시) */}
                 {!isUser && message.citations && message.citations.length > 0 && (
@@ -991,16 +971,19 @@ function MessageBubble({ message }: { message: ChatMessage }) {
                     />
                 )}
 
-                {/* 타임스탬프 */}
-                <span
-                    className={`block text-[9px] mt-2 font-mono ${isUser ? 'text-primary-foreground/70 text-right' : 'text-slate-400'
-                        }`}
-                >
-                    {new Date(message.timestamp).toLocaleTimeString('ko-KR', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                    })}
-                </span>
+                {/* 타임스탬프: VITE_SHOW_MESSAGE_TIMESTAMP 환경변수 설정(true/false) 또는 개발모드 기본값으로 absolute 표시 */}
+                {(import.meta.env.VITE_SHOW_MESSAGE_TIMESTAMP === 'true' ||
+                    (import.meta.env.DEV && import.meta.env.VITE_SHOW_MESSAGE_TIMESTAMP !== 'false')) && (
+                        <span
+                            className={`absolute bottom-1.5 text-[9px] font-mono opacity-60 pointer-events-none ${isUser ? 'left-2 text-primary-foreground/70' : 'right-2 text-slate-400'
+                                }`}
+                        >
+                            {new Date(message.timestamp).toLocaleTimeString('ko-KR', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                            })}
+                        </span>
+                    )}
             </div>
 
             {/* 원문 전체보기 모달 */}

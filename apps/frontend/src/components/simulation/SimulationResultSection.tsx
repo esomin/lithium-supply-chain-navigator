@@ -37,8 +37,26 @@ export function SimulationResultSection({
     const sortedDeficits = [...result.deficits].sort(
         (a, b) => b.deficitPercentage - a.deficitPercentage,
     );
-    const maxDeficit = sortedDeficits.length > 0 ? sortedDeficits[0].deficitPercentage : 0;
     const deficitCount = sortedDeficits.filter((d) => d.deficitPercentage > 0).length;
+
+    // 총 부족량(톤) 및 평균 부족률(%) 계산
+    let totalDeficitTons = 0;
+    let sumDeficitPercentage = 0;
+
+    sortedDeficits.forEach((d) => {
+        sumDeficitPercentage += d.deficitPercentage;
+        const node = nodes.find((n) => n.id === d.nodeId);
+        const capacity = Number(node?.metadata?.productionCapacity) || 50000;
+        const capacityUnit = (node?.metadata?.capacityUnit as string) || '';
+        const lithiumRatio = (node?.type === 'Factory' || capacityUnit === 'tons_cathode') ? 0.48 : 1.0;
+        totalDeficitTons += Math.round((capacity * (d.deficitPercentage / 100)) * lithiumRatio);
+    });
+
+    const avgDeficit = sortedDeficits.length > 0 ? sumDeficitPercentage / sortedDeficits.length : 0;
+
+    const formatTonsHeader = (tons: number) => {
+        return `${tons.toLocaleString()}톤`;
+    };
 
     return (
         <div
@@ -46,45 +64,60 @@ export function SimulationResultSection({
             aria-label="시뮬레이션 결과"
             role="region"
         >
-            {/* 상단 핵심 메트릭 3종 */}
-            <div className="grid grid-cols-3 divide-x divide-border/40 text-xs text-foreground bg-muted/30 border border-border/40 rounded-[4px] p-0 shadow-2xs shrink-0 overflow-hidden">
-                <div className="text-center py-2 px-1 flex flex-col justify-center">
+            {/* 상단 핵심 메트릭 3종 (영향 노드, 총 부족량, 평균 부족률) - 흰색 투명 배경 */}
+            <div className="grid grid-cols-3 text-xs text-foreground bg-white/5 dark:bg-white/5 rounded-[4px] p-1 shadow-none shrink-0">
+                <div className="text-center py-1.5 px-1 flex flex-col justify-center">
                     <div className="text-[10px] text-muted-foreground">영향 노드</div>
                     <div className="font-semibold text-foreground mt-0.5">{result.deficits.length}개</div>
                 </div>
-                <div className="text-center py-2 px-1 flex flex-col justify-center">
-                    <div className="text-[10px] text-muted-foreground">최대 부족률</div>
-                    <div className="font-semibold text-red-400 mt-0.5">{maxDeficit.toFixed(1)}%</div>
+                <div className="text-center py-1.5 px-1 flex flex-col justify-center">
+                    <div className="text-[10px] text-muted-foreground">총 부족량</div>
+                    <div className="font-semibold text-foreground/90 mt-0.5" title={`${totalDeficitTons.toLocaleString()}톤`}>
+                        {formatTonsHeader(totalDeficitTons)}
+                    </div>
                 </div>
-                <div className="text-center py-2 px-1 flex flex-col justify-center">
-                    <div className="text-[10px] text-muted-foreground">실행 시간</div>
-                    <div className="font-mono text-muted-foreground mt-0.5">{formatExecutionTime(result.executionTimeMs)}</div>
+                <div className="text-center py-1.5 px-1 flex flex-col justify-center">
+                    <div className="text-[10px] text-muted-foreground">평균 부족률</div>
+                    <div className="font-semibold text-red-400 mt-0.5">{avgDeficit.toFixed(1)}%</div>
                 </div>
             </div>
 
-            {/* 부족률 테이블 (보더 최소화) */}
+            {/* 부족량/부족률 테이블 (3컬럼) */}
             {sortedDeficits.length > 0 && (
                 <div className="max-h-[170px] overflow-y-auto custom-scrollbar shrink-0 px-0.5">
-                    <table className="w-full text-xs border-collapse" aria-label="부족률 테이블">
+                    <table className="w-full text-xs border-collapse" aria-label="부족량 및 부족률 테이블">
                         <thead>
                             <tr className="border-b border-border/30 text-muted-foreground sticky top-0 bg-card">
                                 <th className="text-left py-1.5 px-2 font-medium text-[11px]">노드</th>
+                                <th className="text-right py-1.5 px-2 font-medium text-[11px]">부족량</th>
                                 <th className="text-right py-1.5 px-2 font-medium text-[11px]">부족률</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border/20">
                             {sortedDeficits.map((d, index) => {
                                 const node = nodes.find((n) => n.id === d.nodeId);
-                                const nameStr = node
-                                    ? `${node.name} (${node.country === 'NA' ? '' : getCountryDisplayName(node.country) + ', '}${getNodeTypeLabel(node.type)})`
-                                    : d.nodeId;
+                                const displayName = node ? node.name : d.nodeId;
                                 const hasDeficit = d.deficitPercentage > 0;
+
+                                // 결손량 톤수 계산 (양극재 공장의 경우 LCE 리튬 투입비 0.48 적용)
+                                const capacity = Number(node?.metadata?.productionCapacity) || 50000;
+                                const capacityUnit = (node?.metadata?.capacityUnit as string) || '';
+                                const lithiumRatio = (node?.type === 'Factory' || capacityUnit === 'tons_cathode') ? 0.48 : 1.0;
+                                const deficitTons = Math.round((capacity * (d.deficitPercentage / 100)) * lithiumRatio);
+
+                                const formatTons = (tons: number) => {
+                                    return `${tons.toLocaleString()}톤`;
+                                };
+
                                 return (
                                     <tr key={`${d.nodeId}-${index}`} className="text-foreground hover:bg-slate-700/30 transition-colors rounded-[3px]">
-                                        <td className="py-1.5 px-2 font-normal text-[11px] truncate max-w-[200px]" title={nameStr}>
-                                            {nameStr}
+                                        <td className="py-1.5 px-2 font-normal text-[11px] truncate max-w-[140px]" title={displayName}>
+                                            {displayName}
                                         </td>
-                                        <td className="text-right py-1.5 px-2">
+                                        <td className="text-right py-1.5 px-2 text-[11px] font-normal text-foreground/90 whitespace-nowrap">
+                                            {hasDeficit ? formatTons(deficitTons) : '-'}
+                                        </td>
+                                        <td className="text-right py-1.5 px-2 whitespace-nowrap">
                                             {hasDeficit ? (
                                                 <span className="inline-block text-[10px] font-semibold text-red-400 bg-red-950/20 px-1.5 py-0.5 rounded-[3px]">
                                                     {d.deficitPercentage.toFixed(1)}%
