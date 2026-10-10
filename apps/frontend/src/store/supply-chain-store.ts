@@ -26,6 +26,7 @@ export interface SupplyChainState {
     zoomLevel: number;
     showAIPanel: boolean;
     pendingAIQuery: string | null;
+    draftAIQuery: string | null;
 
     // 액션
     setNodes: (nodes: SupplyChainNode[]) => void;
@@ -39,6 +40,8 @@ export interface SupplyChainState {
     toggleAIPanel: () => void;
     triggerAIQuery: (query: string) => void;
     clearPendingAIQuery: () => void;
+    setDraftAIQuery: (query: string) => void;
+    clearDraftAIQuery: () => void;
     reset: () => void;
 }
 
@@ -60,6 +63,7 @@ export const useSupplyChainStore = create<SupplyChainState>((set) => ({
     zoomLevel: 1.0,
     showAIPanel: false,
     pendingAIQuery: null,
+    draftAIQuery: null,
 
     // 노드 데이터 설정
     setNodes: (nodes) => set({ nodes }),
@@ -89,9 +93,13 @@ export const useSupplyChainStore = create<SupplyChainState>((set) => ({
     setShowAIPanel: (showAIPanel) => set({ showAIPanel }),
     toggleAIPanel: () => set((state) => ({ showAIPanel: !state.showAIPanel })),
 
-    // 외부에서 AI 패널 열기 및 질의 트리거
+    // 외부에서 AI 패널 열기 및 질의 트리거 (즉시 전송)
     triggerAIQuery: (query) => set({ showAIPanel: true, pendingAIQuery: query }),
     clearPendingAIQuery: () => set({ pendingAIQuery: null }),
+
+    // 외부에서 AI 패널 열기 및 입력창에 질의 자동 입력 (사용자가 확인 후 전송)
+    setDraftAIQuery: (query) => set({ showAIPanel: true, draftAIQuery: query }),
+    clearDraftAIQuery: () => set({ draftAIQuery: null }),
 
     // 상태 초기화
     reset: () =>
@@ -105,5 +113,6 @@ export const useSupplyChainStore = create<SupplyChainState>((set) => ({
             zoomLevel: 1.0,
             showAIPanel: false,
             pendingAIQuery: null,
+            draftAIQuery: null,
         }),
 }));

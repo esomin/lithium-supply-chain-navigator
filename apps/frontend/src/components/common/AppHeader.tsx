@@ -32,15 +32,14 @@ export function AppHeader({
                 <Button
                     onClick={toggleAIPanel}
                     variant={showAIPanel ? "outline" : "default"}
-                    className={`font-semibold shadow-xs flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer rounded-[4px] px-4 py-1.5 text-xs h-8 ${
-                        showAIPanel
+                    className={`font-semibold shadow-xs flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer rounded-[4px] px-4 py-1.5 text-xs h-8 ${showAIPanel
                             ? 'bg-slate-800/95 text-white border border-primary/50 shadow-sm'
                             : 'bg-slate-800/80 text-white hover:bg-slate-700/80 border border-slate-700/80 hover:border-slate-500'
-                    }`}
+                        }`}
                     aria-label={showAIPanel ? "AI 인사이트 패널 닫기" : "AI 인사이트 패널 열기"}
                     aria-pressed={showAIPanel}
                 >
-                    <GiDiamonds className="w-3.5 h-3.5 text-slate-300 shrink-0" />
+                    <GiDiamonds className="w-3.5 h-3.5 text-primary shrink-0 " />
                     AI 인사이트
                 </Button>
 

@@ -238,7 +238,7 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
         }
     }, [sessionId]);
 
-    // 외부에서 스토어를 통해 질문이 주입되었을 때 자동 전송
+    // 외부에서 스토어를 통해 질문이 주입되었을 때 자동 전송 (triggerAIQuery)
     const pendingAIQuery = useSupplyChainStore((state) => state.pendingAIQuery);
     const clearPendingAIQuery = useSupplyChainStore((state) => state.clearPendingAIQuery);
 
@@ -248,6 +248,24 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
             clearPendingAIQuery();
         }
     }, [pendingAIQuery, sendQuery, clearPendingAIQuery]);
+
+    // 외부에서 스토어를 통해 입력창에 질문만 주입 (draftAIQuery - 확인 후 전송)
+    const draftAIQuery = useSupplyChainStore((state) => state.draftAIQuery);
+    const clearDraftAIQuery = useSupplyChainStore((state) => state.clearDraftAIQuery);
+
+    useEffect(() => {
+        if (draftAIQuery && draftAIQuery.trim()) {
+            setInputValue(draftAIQuery);
+            clearDraftAIQuery();
+            // 패널 애니메이션/렌더링 후 텍스트에어리어 포커스 및 커서 맨 끝 이동
+            setTimeout(() => {
+                if (textareaRef.current) {
+                    textareaRef.current.focus();
+                    textareaRef.current.setSelectionRange(draftAIQuery.length, draftAIQuery.length);
+                }
+            }, 100);
+        }
+    }, [draftAIQuery, clearDraftAIQuery]);
 
     // 외부에서 props로 질문이 주입되었을 때 자동 전송
     useEffect(() => {
@@ -314,17 +332,12 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
                     >
                         <FiChevronRight className="w-5 h-5" />
                     </button>
-                    <span className="p-1 rounded-md bg-primary/10 border border-primary/20 text-primary shrink-0">
+                    <span className="p-1 text-primary shrink-0">
                         <GiDiamonds size={18} />
                     </span>
                     <div>
                         <h2 className="m-0 text-sm font-bold text-foreground flex items-center gap-2">
                             AI 공급망 인사이트
-                            {messages.length > 0 && (
-                                <span className="text-[10px] font-normal px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
-                                    세션 유지 중
-                                </span>
-                            )}
                         </h2>
                         <p className="m-0 text-[10px] text-muted-foreground">그래프 토폴로지 &amp; RAG 규제/시장 정보 분석</p>
                     </div>
@@ -593,26 +606,28 @@ function MessageBubble({ message }: { message: ChatMessage }) {
         <div className={`group flex ${isUser ? 'justify-end' : 'justify-start'}`}>
             <div
                 className={`max-w-[92%] rounded-xl text-xs relative border shadow-md transition-all ${isUser
-                    ? 'bg-primary text-primary-foreground border-primary/50 rounded-br-xs px-4 py-3'
+                    ? 'bg-primary text-primary-foreground border-primary/50 rounded-br-xs pl-4 pr-9 py-3'
                     : 'bg-slate-900/95 text-slate-100 border-slate-700/80 rounded-bl-xs pl-4 pr-10 py-3 backdrop-blur-md'
                     }`}
             >
-                {/* 복사 버튼 (어시스턴트 메시지에만 표시) */}
-                {!isUser && (
-                    <button
-                        type="button"
-                        onClick={handleCopy}
-                        className="absolute top-2.5 right-2 p-1.5 rounded-md bg-slate-800/90 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700/80 opacity-70 group-hover:opacity-100 transition-all cursor-pointer shadow-sm flex items-center justify-center"
-                        aria-label="답변 복사"
-                        title={copied ? '복사 완료' : '답변 복사'}
-                    >
-                        {copied ? (
-                            <LuCheck className="w-3.5 h-3.5 text-emerald-400" />
-                        ) : (
-                            <LuCopy className="w-3.5 h-3.5" />
-                        )}
-                    </button>
-                )}
+                {/* 복사 버튼 (사용자 및 어시스턴트 메시지 공통: 호버 시 또는 복사 완료 시 노출) */}
+                <button
+                    type="button"
+                    onClick={handleCopy}
+                    className={`absolute top-2.5 right-2 p-1.5 rounded-md transition-all cursor-pointer shadow-sm flex items-center justify-center ${copied ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                        } ${isUser
+                            ? 'bg-primary-foreground/15 hover:bg-primary-foreground/25 text-primary-foreground'
+                            : 'bg-slate-800/90 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700/80'
+                        }`}
+                    aria-label={isUser ? '질문 복사' : '답변 복사'}
+                    title={copied ? '복사 완료' : (isUser ? '질문 복사' : '답변 복사')}
+                >
+                    {copied ? (
+                        <LuCheck className={`w-3.5 h-3.5 ${isUser ? 'text-primary-foreground' : 'text-emerald-400'}`} />
+                    ) : (
+                        <LuCopy className="w-3.5 h-3.5" />
+                    )}
+                </button>
 
                 {/* 메시지 내용 (선명한 명도 대비와 가독성) */}
                 <div className="m-0 leading-relaxed break-words space-y-2 [&>p]:mb-1.5 [&>p]:leading-relaxed [&>ul]:list-disc [&>ul]:pl-4 [&>ul]:space-y-1 [&>ol]:list-decimal [&>ol]:pl-4 [&>ol]:space-y-1 [&>h3]:text-[13px] [&>h3]:font-bold [&>h3]:text-primary [&>h3]:mt-2 [&>h4]:text-xs [&>h4]:font-bold [&>h4]:text-slate-200 [&>strong]:text-white [&>code]:bg-slate-800 [&>code]:px-1 [&>code]:py-0.5 [&>code]:rounded [&>code]:text-primary/90">

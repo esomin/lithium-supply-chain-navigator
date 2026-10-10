@@ -155,17 +155,18 @@ export const ReRoutingPanel: React.FC<ReRoutingPanelProps> = ({
                     </div>
                 </div>
 
-                {/* 5. AI 인사이트 정밀 규제 검증 & 대안 심층 분석 버튼 */}
+                {/* 5. AI 인사이트 정밀 규제 검증 & 대체 공급망 심층 분석 버튼 */}
                 <Button
                     type="button"
                     onClick={() => {
-                        const query = `현재 시뮬레이션에서 발생한 리튬 공급 결손(원래 부족률 ${activeResult.originalDeficitPercentage}%)에 대해 ${currentPlan.title} (${currentPlan.options.map(o => o.sourceName).join(', ')}) 우회 경로가 제안되었습니다. 이 우회 경로의 IRA Section 30D / FEOC 규제 적격성과 IEA/USGS 수급 타당성을 종합 분석해 줘.`;
-                        useSupplyChainStore.getState().triggerAIQuery(query);
+                        const query = `현재 시뮬레이션에서 발생한 리튬 공급 결손(원래 부족률 ${activeResult.originalDeficitPercentage}%)에 대해 ${currentPlan.title} (${currentPlan.options.map(o => o.sourceName).join(', ')}) 대체 공급망이 제안되었습니다. 이 대체 공급망의 IRA Section 30D / FEOC 규제 적격성과 IEA/USGS 수급 타당성을 종합 분석해 줘.`;
+                        useSupplyChainStore.getState().setDraftAIQuery(query);
                     }}
                     className="w-full shrink-0 mt-1 bg-primary/15 hover:bg-primary/25 text-primary font-semibold text-xs py-2 rounded-[4px] shadow-xs border border-primary/30 cursor-pointer transition-all flex items-center justify-center gap-1.5"
+                    title="선택된 대체 공급망의 규제 검증 질의를 AI 입력창에 자동으로 입력합니다."
                 >
                     <GiDiamonds className="w-3.5 h-3.5 text-primary" />
-                    대체 공급망 AI 규제 분석
+                    이 대체 공급망으로 AI에게 질문하기
                 </Button>
             </div>
 
