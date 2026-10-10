@@ -123,19 +123,20 @@ export const ReRoutingPanel: React.FC<ReRoutingPanelProps> = ({
                                 setModalOption(opt);
                                 setIsModalOpen(true);
                             }}
-                            className="p-2 rounded-[4px] bg-transparent hover:bg-slate-700/40 space-y-1 transition-colors cursor-pointer group"
+                            className="p-1.5 rounded-[4px] bg-transparent hover:bg-slate-700/40 space-y-0.5 transition-colors cursor-pointer group"
                             title="클릭하여 노드간 세부 물량 수급 관계 보기"
                         >
-                            <div className="flex items-center justify-between font-medium text-[11px] text-foreground">
-                                <span className="truncate font-semibold group-hover:text-foreground transition-colors flex items-center gap-1">
-                                    {opt.rank}차 수급: {opt.sourceName}
-                                    <Info className="w-3 h-3 text-muted-foreground group-hover:text-muted-foreground opacity-60 transition-opacity" />
+                            <div className="flex items-center justify-between gap-1 text-[10.5px] text-foreground">
+                                <span className="truncate font-semibold group-hover:text-foreground transition-colors flex items-center gap-1 min-w-0 flex-1" title={`${opt.rank}차 수급: ${opt.sourceName}`}>
+                                    <span className="shrink-0 text-muted-foreground font-normal">{opt.rank}차:</span>
+                                    <span className="truncate">{opt.sourceName}</span>
+                                    <Info className="w-2.5 h-2.5 text-muted-foreground shrink-0 opacity-60 group-hover:opacity-100 transition-opacity" />
                                 </span>
-                                <span className="font-semibold text-foreground/90 shrink-0">
-                                    {opt.allocatedVolumeTons.toLocaleString()}톤 ({opt.coveredDeficitPercentage}%p)
+                                <span className="font-semibold text-foreground/90 shrink-0 text-[10.5px] ml-1">
+                                    {opt.allocatedVolumeTons.toLocaleString()}톤 <span className="text-[10px] font-normal text-muted-foreground">({opt.coveredDeficitPercentage}%p)</span>
                                 </span>
                             </div>
-                            <div className="flex flex-col gap-0.5 text-[10px] text-muted-foreground/80">
+                            <div className="flex items-center justify-between text-[9.5px] text-muted-foreground/80 pt-0.5">
                                 <div>추가 단가 <strong className="text-emerald-400 font-medium">+${opt.costImpact.unitExtraCostUsd}/톤</strong></div>
                                 <div>리드타임 <strong className="text-emerald-400 font-medium">+{opt.leadTimeImpact.additionalDays}일</strong> (총 {opt.leadTimeImpact.totalDays}일)</div>
                             </div>
@@ -143,17 +144,36 @@ export const ReRoutingPanel: React.FC<ReRoutingPanelProps> = ({
                     ))}
                 </div>
 
-                {/* 4. 하단 요약 인라인 레이아웃 */}
-                <div className="pt-2 border-t border-border/40 flex items-center justify-between text-[11px] text-muted-foreground shrink-0 px-0.5">
-                    <div className="flex items-center gap-1.5 font-medium text-foreground">
-                        <span className="text-emerald-400">+${currentPlan.totalExtraCostUsd.toLocaleString()}</span>
-                        <span>•</span>
-                        <span className="text-emerald-400">+{currentPlan.averageExtraLeadTimeDays}일</span>
-                    </div>
-                    <div>
-                        {activeResult.isGlobalCombined ? '평균 부족률' : '부족률'} <strong className="text-foreground">{activeResult.originalDeficitPercentage}%</strong> ➔ <strong className="text-foreground font-semibold">{currentPlan.remainingDeficitPercentage}%</strong>
-                    </div>
-                </div>
+                {/* 4. 하단 요약 2줄 레이아웃 (비용/시간 & 총 조달량/평균 부족률) */}
+                {(() => {
+                    const totalAllocatedTons = currentPlan.options.reduce((sum, o) => sum + o.allocatedVolumeTons, 0);
+                    const costFormatted = currentPlan.totalExtraCostUsd >= 1000000
+                        ? `+$${(currentPlan.totalExtraCostUsd / 1000000).toFixed(1)}M`
+                        : `+$${currentPlan.totalExtraCostUsd.toLocaleString()}`;
+
+                    return (
+                        <div className="pt-2 border-t border-border/40 flex flex-col gap-1 text-[11px] text-muted-foreground shrink-0 px-0.5">
+                            {/* 1행: 비용 & 총 조달량 */}
+                            <div className="flex items-center justify-between whitespace-nowrap">
+                                <span className="text-[10.5px]">
+                                    추가비용 <strong className="text-emerald-400 font-semibold">{costFormatted}</strong>
+                                </span>
+                                <span className="text-[10.5px] text-foreground/90 font-medium">
+                                    총 조달량: <strong className="font-semibold text-foreground">{totalAllocatedTons.toLocaleString()}톤</strong>
+                                </span>
+                            </div>
+                            {/* 2행: 리드타임 & 부족률 해소 */}
+                            <div className="flex items-center justify-between whitespace-nowrap text-[10px]">
+                                <span>
+                                    리드타임 <strong className="text-emerald-400 font-semibold">+{currentPlan.averageExtraLeadTimeDays}일</strong>
+                                </span>
+                                <span>
+                                    {activeResult.isGlobalCombined ? '평균 부족률' : '부족률'}: <strong className="text-foreground">{activeResult.originalDeficitPercentage.toFixed(1)}%</strong> → <strong className="text-foreground font-semibold">{currentPlan.remainingDeficitPercentage.toFixed(1)}%</strong>
+                                </span>
+                            </div>
+                        </div>
+                    );
+                })()}
 
                 {/* 5. AI 인사이트 정밀 규제 검증 & 대체 공급망 심층 분석 버튼 */}
                 <Button
