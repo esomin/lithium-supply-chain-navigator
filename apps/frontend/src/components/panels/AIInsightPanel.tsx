@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import type { ChatMessage, Citation, InsightResponse } from '@navigator/shared';
+import type { ChatMessage, Citation, InsightResponse, SimulationContextPayload } from '@navigator/shared';
 import { GiDiamonds } from 'react-icons/gi';
 import { LuCopy, LuCheck } from 'react-icons/lu';
-import { FiFileText, FiSend, FiChevronRight, FiExternalLink, FiX, FiSearch } from 'react-icons/fi';
+import { FiFileText, FiSend, FiChevronRight, FiExternalLink, FiX, FiSearch, FiGlobe } from 'react-icons/fi';
 import ReactMarkdown from 'react-markdown';
 import { useSupplyChainStore } from '../../store/supply-chain-store';
+import { useSimulationStore } from '../../store/simulation-store';
 import React from 'react';
 
 export interface AIInsightPanelProps {
@@ -68,6 +69,41 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
             return null;
         }
     });
+
+    // 시뮬레이션 전역 상태 구독
+    const simulationResult = useSimulationStore((state) => state.result);
+    const activeRerouteOptions = useSimulationStore((state) => state.activeRerouteOptions);
+    const selectedPlanNumber = useSimulationStore((state) => state.selectedPlanNumber);
+
+    // 현재 선택된 대체 경로 플랜 추출 (activeRerouteOptions는 ReroutingResult[] 형태이며, 내부에 plans가 존재함)
+    const activeResult = (activeRerouteOptions && activeRerouteOptions.length > 0)
+        ? (activeRerouteOptions.find((r) => r.isGlobalCombined || r.targetNodeId === 'GLOBAL_TOTAL') || activeRerouteOptions[0])
+        : null;
+    const currentActivePlan = activeResult?.plans?.find((p) => p.planNumber === selectedPlanNumber)
+        || activeResult?.plans?.[0]
+        || null;
+
+    // 현재 화면 시뮬레이션 맥락 객체 생성 (시뮬레이션 결과 존재 시 항상 연동)
+    const activeSimulationContext: SimulationContextPayload | null = simulationResult
+        ? {
+            scenarioId: simulationResult.scenarioId,
+            scenarioName: activeResult?.isGlobalCombined ? '글로벌 복합 공급망 위기 시나리오' : `공급망 차질 시나리오 (${simulationResult.scenarioId})`,
+            originalDeficitPercentage: activeResult?.originalDeficitPercentage,
+            selectedPlan: currentActivePlan ? {
+                title: currentActivePlan.title,
+                remainingDeficitPercentage: currentActivePlan.remainingDeficitPercentage,
+                totalExtraCostUsd: currentActivePlan.totalExtraCostUsd,
+                averageExtraLeadTimeDays: currentActivePlan.averageExtraLeadTimeDays,
+                allocations: (currentActivePlan.options || []).map(opt => ({
+                    rank: opt.rank,
+                    sourceNode: opt.sourceName || opt.sourceNodeId || 'Unknown Source',
+                    targetNode: opt.targetName || opt.targetNodeId,
+                    allocatedVolume: opt.allocatedVolumeTons !== undefined ? `${opt.allocatedVolumeTons.toLocaleString()} tons` : undefined,
+                    contributionPercentage: opt.coveredDeficitPercentage !== undefined ? `${opt.coveredDeficitPercentage}%p` : undefined,
+                })),
+            } : null,
+        }
+        : null;
 
     // 클라이언트 질의응답 Exact Match 캐시 Map
     const clientCacheRef = useRef<Map<string, { answer: string; citations: Citation[] }>>((() => {
@@ -160,7 +196,10 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
 
         // 1단계: 프론트엔드 클라이언트 Exact Match 캐시 확인 (즉각 0ms 응답)
         const normalized = normalizeQueryText(query);
-        const cacheKey = computeClientHash(normalized);
+        const cachePayloadKey = activeSimulationContext 
+            ? `${normalized}::${JSON.stringify(activeSimulationContext)}` 
+            : normalized;
+        const cacheKey = computeClientHash(cachePayloadKey);
         const clientCache = clientCacheRef.current;
         const cached = clientCache.get(cacheKey);
 
@@ -188,6 +227,7 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
                 body: JSON.stringify({
                     sessionId: sessionId ?? undefined,
                     query: query.trim(),
+                    simulationContext: activeSimulationContext,
                 }),
             });
 
@@ -236,7 +276,7 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
         } finally {
             setIsLoading(false);
         }
-    }, [sessionId]);
+    }, [sessionId, activeSimulationContext]);
 
     // 외부에서 스토어를 통해 질문이 주입되었을 때 자동 전송 (triggerAIQuery)
     const pendingAIQuery = useSupplyChainStore((state) => state.pendingAIQuery);
@@ -428,7 +468,31 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
                         className="w-full min-h-[44px] max-h-[160px] bg-transparent border-0 text-xs text-white placeholder:text-slate-400 focus:outline-none focus:ring-0 disabled:opacity-50 disabled:cursor-not-allowed resize-none leading-relaxed custom-scrollbar pb-1 px-1"
                         aria-label="AI 인사이트 질문 입력"
                     />
-                    <div className="flex items-center justify-end pt-1 border-t border-slate-800/60 mt-1">
+                    <div className="flex items-center justify-between pt-1.5 border-t border-slate-800/60 mt-1">
+                        {/* 하단 왼쪽: 맥락 상태 뱃지 (프라이머리 색상 테마 적용) */}
+                        <div className="flex items-center gap-1.5 overflow-hidden pr-2">
+                            {activeSimulationContext ? (
+                                <div
+                                    className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/15 border border-primary/30 text-primary text-[11px] font-medium shadow-xs select-none cursor-help"
+                                    title={currentActivePlan ? `[${currentActivePlan.title}]\n질문 시 화면의 세부 수급 할당량 및 대체 공급망 데이터가 AI 분석에 자동으로 포함됩니다.` : '질문 시 현재 화면의 노드별 수급 할당량 및 대체 공급망 데이터가 AI 분석에 자동으로 포함됩니다.'}
+                                >
+                                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse shrink-0" />
+                                    <span className="truncate">
+                                        현재 시뮬레이션 데이터 반영 중
+                                    </span>
+                                </div>
+                            ) : (
+                                <div
+                                    className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-800/80 border border-slate-700/80 text-slate-400 text-[11px] font-medium select-none"
+                                    title="현재 17개 시설의 기본 생산 용량 및 연결망 데이터를 기반으로 질의합니다."
+                                >
+                                    <FiGlobe className="w-3 h-3 text-slate-400 shrink-0" />
+                                    <span className="truncate">글로벌 마스터 공급망 기준</span>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* 하단 오른쪽: 전송 버튼 */}
                         <button
                             type="submit"
                             disabled={isLoading || !inputValue.trim()}

@@ -279,7 +279,7 @@ router.get('/trace/:factoryNodeId', (req: Request, res: Response) => {
 
 /** POST /api/insights/query - AI 질의 */
 router.post('/insights/query', async (req: Request, res: Response) => {
-    const { sessionId, query } = req.body;
+    const { sessionId, query, simulationContext } = req.body;
 
     if (!query || typeof query !== 'string' || query.trim().length === 0) {
         res.status(400).json({
@@ -293,7 +293,7 @@ router.post('/insights/query', async (req: Request, res: Response) => {
     const resolvedSessionId = sessionId || `session-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
     try {
-        const result = await aiInsightsController.query(resolvedSessionId, query.trim());
+        const result = await aiInsightsController.query(resolvedSessionId, query.trim(), simulationContext);
         res.json(result);
     } catch (err) {
         console.error('[insights/query] 예상치 못한 오류:', err);

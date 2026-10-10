@@ -11,6 +11,7 @@ import type {
     SimulationResult,
     AiAlternativeRoute,
     RecommendationResponse,
+    SimulationContextPayload,
 } from '@navigator/shared';
 
 /** 재시도 설정 */
@@ -132,9 +133,14 @@ export class AIInsightsService {
     }
 
     /**
-     * 그래프 토폴로지 + 문서 컨텍스트를 결합한 적응형(Adaptive) 시스템 프롬프트를 구성한다.
+     * 그래프 토폴로지 + 문서 컨텍스트 + 시뮬레이션 맥락을 결합한 적응형(Adaptive) 시스템 프롬프트를 구성한다.
      */
-    buildContextPrompt(graphContext: GraphContext, documentChunks: DocumentChunk[], userQuery: string): string {
+    buildContextPrompt(
+        graphContext: GraphContext,
+        documentChunks: DocumentChunk[],
+        userQuery: string,
+        simulationContext?: SimulationContextPayload | null,
+    ): string {
         const intent = this.classifyIntent(userQuery);
         console.info(`[Adaptive RAG] 질문 의도 라우팅: ${intent}`);
 
@@ -148,9 +154,43 @@ export class AIInsightsService {
             ? '순수 시설 경로 질문이므로 관련 외부 규제 문서는 생략되었습니다.'
             : this.buildDocumentContext(documentChunks);
 
+        // 시뮬레이션 맥락 텍스트 조립
+        let simulationSection = '';
+        if (simulationContext) {
+            simulationSection = `## [현재 화면 시뮬레이션 분석 데이터]
+- **시나리오**: ${simulationContext.scenarioName ?? simulationContext.scenarioId ?? '공급망 차질 시뮬레이션'}
+- **원래 공급 부족률**: ${simulationContext.originalDeficitPercentage !== undefined ? simulationContext.originalDeficitPercentage + '%' : '미지정'}
+`;
+            if (simulationContext.selectedPlan) {
+                const plan = simulationContext.selectedPlan;
+                simulationSection += `- **선택된 대체 공급망 방안**: ${plan.title} (결손 해소 후 잔여 결손율: ${plan.remainingDeficitPercentage ?? 0}%)
+- **대체 공급원(Alternative Source) 수급 배분 현황**:
+${plan.allocations.map(a => `  * [${a.rank ? `${a.rank}차 ` : ''}대체 공급처] ${a.sourceNode}: 공급 배분량 ${a.allocatedVolume ?? 'N/A'} (결손 해소 기여도 ${a.contributionPercentage ?? 'N/A'})${a.targetNode ? ` ➔ (차질 대상: ${a.targetNode})` : ''}`).join('\n')}
+
+> [중요 분석 지침]
+> - 위 **대체 공급처(POSCO Pilbara, Umicore Cheonan, Pilgangoora 등)**는 결손을 메우기 위해 신규로 투입된 '대체 공급망 노드'입니다.
+> - 기존에 차질(결손)을 겪고 있던 다운스트림 수용처(예: EcoPro BM Pohang, Hunan Yuneng 등)와 '대체 공급처'를 절대 혼동하지 마세요.
+> - **대체 공급망의 규제(IRA/FEOC) 적격성 및 수급 타당성은 위 '대체 공급처' 노드들을 기준으로 평가해야 합니다.**
+`;
+            }
+        }
+
+        const domainGuardrails = `## [중요 도메인 지식 및 단위 가드레일 (Domain Rules)]
+1. **광물 단위 변환 원칙 (SC6 vs LCE)**:
+   - 하드락 광산(Mine: Pilgangoora, Greenbushes 등)의 생산 수치는 **스포듀민 정광(Spodumene Concentrate, SC6)** 기준입니다.
+   - **스포듀민 7.5~8톤 ➔ 탄산리튬 등가물(LCE) 약 1톤** 생산 수율(약 12.5~13.3%)을 가집니다.
+   - 예: Pilgangoora 연산 755,000톤 SC6은 LCE 기준 **약 95,000~100,000톤 LCE**에 해당합니다. 광산의 SC6 생산량을 정제 LCE 통계와 1:1로 단순 비교하여 과대평가하지 마세요.
+2. **배터리 밸류체인 3단계 공정 체계**:
+   - **Mine (광산)**: 원광 및 스포듀민 정광(SC6) / 염수 채굴
+   - **Refinery (제련소/정제소)**: 정광/염수를 배터리급 수산화리튬(LiOH) 및 탄산리튬(Li2CO3) 화합물로 정제
+   - **Plant / CAM (양극재 플랜트)**: 정제된 리튬 화합물과 전구체를 결합하여 최종 양극활물질(tons_cathode) 생산
+   - (참고: Umicore Cheonan Plant, LG Chem Cheongju, EcoPro BM Pohang, POSCO Future M Gwangyang 등은 정제소가 아닌 **양극재 플랜트(Plant)**입니다)`;
+
         if (intent === 'GENERAL_MARKET') {
             return `## Role & Instructions
 배터리 및 핵심 광물 시장 전문 분석 어시스턴트로서, 최신 글로벌 통계(예: IEA, USGS)와 산업 지식을 바탕으로 명쾌하고 구조화된 답변을 작성하세요.
+
+${domainGuardrails}
 
 ## 참조 시장 문서
 ${documentContext}
@@ -169,6 +209,10 @@ ${userQuery}`;
             return `## Role & Instructions
 리튬 공급망 토폴로지 분석 어시스턴트로서, 아래 공급망 그래프 데이터의 실제 연결 관계만을 기반으로 노드 간의 이동 경로를 구체적으로 설명하세요.
 
+${domainGuardrails}
+
+${simulationSection}
+
 ## 공급망 그래프 토폴로지
 ${graphSummary}
 
@@ -184,6 +228,10 @@ ${userQuery}`;
         return `## Role & Instructions
 글로벌 통상 규제(IRA/FEOC/CRMA) 및 공급망 컴플라이언스 분석 어시스턴트로서, 공급망 데이터와 관련 규제 문서를 교차 분석하여 전문적인 판단을 제공하세요.
 
+${domainGuardrails}
+
+${simulationSection}
+
 ## 공급망 그래프 토폴로지
 ${graphSummary}
 
@@ -192,9 +240,10 @@ ${documentContext}
 
 ## 답변 규칙
 1. 역할 선언이나 장황한 서두 없이, 첫 문장부터 질문에 대한 규제 적격성 및 위험도 판정 결과로 즉시 진입하세요.
-2. 제공된 데이터와 문서를 최우선 근거로 활용하되, 통상 법률 및 산업 지식을 결합하여 실무적인 분석을 제공하세요.
-3. 문서 인용 시 [1], [2] 또는 [출처: 소스명] 형식의 인덱스 번호로 인라인 표기하세요.
-4. 불확실하거나 해석의 여지가 있는 부분은 유의사항으로 명시하세요.
+2. 화면 시뮬레이션 분석 데이터가 제공된 경우, 시뮬레이션의 노드별 수급 할당량과 기여도를 근거로 수급 타당성을 실무적으로 분석하세요.
+3. 광산 정광(SC6)과 정제 화합물(LCE/LiOH)의 단위 수율 차이를 정확히 반영하여 수급 병목 여부를 판단하세요.
+4. 문서 인용 시 [1], [2] 또는 [출처: 소스명] 형식의 인덱스 번호로 인라인 표기하세요.
+5. 불확실하거나 해석의 여지가 있는 부분은 유의사항으로 명시하세요.
 
 ## 사용자 질문
 ${userQuery}`;
@@ -214,8 +263,11 @@ ${userQuery}`;
     /**
      * 질문 정규화 기반 SHA-256 캐시 키를 생성한다.
      */
-    private computeCacheKey(normalizedQuery: string): string {
-        return createHash('sha256').update(normalizedQuery).digest('hex');
+    private computeCacheKey(normalizedQuery: string, simulationContext?: SimulationContextPayload | null): string {
+        const raw = simulationContext 
+            ? `${normalizedQuery}::${JSON.stringify(simulationContext)}` 
+            : normalizedQuery;
+        return createHash('sha256').update(raw).digest('hex');
     }
 
     /**
@@ -229,10 +281,11 @@ ${userQuery}`;
         userQuery: string,
         graphContext: GraphContext,
         documentChunks: DocumentChunk[],
+        simulationContext?: SimulationContextPayload | null,
     ): Promise<InsightResponse> {
         const startTime = Date.now();
         console.info(`[LLM] 요청 시작 | session=${sessionId} | query="${userQuery.substring(0, 80)}"`);
-        console.info(`[LLM] 컨텍스트 | nodes=${graphContext.nodes.length} edges=${graphContext.edges.length} docs=${documentChunks.length}`);
+        console.info(`[LLM] 컨텍스트 | nodes=${graphContext.nodes.length} edges=${graphContext.edges.length} docs=${documentChunks.length} sim=${!!simulationContext}`);
 
         // 세션 이력 조회 또는 생성
         if (!this.sessions.has(sessionId)) {
@@ -242,7 +295,7 @@ ${userQuery}`;
 
         // Exact Match 캐시 검사: 세션에 이전 대화 이력이 없는 첫 질문이거나 반복 질문일 때 캐시 확인
         const normalized = this.normalizeQuery(userQuery);
-        const cacheKey = this.computeCacheKey(normalized);
+        const cacheKey = this.computeCacheKey(normalized, simulationContext);
         const cached = this.queryCache.get(cacheKey);
 
         // 캐시된 데이터가 있고, 문서 청크가 0개가 아니었던 유효 응답일 때만 반환
@@ -293,7 +346,7 @@ ${userQuery}`;
         }
 
         // 프롬프트 구성
-        const prompt = this.buildContextPrompt(graphContext, documentChunks, userQuery);
+        const prompt = this.buildContextPrompt(graphContext, documentChunks, userQuery, simulationContext);
         console.info(`[LLM] 프롬프트 생성 | 길이=${prompt.length}자 (~${Math.round(prompt.length / 4)}토큰)`);
 
         // 멀티턴 대화: 이전 이력을 Gemini chat 모드로 전달

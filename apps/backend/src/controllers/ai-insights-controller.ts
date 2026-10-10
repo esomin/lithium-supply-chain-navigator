@@ -9,6 +9,7 @@ import type {
     EmbeddingProvider,
     SimulationResult,
     RecommendationResponse,
+    SimulationContextPayload,
 } from '@navigator/shared';
 import { AIInsightsService, type GraphContext } from '../services/ai-insights-service.js';
 
@@ -32,7 +33,11 @@ export class AIInsightsController {
      * AI 질의를 처리한다.
      * 그래프 토폴로지와 관련 문서 청크를 수집하여 LLM에 전달한다.
      */
-    async query(sessionId: string, userQuery: string): Promise<InsightResponse> {
+    async query(
+        sessionId: string,
+        userQuery: string,
+        simulationContext?: SimulationContextPayload | null,
+    ): Promise<InsightResponse> {
         // 1. 그래프 컨텍스트 수집
         const graphContext: GraphContext = {
             nodes: this.store.getNodes(),
@@ -49,7 +54,7 @@ export class AIInsightsController {
         }
 
         // 3. LLM 인사이트 생성
-        return this.service.generateInsight(sessionId, userQuery, graphContext, documentChunks);
+        return this.service.generateInsight(sessionId, userQuery, graphContext, documentChunks, simulationContext);
     }
 
     /**

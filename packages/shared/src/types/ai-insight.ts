@@ -46,6 +46,35 @@ export interface ChatMessage {
 }
 
 /**
+ * 시뮬레이션 세부 수급 배분 항목.
+ */
+export interface SimulationAllocationItem {
+    rank?: number;
+    sourceNode: string; // 신규/대체 공급원 (예: POSCO Pilbara Lithium Solution)
+    targetNode?: string; // 공급받는 차질 노드 (예: EcoPro BM Pohang, Hunan Yuneng)
+    allocatedVolume?: string | number;
+    contributionPercentage?: string | number;
+    unit?: string;
+    tier?: string;
+}
+
+/**
+ * AI 질의에 포함되는 현재 화면 시뮬레이션 맥락 페이로드.
+ */
+export interface SimulationContextPayload {
+    scenarioId?: string;
+    scenarioName?: string;
+    originalDeficitPercentage?: number;
+    selectedPlan?: {
+        title: string;
+        remainingDeficitPercentage?: number;
+        totalExtraCostUsd?: number;
+        averageExtraLeadTimeDays?: number;
+        allocations: SimulationAllocationItem[];
+    } | null;
+}
+
+/**
  * AI 질의 요청 body.
  */
 export interface InsightQueryRequest {
@@ -53,6 +82,8 @@ export interface InsightQueryRequest {
     sessionId?: string;
     /** 사용자 질의 */
     query: string;
+    /** 현재 화면 시뮬레이션 맥락 (선택 사항) */
+    simulationContext?: SimulationContextPayload | null;
 }
 
 /**
