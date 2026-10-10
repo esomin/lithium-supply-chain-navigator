@@ -588,10 +588,10 @@ function renderTextWithGlossary(text: string): React.ReactNode {
                 <span className="underline decoration-dotted decoration-primary/60 underline-offset-3 cursor-help text-foreground hover:text-primary transition-colors font-medium">
                     {part}
                 </span>
-                {/* 호버 팝오버 툴팁 (말풍선 배경과 명확히 구분되는 딥 테크 다크톤 & 사이안 테두리 하이라이트) */}
+                {/* 호버 팝오버 툴팁 (말풍선 배경과 명확히 구분되는 딥 테크 다크톤 & 패널 좌측 잘림 방지 스타일) */}
                 <span
                     role="tooltip"
-                    className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/term:flex flex-col w-72 p-3 rounded-xl bg-slate-900/98 border border-primary/40 text-slate-100 shadow-[0_10px_25px_-5px_rgba(0,0,0,0.6),0_0_15px_rgba(30,144,255,0.15)] z-50 animate-fade-in backdrop-blur-lg text-left"
+                    className="pointer-events-none absolute bottom-full left-0 mb-2 hidden group-hover/term:flex flex-col w-72 max-w-[80vw] p-3 rounded-xl bg-slate-900/98 border border-primary/40 text-slate-100 shadow-[0_10px_25px_-5px_rgba(0,0,0,0.6),0_0_15px_rgba(30,144,255,0.15)] z-50 animate-fade-in backdrop-blur-lg text-left"
                 >
                     <div className="border-b border-slate-700/80 pb-1.5 mb-1.5">
                         <span className="text-primary font-bold text-xs block">
@@ -740,8 +740,8 @@ function MessageBubble({ message }: { message: ChatMessage }) {
                         components={{
                             p: ({ children }) => <p className="mb-1.5 leading-relaxed">{renderNodeWithBadges(children)}</p>,
                             li: ({ children }) => <li>{renderNodeWithBadges(children)}</li>,
-                            strong: ({ children }) => <strong className="font-bold text-white">{renderNodeWithBadges(children)}</strong>,
-                            em: ({ children }) => <em className="italic text-slate-200">{renderNodeWithBadges(children)}</em>,
+                            strong: ({ children }) => <strong className="font-bold text-white">{children}</strong>,
+                            em: ({ children }) => <em className="italic text-slate-200">{children}</em>,
                             td: ({ children }) => <td>{renderNodeWithBadges(children)}</td>,
                         }}
                     >
