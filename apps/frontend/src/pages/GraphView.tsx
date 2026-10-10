@@ -38,12 +38,30 @@ export function GraphView() {
     }));
 
     const [error, setError] = useState<string | null>(null);
+    const STORAGE_KEY_SIM_COACH_MARK = 'has_seen_sim_coach_mark';
+
     // ESG 역추적 패널 표시 상태
     const [showTraceability, setShowTraceability] = useState(false);
     // 시뮬레이션 패널 표시 상태
     const [showSimulation, setShowSimulation] = useState(false);
-    // 시뮬레이션 버튼 안내 말풍선 표시 상태
-    const [showSimTooltip, setShowSimTooltip] = useState(true);
+    // 시뮬레이션 버튼 안내 말풍선 표시 상태 (최초 1회만 노출)
+    const [showSimTooltip, setShowSimTooltip] = useState<boolean>(() => {
+        try {
+            return localStorage.getItem(STORAGE_KEY_SIM_COACH_MARK) !== 'true';
+        } catch {
+            return true;
+        }
+    });
+
+    // 시뮬레이션 툴팁 닫기 및 재노출 방지 핸들러
+    const dismissSimTooltip = useCallback(() => {
+        setShowSimTooltip(false);
+        try {
+            localStorage.setItem(STORAGE_KEY_SIM_COACH_MARK, 'true');
+        } catch {
+            // ignore localStorage quota/disabled errors
+        }
+    }, []);
 
     // 시뮬레이션 패널이 열릴 때 토스트 메시지 표시
     useEffect(() => {
@@ -240,7 +258,7 @@ export function GraphView() {
                             id="tour-sim-button"
                             onClick={() => {
                                 setShowSimulation(true);
-                                setShowSimTooltip(false);
+                                dismissSimTooltip();
                             }}
                             variant="default"
                             className="font-semibold shadow-xs flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer rounded-[4px] px-3 py-1.5 text-xs h-8 bg-primary text-primary-foreground hover:bg-primary-hover border border-primary/20 backdrop-blur-md"
@@ -256,7 +274,7 @@ export function GraphView() {
                                 className="absolute left-0 top-full mt-2.5 w-[280px] bg-card/95 backdrop-blur-md border border-primary text-card-foreground rounded-[4px] shadow-[0_0_16px_rgba(59,130,246,0.25)] p-3.5 z-50 animate-in fade-in slide-in-from-top-2 duration-300 pointer-events-auto select-none group hover:border-2 hover:border-primary hover:shadow-[0_0_24px_rgba(59,130,246,0.45)] transition-all cursor-pointer"
                                 onClick={() => {
                                     setShowSimulation(true);
-                                    setShowSimTooltip(false);
+                                    dismissSimTooltip();
                                 }}
                             >
                                 {/* 상단 화살표 말풍선 꼬리 */}
@@ -271,7 +289,7 @@ export function GraphView() {
                                         type="button"
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            setShowSimTooltip(false);
+                                            dismissSimTooltip();
                                         }}
                                         className="text-muted-foreground hover:text-foreground text-[11px] px-1 py-0.5 rounded hover:bg-muted/60 transition-colors cursor-pointer"
                                         title="안내 닫기"

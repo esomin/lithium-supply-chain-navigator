@@ -77,14 +77,32 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
     // 직접 구성 아코디언 상태 (기본 닫힘)
     const [isCustomConfigOpen, setIsCustomConfigOpen] = useState(false);
 
+    const STORAGE_KEY_RUN_COACH_MARK = 'has_seen_run_coach_mark';
+
     // 2열 패널 탭 상태 ('result' | 'history')
     const [activeTab, setActiveTab] = useState<'result' | 'history'>('result');
 
     // 2열 레이아웃 슬라이드 아웃 상태
     const [isSecondColumnOpen, setIsSecondColumnOpen] = useState(historyEntries.length > 0 || !!result);
 
-    // 시뮬레이션 실행 버튼 안내 툴팁 팝오버 표시 상태
-    const [showRunTooltip, setShowRunTooltip] = useState(true);
+    // 시뮬레이션 실행 버튼 안내 툴팁 팝오버 표시 상태 (최초 1회만 노출)
+    const [showRunTooltip, setShowRunTooltip] = useState<boolean>(() => {
+        try {
+            return localStorage.getItem(STORAGE_KEY_RUN_COACH_MARK) !== 'true';
+        } catch {
+            return true;
+        }
+    });
+
+    // 시뮬레이션 실행 툴팁 닫기 및 재노출 방지 핸들러
+    const dismissRunTooltip = useCallback(() => {
+        setShowRunTooltip(false);
+        try {
+            localStorage.setItem(STORAGE_KEY_RUN_COACH_MARK, 'true');
+        } catch {
+            // ignore localStorage quota/disabled errors
+        }
+    }, []);
 
     // 결과 생성 시 2열 패널 자동 확장 및 결과 탭으로 전환
     useEffect(() => {
@@ -773,7 +791,10 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
                         {/* 시뮬레이션 실행 버튼 및 안내 툴팁 영역 */}
                         <div className="relative mb-3">
                             <Button
-                                onClick={handleRunSimulation}
+                                onClick={() => {
+                                    dismissRunTooltip();
+                                    handleRunSimulation();
+                                }}
                                 disabled={isRunning || disruptions.length === 0}
                                 variant="default"
                                 className="w-full h-8 shadow-xs text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary-hover cursor-pointer transition-colors rounded-[4px]"
@@ -786,7 +807,10 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
                             {showRunTooltip && !result && !isRunning && (
                                 <div
                                     className="absolute left-0 top-full mt-2.5 w-full bg-card/95 backdrop-blur-md border border-primary text-card-foreground rounded-[4px] shadow-[0_0_16px_rgba(59,130,246,0.25)] p-3.5 z-50 animate-in fade-in slide-in-from-top-2 duration-300 pointer-events-auto select-none group hover:border-2 hover:border-primary hover:shadow-[0_0_24px_rgba(59,130,246,0.45)] transition-all cursor-pointer"
-                                    onClick={handleRunSimulation}
+                                    onClick={() => {
+                                        dismissRunTooltip();
+                                        handleRunSimulation();
+                                    }}
                                 >
                                     {/* 상단 화살표 말풍선 꼬리 */}
                                     <div className="absolute -top-1.5 left-6 w-3 h-3 bg-card rotate-45 border-l border-t border-primary group-hover:border-l-2 group-hover:border-t-2 transition-all" />
@@ -800,7 +824,7 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
                                             type="button"
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                setShowRunTooltip(false);
+                                                dismissRunTooltip();
                                             }}
                                             className="text-muted-foreground hover:text-foreground text-[11px] px-1 py-0.5 rounded hover:bg-muted/60 transition-colors cursor-pointer"
                                             title="안내 닫기"
