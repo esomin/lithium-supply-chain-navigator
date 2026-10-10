@@ -39,20 +39,13 @@ export function SimulationResultSection({
     );
     const deficitCount = sortedDeficits.filter((d) => d.deficitPercentage > 0).length;
 
-    // 총 부족량(톤) 및 평균 부족률(%) 계산
-    let totalDeficitTons = 0;
-    let sumDeficitPercentage = 0;
-
-    sortedDeficits.forEach((d) => {
-        sumDeficitPercentage += d.deficitPercentage;
-        const node = nodes.find((n) => n.id === d.nodeId);
-        const capacity = Number(node?.metadata?.productionCapacity) || 50000;
-        const capacityUnit = (node?.metadata?.capacityUnit as string) || '';
-        const lithiumRatio = (node?.type === 'Factory' || capacityUnit === 'tons_cathode') ? 0.48 : 1.0;
-        totalDeficitTons += Math.round((capacity * (d.deficitPercentage / 100)) * lithiumRatio);
-    });
-
-    const avgDeficit = sortedDeficits.length > 0 ? sumDeficitPercentage / sortedDeficits.length : 0;
+    // 백엔드/엔진에서 계산하여 내려준 순 결손량 및 평균 결손율 사용 (Fallback 보장)
+    const netDeficitTons = result.totalNetDeficitTons ?? sortedDeficits.reduce((sum, d) => sum + (d.defectQuantityTons || 0), 0);
+    const avgDeficit = result.averageDeficitPercentage ?? (
+        sortedDeficits.length > 0
+            ? sortedDeficits.reduce((sum, d) => sum + d.deficitPercentage, 0) / sortedDeficits.length
+            : 0
+    );
 
     const formatTonsHeader = (tons: number) => {
         return `${tons.toLocaleString()}톤`;
@@ -64,16 +57,16 @@ export function SimulationResultSection({
             aria-label="시뮬레이션 결과"
             role="region"
         >
-            {/* 상단 핵심 메트릭 3종 (영향 노드, 총 부족량, 평균 부족률) - 흰색 투명 배경 */}
+            {/* 상단 핵심 메트릭 3종 (영향 노드, 순 결손량, 평균 부족률) - 흰색 투명 배경 */}
             <div className="grid grid-cols-3 text-xs text-foreground bg-white/5 dark:bg-white/5 rounded-[4px] p-1 shadow-none shrink-0">
                 <div className="text-center py-1.5 px-1 flex flex-col justify-center">
                     <div className="text-[10px] text-muted-foreground">영향 노드</div>
                     <div className="font-semibold text-foreground mt-0.5">{result.deficits.length}개</div>
                 </div>
                 <div className="text-center py-1.5 px-1 flex flex-col justify-center">
-                    <div className="text-[10px] text-muted-foreground">총 부족량</div>
-                    <div className="font-semibold text-foreground/90 mt-0.5" title={`${totalDeficitTons.toLocaleString()}톤`}>
-                        {formatTonsHeader(totalDeficitTons)}
+                    <div className="text-[10px] text-muted-foreground">순 결손량</div>
+                    <div className="font-semibold text-foreground/90 mt-0.5" title={`하류 최종 가공공장 투입 기준 순수 필요 리튬량: ${netDeficitTons.toLocaleString()}톤`}>
+                        {formatTonsHeader(netDeficitTons)}
                     </div>
                 </div>
                 <div className="text-center py-1.5 px-1 flex flex-col justify-center">
@@ -98,12 +91,7 @@ export function SimulationResultSection({
                                 const node = nodes.find((n) => n.id === d.nodeId);
                                 const displayName = node ? node.name : d.nodeId;
                                 const hasDeficit = d.deficitPercentage > 0;
-
-                                // 결손량 톤수 계산 (양극재 공장의 경우 LCE 리튬 투입비 0.48 적용)
-                                const capacity = Number(node?.metadata?.productionCapacity) || 50000;
-                                const capacityUnit = (node?.metadata?.capacityUnit as string) || '';
-                                const lithiumRatio = (node?.type === 'Factory' || capacityUnit === 'tons_cathode') ? 0.48 : 1.0;
-                                const deficitTons = Math.round((capacity * (d.deficitPercentage / 100)) * lithiumRatio);
+                                const deficitTons = d.defectQuantityTons ?? 0;
 
                                 const formatTons = (tons: number) => {
                                     return `${tons.toLocaleString()}톤`;

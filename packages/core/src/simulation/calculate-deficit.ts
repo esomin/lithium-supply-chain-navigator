@@ -67,11 +67,23 @@ export function calculateSupplyDeficit(
         // 부족률 = 감쇄 계수 * 100, [0, 100] 범위로 클램핑
         const deficitPercentage = Math.min(100, Math.max(0, Math.round(attenuationFactor * 100 * 10) / 10));
 
+        // 화학양론비(LCE)가 반영된 물리적 결손 톤수 계산
+        const capacityUnit = (node?.metadata?.capacityUnit as string) || '';
+        const lithiumRatio = (node?.type === 'Factory' || capacityUnit === 'tons_cathode') ? 0.48 : 1.0;
+        const baseCapacity = nodeCapacity > 0 ? nodeCapacity : originalSupply;
+        const defectQuantityTons = Math.round((baseCapacity * (deficitPercentage / 100)) * lithiumRatio);
+
+        // 하류로 물량을 전달하는 아웃바운드 엣지가 있는지 여부 확인 (없으면 최종 소비처)
+        const hasOutboundSupply = allEdges.some((e) => e.sourceNodeId === nodeId);
+        const isTerminalConsumer = !hasOutboundSupply || node?.type === 'Factory';
+
         results.push({
             nodeId,
             originalSupply,
             disruptedSupply,
             deficitPercentage,
+            defectQuantityTons,
+            isTerminalConsumer,
         });
     }
 

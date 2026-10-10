@@ -73,11 +73,44 @@ export function runSingleSimulation(
 
     const executionTimeMs = performance.now() - startTime;
 
+    // 결손 노드 집계 및 상하류 중복 방지 순 결손(Net Deficit) 계산
+    const deficitNodeIdSet = new Set(deficits.filter((d) => d.deficitPercentage > 0).map((d) => d.nodeId));
+    const isUpstreamOfAnotherDeficitNode = (nodeId: string): boolean => {
+        return allEdges.some(
+            (e) => e.sourceNodeId === nodeId && deficitNodeIdSet.has(e.targetNodeId),
+        );
+    };
+
+    let totalGrossDeficitTons = 0;
+    let totalNetDeficitTons = 0;
+    let sumDeficitPercentage = 0;
+
+    deficits.forEach((d) => {
+        sumDeficitPercentage += d.deficitPercentage;
+        const tons = d.defectQuantityTons || 0;
+        totalGrossDeficitTons += tons;
+
+        if (!isUpstreamOfAnotherDeficitNode(d.nodeId)) {
+            totalNetDeficitTons += tons;
+        }
+    });
+
+    if (totalNetDeficitTons === 0 && deficits.length > 0) {
+        totalNetDeficitTons = totalGrossDeficitTons;
+    }
+
+    const averageDeficitPercentage = deficits.length > 0
+        ? Math.round((sumDeficitPercentage / deficits.length) * 10) / 10
+        : 0;
+
     return {
         scenarioId: scenario.id,
         propagationPaths,
         deficits,
         executionTimeMs,
+        totalNetDeficitTons,
+        totalGrossDeficitTons,
+        averageDeficitPercentage,
     };
 }
 

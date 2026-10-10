@@ -33,6 +33,8 @@ export interface DeficitResult {
     originalSupply: number;
     disruptedSupply: number;
     deficitPercentage: number; // 0-100
+    defectQuantityTons?: number; // 화학양론비(LCE)가 반영된 노드별 결손 톤수
+    isTerminalConsumer?: boolean; // 하류 소비 공장 여부 (순결손 대상 여부)
 }
 
 export type OptimizationCriterion = 'cost' | 'leadTime' | 'balanced';
@@ -103,5 +105,8 @@ export interface SimulationResult {
     propagationPaths: PropagationPath[];
     deficits: DeficitResult[];
     executionTimeMs: number;
+    totalNetDeficitTons?: number; // 상하류 중복이 제거된 순 결손 총 톤수
+    totalGrossDeficitTons?: number; // 단순 계통 결손 합계 톤수
+    averageDeficitPercentage?: number; // 전체 평균 결손율 (%)
     reroutingResults?: ReroutingResult[];
 }
