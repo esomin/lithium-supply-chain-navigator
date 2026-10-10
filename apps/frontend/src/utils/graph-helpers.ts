@@ -96,7 +96,7 @@ const NODE_TYPE_COLORS: Record<string, string> = {
     Resource: '#0EA5E9',   // 하늘색 (자원)
     Mine: '#10B981',       // 에메랄드 그린 (광산)
     Refinery: '#F59E0B',   // 앰버/주황 (정제소)
-    Factory: '#8B5CF6',    // 보라 (공장)
+    Factory: 'rgba(91, 134, 195, 1)',    // 연한 그레이 (공장)
 };
 
 /**
