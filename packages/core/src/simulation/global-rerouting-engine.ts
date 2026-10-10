@@ -80,23 +80,35 @@ export function computeGlobalReroutingOption(
 
         const mergedOptions = Array.from(supplierMap.values());
         mergedOptions.sort((a, b) => b.allocatedVolumeTons - a.allocatedVolumeTons);
+
+        const avgRemainingDeficit = Math.round((globalRemainingDeficitSum / individualResults.length) * 10) / 10;
+        const totalCoveredDeficit = Math.max(0, Math.round((avgOriginalDeficit - avgRemainingDeficit) * 10) / 10);
+        const totalAllocatedVolume = mergedOptions.reduce((sum, o) => sum + o.allocatedVolumeTons, 0);
+
         mergedOptions.forEach((opt, idx) => {
             opt.rank = idx + 1;
-            opt.coveredDeficitPercentage = totalDisruptedTons > 0
-                ? Math.round((opt.allocatedVolumeTons / totalDisruptedTons) * avgOriginalDeficit * 10) / 10
+            // 통합 시나리오에서 각 수급처가 전체 해소된 부족률(64%p) 중 기여한 비중(%p) 계산
+            opt.coveredDeficitPercentage = totalAllocatedVolume > 0
+                ? Math.round((opt.allocatedVolumeTons / totalAllocatedVolume) * totalCoveredDeficit * 10) / 10
                 : 0;
         });
 
-        const avgRemainingDeficit = Math.round((globalRemainingDeficitSum / individualResults.length) * 10) / 10;
-        const avgGlobalLeadTime = totalDisruptedTons > 0
-            ? Math.round((weightedLeadTimeSum / totalDisruptedTons) * 10) / 10
+        // 반올림 오차 보정 (합계가 totalCoveredDeficit과 정확히 일치하도록 1위에 보정)
+        const currentSum = Math.round(mergedOptions.reduce((sum, o) => sum + (o.coveredDeficitPercentage || 0), 0) * 10) / 10;
+        const diff = Math.round((totalCoveredDeficit - currentSum) * 10) / 10;
+        if (mergedOptions.length > 0 && Math.abs(diff) > 0 && Math.abs(diff) < 2) {
+            mergedOptions[0].coveredDeficitPercentage = Math.round(((mergedOptions[0].coveredDeficitPercentage || 0) + diff) * 10) / 10;
+        }
+
+        const avgGlobalLeadTime = totalAllocatedVolume > 0
+            ? Math.round((weightedLeadTimeSum / totalAllocatedVolume) * 10) / 10
             : 0;
 
         return {
             planNumber: planNum,
             title: planTitles[crit],
             criterion: crit,
-            coveredDeficitPercentage: Math.max(0, Math.round((avgOriginalDeficit - avgRemainingDeficit) * 10) / 10),
+            coveredDeficitPercentage: totalCoveredDeficit,
             remainingDeficitPercentage: avgRemainingDeficit,
             totalExtraCostUsd: globalTotalExtraCost,
             averageExtraLeadTimeDays: avgGlobalLeadTime,

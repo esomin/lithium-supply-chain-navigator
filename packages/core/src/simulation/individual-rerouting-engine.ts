@@ -163,8 +163,14 @@ export function computeIndividualReroutingOptions(
             if (topCandidates.length === 0) return null;
 
             const totalDeficitPercentage = deficit.deficitPercentage;
-            const capacity = Number(targetNode.metadata?.productionCapacity) || 50000;
-            const defectQuantityTons = Math.round((capacity * totalDeficitPercentage) / 100);
+            const targetCapacity = Number(targetNode.metadata?.productionCapacity) || 50000;
+            const targetCapacityUnit = (targetNode.metadata?.capacityUnit as string) || '';
+
+            // 양극재 플랜트(Factory)의 경우 캐파는 'tons_cathode' 단위임.
+            // 양극재 1톤 생산에는 화학양론적으로 약 0.45~0.50톤의 탄산리튬/수산화리튬(LCE)이 투입됨.
+            // 따라서 상위 정제소(Refinery)로부터 필요한 LCE 원료 결손량은 cathode 캐파 * 0.48로 환산해야 함.
+            const lithiumInputRatio = (targetNode.type === 'Factory' || targetCapacityUnit === 'tons_cathode') ? 0.48 : 1.0;
+            const requiredLithiumTons = Math.round((targetCapacity * (totalDeficitPercentage / 100)) * lithiumInputRatio);
 
             const allocations = topCandidates.length > 1 ? [0.7, 0.3] : [1.0];
             const options: ReroutingOption[] = [];
@@ -175,7 +181,14 @@ export function computeIndividualReroutingOptions(
             topCandidates.forEach((item, index) => {
                 const ratio = allocations[index];
                 const coveredDeficit = Math.round(totalDeficitPercentage * ratio * 10) / 10;
-                const allocatedTons = Math.round(defectQuantityTons * ratio);
+                
+                // 후보 정제소/광산의 생산 용량 한도
+                const candidateCapacity = Number(item.candidateNode.metadata?.productionCapacity) || 100000;
+                // 정제소는 여유 가용 캐파 범위(보통 연산의 20~30% 또는 결손량) 내에서 안전하게 공급
+                const allocatedTons = Math.min(
+                    Math.round(requiredLithiumTons * ratio),
+                    Math.round(candidateCapacity * 0.5) // 단일 대안처가 캐파의 50%를 초과하여 과도하게 할당되지 않도록 안전 가드레일
+                );
 
                 totalCoveredPercentage += coveredDeficit;
                 const totalExtraCost = Math.round(allocatedTons * item.costPerTon);
@@ -232,8 +245,10 @@ export function computeIndividualReroutingOptions(
         if (plans.length === 0) continue;
 
         const defaultPlan = plans.find((p) => p.criterion === defaultCriterion) || plans[0];
-        const capacity = Number(targetNode.metadata?.productionCapacity) || 50000;
-        const defectQuantityTons = Math.round((capacity * deficit.deficitPercentage) / 100);
+        const targetCapacity = Number(targetNode.metadata?.productionCapacity) || 50000;
+        const targetCapacityUnit = (targetNode.metadata?.capacityUnit as string) || '';
+        const lithiumInputRatio = (targetNode.type === 'Factory' || targetCapacityUnit === 'tons_cathode') ? 0.48 : 1.0;
+        const defectQuantityTons = Math.round((targetCapacity * (deficit.deficitPercentage / 100)) * lithiumInputRatio);
 
         results.push({
             simulationId: simulationResult.scenarioId,

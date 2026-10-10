@@ -115,7 +115,7 @@ export const ReRoutingPanel: React.FC<ReRoutingPanelProps> = ({
                 )}
 
                 {/* 3. 플랫 리스트 구조 */}
-                <div className="space-y-0.5 max-h-[160px] overflow-y-auto custom-scrollbar">
+                <div className="space-y-0.5 max-h-[200px] overflow-y-auto custom-scrollbar">
                     {currentPlan.options.map((opt) => (
                         <div
                             key={`${opt.rank}-${opt.sourceNodeId}`}
