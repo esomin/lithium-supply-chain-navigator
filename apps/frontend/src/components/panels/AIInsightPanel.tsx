@@ -547,15 +547,25 @@ function MessageBubble({ message }: { message: ChatMessage }) {
                 setSelectedCitation(found);
                 return;
             }
+            // docIndex가 없거나 1-indexed 배열 인덱스로 조회
+            if (message.citations[num - 1]) {
+                setSelectedCitation(message.citations[num - 1]);
+                return;
+            }
+            // 순수 숫자 번호 뱃지([2], [4])인 경우 잘못된 텍스트 매칭 방지를 위해 여기서 반환
+            return;
         }
 
-        // 출처명 매칭
-        const foundByName = message.citations.find(c => {
-            const clean = matchedText.replace(/[\[\]]/g, '').replace(/^출처:\s*/, '').trim().toLowerCase();
-            return c.source.toLowerCase().includes(clean) || clean.includes(c.source.toLowerCase());
-        });
-        if (foundByName) {
-            setSelectedCitation(foundByName);
+        // 출처명 매칭 ([출처: ...])
+        const clean = matchedText.replace(/[\[\]]/g, '').replace(/^출처:\s*/, '').trim().toLowerCase();
+        if (clean.length >= 2) {
+            const foundByName = message.citations.find(c => {
+                const src = c.source.toLowerCase();
+                return src.includes(clean) || clean.includes(src);
+            });
+            if (foundByName) {
+                setSelectedCitation(foundByName);
+            }
         }
     };
 

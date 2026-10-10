@@ -86,12 +86,12 @@ describe('AIInsightsService', () => {
         it('그래프 토폴로지와 문서 컨텍스트를 결합한 프롬프트를 생성한다', () => {
             const graphContext = createTestGraphContext();
             const chunks = createTestDocumentChunks();
-            const query = '칠레-중국 리튬 공급 경로의 리스크는?';
+            const query = '칠레-중국 리튬 공급의 IRA 규제 리스크와 시장 전망은?';
 
             const prompt = service.buildContextPrompt(graphContext, chunks, query);
 
             // 시스템 프롬프트에 핵심 요소 포함 확인
-            expect(prompt).toContain('리튬 공급망 분석 전문가');
+            expect(prompt).toContain('Role & Instructions');
             expect(prompt).toContain('Atacama Salt Flat Mine');
             expect(prompt).toContain('Ganfeng Lithium Refinery');
             expect(prompt).toContain('USGS Mineral Report');

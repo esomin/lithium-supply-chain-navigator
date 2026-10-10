@@ -316,10 +316,14 @@ ${userQuery}`;
         }
 
         // 응답 텍스트 추출
-        const responseText = result.response.text();
+        const rawResponseText = result.response.text();
 
-        // 출처 인용 추출
-        const citations = this.extractCitations(responseText, documentChunks, graphContext);
+        // 출처 인용 추출 및 본문 인용 번호 정규화 ([1], [2], [3]... 순차 동기화)
+        const { citations, normalizedResponseText: responseText } = this.extractCitations(
+            rawResponseText,
+            documentChunks,
+            graphContext,
+        );
 
         const elapsed = Date.now() - startTime;
         console.info(`[LLM] 응답 완료 | ${elapsed}ms | 답변=${responseText.length}자 | 인용=${citations.length}건`);
@@ -754,26 +758,23 @@ JSON 블록 아래에 각 대안에 대한 상세 분석도 포함하세요.`;
     }
 
     /**
-     * LLM 응답에서 출처 인용을 추출한다.
+     * LLM 응답에서 출처 인용을 추출하고, 본문의 인용 번호([N])를 실제 인용된 문서 순서([1], [2], ...)로 정규화한다.
      * 1) [문서 1], [1] 등의 문서 인덱스 번호 기반 동적 매핑
      * 2) [출처: ...] 명칭 및 본문 내 문서명/출처명 출현 기반 동적 매핑
-     * 하드코딩 없이 새 문서가 추가되어도 100% 자동 확장 지원.
+     * 3) 실제 인용된 문서들만 모아 [1], [2], [3]... 순차 번호로 본문 텍스트와 citation.docIndex를 1:1 동기화
      */
     private extractCitations(
         responseText: string,
         documentChunks: DocumentChunk[],
         graphContext: GraphContext,
-    ): Citation[] {
-        const citations: Citation[] = [];
-        const addedSources = new Set<string>();
-
+    ): { citations: Citation[]; normalizedResponseText: string } {
         // 1. [문서 1], [문서 2], [1], [2] 인덱스 패턴 추출
-        const docIndexMatches = [...responseText.matchAll(/\[문서\s*(\d+)\]|\[(\d+)\]/g)];
-        const citedIndices = new Set<number>();
+        const docIndexMatches = [...responseText.matchAll(/\[(?:문서\s*)?(\d+)\]/g)];
+        const citedRawIndices = new Set<number>();
         for (const match of docIndexMatches) {
-            const num = parseInt(match[1] || match[2], 10);
+            const num = parseInt(match[1], 10);
             if (!isNaN(num) && num >= 1 && num <= documentChunks.length) {
-                citedIndices.add(num - 1); // 0-indexed
+                citedRawIndices.add(num); // 1-based (주입 당시 번호)
             }
         }
 
@@ -784,14 +785,18 @@ JSON 블록 아래에 각 대안에 대한 상세 분석도 포함하세요.`;
 
         while ((nameMatch = citationPattern.exec(responseText)) !== null) {
             const text = nameMatch[1].trim().toLowerCase();
-            if (text && !text.startsWith('문서')) {
+            if (text && !text.startsWith('문서') && !/^\d+$/.test(text)) {
                 citedNames.push(text);
             }
         }
 
-        // 3. DocumentChunk 순회하며 인덱스 또는 출처명과 동적 매칭
+        // 3. DocumentChunk 순회하며 인용된 청크 식별
+        const matchedChunks: { chunk: DocumentChunk; originalIndex: number }[] = [];
+        const addedSources = new Set<string>();
+
         for (let i = 0; i < documentChunks.length; i++) {
             const chunk = documentChunks[i];
+            const originalIndex = i + 1;
             const source = chunk.metadata.source;
             const docType = chunk.metadata.documentType;
 
@@ -800,9 +805,9 @@ JSON 블록 아래에 각 대안에 대한 상세 분석도 포함하세요.`;
             const sourceTokens = baseFilename.split(/[-_\s.]+/).filter(t => t.length >= 2);
 
             // A. 번호 기반 인용 매칭 ([문서 1], [1])
-            const isIndexMatched = citedIndices.has(i);
+            const isIndexMatched = citedRawIndices.has(originalIndex);
 
-            // B. 명시적 출처명 매칭 (LLM이 [출처: ...] 안에 파일명이나 핵심 토큰을 언급한 경우)
+            // B. 명시적 출처명 매칭
             const isNameMatched = citedNames.some(cited => {
                 return cited.includes(baseFilename) || 
                     baseFilename.includes(cited) ||
@@ -815,16 +820,40 @@ JSON 블록 아래에 각 대안에 대한 상세 분석도 포함하세요.`;
 
             if ((isIndexMatched || isNameMatched || isContentMentioned) && !addedSources.has(source)) {
                 addedSources.add(source);
-                citations.push({
-                    source,
-                    content: chunk.content.substring(0, 200), // 요약용 200자
-                    relevance: 1.0,
-                    docIndex: i + 1, // 주입 당시의 문서 번호 ([문서 1], [문서 2] 등, 1-based)
-                });
+                matchedChunks.push({ chunk, originalIndex });
             }
         }
 
-        // 4. 그래프 데이터 인용 (명시적으로 [출처: 공급망...] 또는 [공급망 그래프...] 인용한 경우만 포함)
+        // 4. 원래 주입 번호(originalIndex) -> 새로운 1부터 시작하는 순차 번호(newDocIndex) 매핑 테이블 구성
+        const indexMapping = new Map<number, number>();
+        const citations: Citation[] = [];
+
+        matchedChunks.forEach((item, idx) => {
+            const newDocIndex = idx + 1;
+            indexMapping.set(item.originalIndex, newDocIndex);
+            citations.push({
+                source: item.chunk.metadata.source,
+                content: item.chunk.content.substring(0, 200), // 요약용 200자
+                relevance: 1.0,
+                docIndex: newDocIndex,
+            });
+        });
+
+        // 5. 본문 텍스트 내의 [원래번호]를 [새순차번호]로 교체하여 불일치 해소
+        let normalizedResponseText = responseText;
+        if (citations.length > 0) {
+            normalizedResponseText = responseText.replace(/\[(?:문서\s*)?(\d+)\]/g, (fullMatch, numStr) => {
+                const num = parseInt(numStr, 10);
+                const mapped = indexMapping.get(num);
+                if (mapped !== undefined) {
+                    return `[${mapped}]`;
+                }
+                // 매핑되지 않은(유효 범위를 벗어났거나 검색에 없던) 번호는 가장 가까운 번호 또는 원본 유지
+                return fullMatch;
+            });
+        }
+
+        // 6. 그래프 데이터 인용 (명시적으로 [출처: 공급망...] 또는 [공급망 그래프...] 인용한 경우만 포함)
         const isGraphExplicitlyCited = citedNames.some(name => 
             name.includes('공급망') || name.includes('그래프') || name.includes('토폴로지') || name.includes('네트워크')
         );
@@ -837,7 +866,7 @@ JSON 블록 아래에 각 대안에 대한 상세 분석도 포함하세요.`;
             });
         }
 
-        return citations;
+        return { citations, normalizedResponseText };
     }
 
     /**
