@@ -108,7 +108,8 @@ export function SimulationResultSection({
                 <Button
                     onClick={triggerRerouteCalculation}
                     disabled={isRerouteLoading}
-                    className="w-full shrink-0 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs py-2 rounded-[4px] shadow-sm cursor-pointer transition-all flex items-center justify-center gap-1.5"
+                    variant="default"
+                    className="w-full shrink-0 h-8 shadow-xs text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary-hover cursor-pointer transition-colors rounded-[4px] flex items-center justify-center gap-1.5"
                 >
                     <Route className="w-3.5 h-3.5" />
                     <span>대체 공급망 최적안 추천</span>

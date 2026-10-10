@@ -843,10 +843,10 @@ function MessageBubble({ message }: { message: ChatMessage }) {
                 <button
                     type="button"
                     onClick={handleCopy}
-                    className={`absolute top-2.5 right-2 p-1.5 rounded-md transition-all cursor-pointer shadow-sm flex items-center justify-center ${copied ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                    className={`absolute top-2.5 right-2 p-1.5 rounded-md transition-all cursor-pointer flex items-center justify-center ${copied ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                         } ${isUser
                             ? 'bg-primary-foreground/15 hover:bg-primary-foreground/25 text-primary-foreground'
-                            : 'bg-slate-800/90 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700/80'
+                            : 'bg-slate-800/90 hover:bg-slate-700 text-slate-400 hover:text-white'
                         }`}
                     aria-label={isUser ? '질문 복사' : '답변 복사'}
                     title={copied ? '복사 완료' : (isUser ? '질문 복사' : '답변 복사')}
@@ -872,6 +872,26 @@ function MessageBubble({ message }: { message: ChatMessage }) {
                         {message.content}
                     </ReactMarkdown>
                 </div>
+
+                {/* 메시지 내용 우하단 복사 버튼 (텍스트 하단 / 참조 원문 디바이더 바로 위) */}
+                {!isUser && (
+                    <div className="flex justify-end pt-1 -mb-1">
+                        <button
+                            type="button"
+                            onClick={handleCopy}
+                            className={`p-1.5 rounded-md transition-all cursor-pointer flex items-center justify-center ${copied ? 'opacity-100 bg-slate-800 text-emerald-400' : 'opacity-0 group-hover:opacity-100 bg-slate-800/90 hover:bg-slate-700 text-slate-400 hover:text-white'
+                                }`}
+                            aria-label="답변 복사"
+                            title={copied ? '복사 완료' : '답변 복사'}
+                        >
+                            {copied ? (
+                                <LuCheck className="w-3.5 h-3.5 text-emerald-400" />
+                            ) : (
+                                <LuCopy className="w-3.5 h-3.5" />
+                            )}
+                        </button>
+                    </div>
+                )}
 
                 {/* 출처 인용 (어시스턴트 메시지에만 표시) */}
                 {!isUser && message.citations && message.citations.length > 0 && (
