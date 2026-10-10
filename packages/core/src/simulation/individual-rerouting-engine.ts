@@ -201,7 +201,6 @@ export function computeIndividualReroutingOptions(
 
             topCandidates.forEach((item, index) => {
                 const ratio = allocations[index];
-                const coveredDeficit = Math.round(totalDeficitPercentage * ratio * 10) / 10;
 
                 // 후보 정제소/광산의 생산 용량 한도
                 const candidateCapacity = Number(item.candidateNode.metadata?.productionCapacity) || 100000;
@@ -210,6 +209,11 @@ export function computeIndividualReroutingOptions(
                     Math.round(requiredLithiumTons * ratio),
                     Math.round(candidateCapacity * 0.5) // 단일 대안처가 캐파의 50%를 초과하여 과도하게 할당되지 않도록 안전 가드레일
                 );
+
+                // 할당된 실제 톤수 기반의 실질 부족 해소율(%p) 계산
+                const coveredDeficit = requiredLithiumTons > 0
+                    ? Math.round(((allocatedTons / requiredLithiumTons) * totalDeficitPercentage) * 10) / 10
+                    : 0;
 
                 totalCoveredPercentage += coveredDeficit;
                 const totalExtraCost = Math.round(allocatedTons * item.costPerTon);

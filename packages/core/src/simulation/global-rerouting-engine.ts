@@ -22,10 +22,12 @@ export function computeGlobalReroutingOption(
         return null;
     }
 
-    const totalDisruptedTons = individualResults.reduce((sum, r) => sum + r.defectQuantityTons, 0);
-    const avgOriginalDeficit = Math.round(
-        (individualResults.reduce((sum, r) => sum + r.originalDeficitPercentage, 0) / individualResults.length) * 10,
-    ) / 10;
+    const totalDisruptedTons = simulationResult.totalNetDeficitTons ?? individualResults.reduce((sum, r) => sum + r.defectQuantityTons, 0);
+    const avgOriginalDeficit = simulationResult.averageDeficitPercentage ?? (
+        Math.round(
+            (individualResults.reduce((sum, r) => sum + r.originalDeficitPercentage, 0) / individualResults.length) * 10,
+        ) / 10
+    );
 
     const criteria: OptimizationCriterion[] = ['cost', 'leadTime', 'balanced'];
     const planTitles: Record<OptimizationCriterion, string> = {
