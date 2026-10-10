@@ -807,7 +807,7 @@ export function GraphRenderer({
                             }
                         }}
                         className="relative -top-5 -right-5 flex items-center justify-center cursor-pointer group"
-                        title="LG Chem Cheongju 공장 노드 선택"
+                        title="LG Chem Cheongju 양극재 플랜트 노드 선택"
                     >
                         {/* 1. 바깥쪽 확장 핑 애니메이션 링 */}
                         <span className="absolute inline-flex h-8 w-8 rounded-full bg-sky-400 opacity-60 animate-ping pointer-events-none" />
@@ -854,7 +854,7 @@ export function GraphRenderer({
                         </div>
 
                         <h4 className="text-xs font-bold text-foreground mb-0.5 flex items-center gap-1">
-                            LG Chem Cheongju (공장)
+                            LG Chem Cheongju (양극재 플랜트)
                         </h4>
                         <p className="text-[11px] text-muted-foreground leading-snug mb-2">
                             클릭하여 <strong>ESG 역추적 분석</strong> 및 시설 상세 정보를 확인해보세요.
@@ -875,7 +875,7 @@ const NODE_TYPE_LABEL_KO: Record<string, string> = {
     Resource: '자원',
     Mine: '광산',
     Refinery: '정제소',
-    Factory: '공장',
+    Factory: '양극재 플랜트',
 };
 
 /** 국가 영-한 매핑 */

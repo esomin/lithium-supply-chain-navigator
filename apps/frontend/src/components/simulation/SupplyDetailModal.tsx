@@ -126,7 +126,7 @@ export const SupplyDetailModal: React.FC<SupplyDetailModalProps> = ({
                         <div className="flex items-center justify-between text-xs font-bold text-foreground">
                             <span className="flex items-center gap-1.5">
                                 <Truck className="w-3.5 h-3.5 text-primary" />
-                                노드 간 세부 물량 수급 내역 (전체 5개 차질 공장 중 {breakdown.length}개 공장 배분)
+                                노드 간 세부 물량 수급 내역 (전체 5개 차질 양극재 플랜트 중 {breakdown.length}개 플랜트 배분)
                             </span>
                             <span className="text-[10px] text-muted-foreground font-normal">
                                 운송 모드: {option.transportType === 'Road' ? '육상 운송' : '해상 운송'}

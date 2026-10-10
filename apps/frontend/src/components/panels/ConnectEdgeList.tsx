@@ -7,7 +7,7 @@ const NODE_TYPE_LABEL_KO: Record<string, string> = {
     Resource: '자원',
     Mine: '광산',
     Refinery: '정제소',
-    Factory: '공장',
+    Factory: '양극재 플랜트',
 };
 
 interface ConnectedEdgesListProps {

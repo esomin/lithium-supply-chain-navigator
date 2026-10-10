@@ -31,8 +31,8 @@ export type TooltipInfo =
 const NODE_TYPE_KO: Record<string, string> = {
     Resource: '자원',
     Mine: '광산',
-    Refinery: '제련소',
-    Factory: '공장',
+    Refinery: '정제소',
+    Factory: '양극재 플랜트',
 };
 
 // 운송 수단 한글 매핑 (이모지 제외)

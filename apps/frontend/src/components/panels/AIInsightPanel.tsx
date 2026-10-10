@@ -369,10 +369,10 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
                         <div className="flex flex-col gap-1.5 text-left max-w-sm mx-auto">
                             <button
                                 type="button"
-                                onClick={() => sendQuery('칠레산 리튬이 한국 공장까지 어떻게 들어오나요?')}
+                                onClick={() => sendQuery('칠레산 리튬이 한국 양극재 플랜트까지 어떻게 들어오나요?')}
                                 className="text-[11px] p-2 rounded-lg bg-card border border-border hover:border-primary/50 hover:bg-primary/5 text-foreground transition-all text-left cursor-pointer"
                             >
-                                "칠레산 리튬이 한국 공장까지 어떻게 들어오나요?"
+                                "칠레산 리튬이 한국 양극재 플랜트까지 어떻게 들어오나요?"
                             </button>
                             <button
                                 type="button"

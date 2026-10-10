@@ -92,7 +92,7 @@ export function TraceabilityPanel({ factoryNodeId, factoryName, onClose }: Trace
 
             {/* Factory 이름 카드 */}
             <div className="p-3 bg-muted/30 border border-border rounded-[4px] shadow-xs mb-4">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">대상 시설 (Factory)</span>
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">대상 시설 (Plant)</span>
                 <h3 className="text-sm font-bold text-foreground tracking-tight">{factoryName}</h3>
             </div>
 

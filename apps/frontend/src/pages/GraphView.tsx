@@ -422,11 +422,11 @@ export function GraphView() {
                         </span>
                         <span className="flex items-center gap-1">
                             <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-muted-foreground/30 text-[9px] font-bold text-foreground">R</span>{' '}
-                            제련소
+                            정제소
                         </span>
                         <span className="flex items-center gap-1">
                             <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-muted-foreground/30 text-[9px] font-bold text-foreground">F</span>{' '}
-                            공장
+                            양극재 플랜트
                         </span>
                         <span className="flex items-center gap-1">
                             <span className="inline-flex items-center justify-center px-1 h-4 rounded-full bg-muted-foreground/30 text-[8px] font-bold text-foreground">RES</span>{' '}

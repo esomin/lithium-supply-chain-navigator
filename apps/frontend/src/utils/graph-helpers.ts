@@ -68,8 +68,8 @@ export function getNodeTypeLabel(type: string): string {
     const labels: Record<string, string> = {
         Resource: '매장된 자원',
         Mine: '광산',
-        Refinery: '제련소',
-        Factory: '공장',
+        Refinery: '정제소',
+        Factory: '양극재 플랜트',
     };
     return labels[type] || type;
 }

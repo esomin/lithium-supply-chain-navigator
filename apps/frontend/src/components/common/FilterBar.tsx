@@ -19,7 +19,7 @@ const HS_CODE_OPTIONS = [
             { text: '염호→정제소 원료', color: 'bg-muted/80 text-muted-foreground border-border/80' },
             { text: 'LFP계 양극재 원료', color: 'bg-muted/80 text-muted-foreground border-border/80' },
         ],
-        description: '탄산리튬 (2836.91): 염호 직조달 및 정제소 → LFP 양극재 공장 납품',
+        description: '탄산리튬 (2836.91): 염호 직조달 및 정제소 → LFP 양극재 플랜트 납품',
     },
     {
         value: '2825.20',
@@ -27,7 +27,7 @@ const HS_CODE_OPTIONS = [
         badges: [
             { text: '삼원계 양극재 원료', color: 'bg-muted/80 text-muted-foreground border-border/80' },
         ],
-        description: '수산화리튬 (2825.20): 정제소 → 삼원계(NCM/NCA) 하이니켈 공장 납품',
+        description: '수산화리튬 (2825.20): 정제소 → 삼원계(NCM/NCA) 하이니켈 플랜트 납품',
     },
 ] as const;
 
