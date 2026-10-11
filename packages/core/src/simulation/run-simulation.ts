@@ -83,15 +83,19 @@ export function runSingleSimulation(
 
     let totalGrossDeficitTons = 0;
     let totalNetDeficitTons = 0;
-    let sumDeficitPercentage = 0;
+    let sumNetDeficitPercentage = 0;
+    let netDeficitCount = 0;
 
     deficits.forEach((d) => {
-        sumDeficitPercentage += d.deficitPercentage;
         const tons = d.defectQuantityTons || 0;
         totalGrossDeficitTons += tons;
 
         if (!isUpstreamOfAnotherDeficitNode(d.nodeId)) {
             totalNetDeficitTons += tons;
+            if (d.deficitPercentage > 0) {
+                sumNetDeficitPercentage += d.deficitPercentage;
+                netDeficitCount += 1;
+            }
         }
     });
 
@@ -99,9 +103,11 @@ export function runSingleSimulation(
         totalNetDeficitTons = totalGrossDeficitTons;
     }
 
-    const averageDeficitPercentage = deficits.length > 0
-        ? Math.round((sumDeficitPercentage / deficits.length) * 10) / 10
-        : 0;
+    const averageDeficitPercentage = netDeficitCount > 0
+        ? Math.round((sumNetDeficitPercentage / netDeficitCount) * 10) / 10
+        : (deficits.length > 0
+            ? Math.round((deficits.reduce((sum, d) => sum + d.deficitPercentage, 0) / deficits.length) * 10) / 10
+            : 0);
 
     return {
         scenarioId: scenario.id,
