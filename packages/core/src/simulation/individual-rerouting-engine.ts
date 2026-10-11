@@ -68,8 +68,8 @@ export function computeIndividualReroutingOptions(
     // 만약 순환 구조 등으로 모든 노드가 상류로 판별되었다면 기존 전체 deficitItems 사용 (Fallback)
     const effectiveDeficitItems = targetDeficitItems.length > 0 ? targetDeficitItems : deficitItems;
 
-    // 정제소/광산 후보의 명목 캐파 대비 즉시 동원 가능한 여유 캐파 비율 (장기 오프테이크 락인 및 배터리급 품질인증 현실 반영: 10%)
-    const REFINERY_AVAILABLE_CAPACITY_RATIO = 0.10;
+    // 정제소/광산 후보의 명목 캐파 대비 비상 긴급 동원 가능한 여유 캐파 비율 (장기 오프테이크 허용오차 및 가동률 극대화 반영: 15%)
+    const REFINERY_AVAILABLE_CAPACITY_RATIO = 0.15;
 
     // 각 기준(cost, leadTime, balanced)별로 공장 간 정제소 캐파 중복 할당을 방지하기 위한 함수
     const buildCriterionResults = (crit: OptimizationCriterion, planNum: 1 | 2 | 3, planTitle: string) => {

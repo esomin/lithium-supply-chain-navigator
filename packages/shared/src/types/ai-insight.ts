@@ -71,6 +71,7 @@ export interface SimulationContextPayload {
         totalExtraCostUsd?: number;
         averageExtraLeadTimeDays?: number;
         allocations: SimulationAllocationItem[];
+        emergencyPackage?: any;
     } | null;
 }
 

@@ -75,6 +75,29 @@ export interface ReroutingOption {
     targetBreakdown?: ReroutingTargetBreakdown[];
 }
 
+export type EmergencyStatusLevel = 'CRITICAL' | 'MODERATE' | 'RESOLVED';
+
+export interface EmergencyProtocolStep {
+    stepNumber: number;
+    name: string;
+    category: 'SPOT_REROUTE' | 'STRATEGIC_STOCKPILE' | 'RECYCLING_LOOP' | 'DEMAND_CURTAILMENT';
+    allocatedVolumeTons: number;
+    reliefPercentage: number;
+    description: string;
+    leadTimeDays: number;
+    agencyOrSource: string;
+}
+
+export interface EmergencyResponsePackage {
+    statusLevel: EmergencyStatusLevel;
+    coverageRate: number; // 결손 해결 비율 (%) = (초기 - 잔여) / 초기 * 100
+    residualDeficitPercentage: number; // 잔여 부족률 (%)
+    totalRequiredLithiumTons: number;
+    spotAllocatedTons: number;
+    cumulativeReliefPercentage: number; // 다단계 총합 해결 비율 (%)
+    steps: EmergencyProtocolStep[];
+}
+
 export interface ReroutingProposalPlan {
     planNumber: 1 | 2 | 3;
     title: string;                 // 예: "1안: 비용 우선" | "2안: 운송시간 우선" | "3안: 밸런스"
@@ -84,6 +107,7 @@ export interface ReroutingProposalPlan {
     totalExtraCostUsd: number;
     averageExtraLeadTimeDays: number;
     options: ReroutingOption[];
+    emergencyPackage?: EmergencyResponsePackage;
 }
 
 export interface ReroutingResult {
@@ -98,6 +122,7 @@ export interface ReroutingResult {
     averageExtraLeadTimeDays: number;
     criterion: OptimizationCriterion;
     plans: ReroutingProposalPlan[]; // 1안, 2안, 3안 종합 시나리오
+    emergencyPackage?: EmergencyResponsePackage;
 }
 
 export interface SimulationResult {
@@ -110,3 +135,4 @@ export interface SimulationResult {
     averageDeficitPercentage?: number; // 전체 평균 결손율 (%)
     reroutingResults?: ReroutingResult[];
 }
+
