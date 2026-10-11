@@ -68,44 +68,51 @@ export function computeIndividualReroutingOptions(
     // 만약 순환 구조 등으로 모든 노드가 상류로 판별되었다면 기존 전체 deficitItems 사용 (Fallback)
     const effectiveDeficitItems = targetDeficitItems.length > 0 ? targetDeficitItems : deficitItems;
 
-    for (const deficit of effectiveDeficitItems) {
-        const targetNode = nodeMap.get(deficit.nodeId);
-        if (!targetNode) continue;
+    // 정제소/광산 후보의 명목 캐파 대비 즉시 동원 가능한 여유 캐파 비율 (장기 오프테이크 락인 및 배터리급 품질인증 현실 반영: 10%)
+    const REFINERY_AVAILABLE_CAPACITY_RATIO = 0.10;
 
-        // 결손 노드로 들어오는 엣지들 및 HS 코드
-        const incomingEdges = allEdges.filter((e) => e.targetNodeId === targetNode.id);
-        const incomingHsCodes = new Set(incomingEdges.map((e) => e.attributes?.hsCode).filter(Boolean));
-
-        // 대체 가능 후보 노드 스크리닝
-        const candidates = allNodes.filter((candidate) => {
-            if (candidate.id === targetNode.id) return false;
-            if (candidate.type === 'Resource') return false;
-
-            if (targetNode.type === 'Factory') {
-                if (candidate.type !== 'Refinery') return false;
-            } else if (targetNode.type === 'Refinery') {
-                if (candidate.type !== 'Mine') return false;
-            } else if (targetNode.type === 'Mine') {
-                if (candidate.type !== 'Mine') return false;
+    // 각 기준(cost, leadTime, balanced)별로 공장 간 정제소 캐파 중복 할당을 방지하기 위한 함수
+    const buildCriterionResults = (crit: OptimizationCriterion, planNum: 1 | 2 | 3, planTitle: string) => {
+        // 정제소/광산 노드별 남은 가용 용량 풀 (Shared Pool) 초기화
+        const remainingCapacityMap = new Map<string, number>();
+        allNodes.forEach((node) => {
+            if (node.type === 'Refinery' || node.type === 'Mine') {
+                const nominalCap = Number(node.metadata?.productionCapacity) || 50000;
+                remainingCapacityMap.set(node.id, Math.round(nominalCap * REFINERY_AVAILABLE_CAPACITY_RATIO));
             }
-
-            // 시뮬레이션 차질(부족률 30% 이상 또는 공급 0) 노드는 제외
-            const candidateDeficit = simulationResult.deficits.find((d) => d.nodeId === candidate.id);
-            if (candidateDeficit && (candidateDeficit.deficitPercentage >= 30 || candidateDeficit.disruptedSupply === 0)) {
-                return false;
-            }
-
-            return true;
         });
 
-        if (candidates.length === 0) continue;
+        const perFactoryPlans = new Map<string, ReroutingProposalPlan>();
 
-        // 기준(criterion)별 ReroutingProposalPlan 산출 함수
-        const buildPlan = (
-            crit: OptimizationCriterion,
-            planNum: 1 | 2 | 3,
-            title: string,
-        ): ReroutingProposalPlan | null => {
+        for (const deficit of effectiveDeficitItems) {
+            const targetNode = nodeMap.get(deficit.nodeId);
+            if (!targetNode) continue;
+
+            const incomingEdges = allEdges.filter((e) => e.targetNodeId === targetNode.id);
+            const incomingHsCodes = new Set(incomingEdges.map((e) => e.attributes?.hsCode).filter(Boolean));
+
+            const candidates = allNodes.filter((candidate) => {
+                if (candidate.id === targetNode.id) return false;
+                if (candidate.type === 'Resource') return false;
+
+                if (targetNode.type === 'Factory') {
+                    if (candidate.type !== 'Refinery') return false;
+                } else if (targetNode.type === 'Refinery') {
+                    if (candidate.type !== 'Mine') return false;
+                } else if (targetNode.type === 'Mine') {
+                    if (candidate.type !== 'Mine') return false;
+                }
+
+                const candidateDeficit = simulationResult.deficits.find((d) => d.nodeId === candidate.id);
+                if (candidateDeficit && (candidateDeficit.deficitPercentage >= 30 || candidateDeficit.disruptedSupply === 0)) {
+                    return false;
+                }
+
+                return true;
+            });
+
+            if (candidates.length === 0) continue;
+
             interface CandidateEvaluation {
                 candidateNode: SupplyChainNode;
                 hsCode: string;
@@ -181,7 +188,7 @@ export function computeIndividualReroutingOptions(
 
             evaluated.sort((a, b) => a.score - b.score);
             const topCandidates = evaluated.slice(0, 2);
-            if (topCandidates.length === 0) return null;
+            if (topCandidates.length === 0) continue;
 
             const totalDeficitPercentage = deficit.deficitPercentage;
             const targetCapacity = Number(targetNode.metadata?.productionCapacity) || 50000;
@@ -201,14 +208,14 @@ export function computeIndividualReroutingOptions(
 
             topCandidates.forEach((item, index) => {
                 const ratio = allocations[index];
+                const desiredTons = Math.round(requiredLithiumTons * ratio);
+                const currentRemaining = remainingCapacityMap.get(item.candidateNode.id) ?? 0;
 
-                // 후보 정제소/광산의 생산 용량 한도
-                const candidateCapacity = Number(item.candidateNode.metadata?.productionCapacity) || 100000;
-                // 정제소는 여유 가용 캐파 범위(보통 연산의 20~30% 또는 결손량) 내에서 안전하게 공급
-                const allocatedTons = Math.min(
-                    Math.round(requiredLithiumTons * ratio),
-                    Math.round(candidateCapacity * 0.5) // 단일 대안처가 캐파의 50%를 초과하여 과도하게 할당되지 않도록 안전 가드레일
-                );
+                // 공유 풀 잔여 캐파와 요청량 중 작은 값 할당
+                const allocatedTons = Math.max(0, Math.min(desiredTons, currentRemaining));
+
+                // 공유 풀에서 할당된 톤수만큼 차감
+                remainingCapacityMap.set(item.candidateNode.id, Math.max(0, currentRemaining - allocatedTons));
 
                 // 할당된 실제 톤수 기반의 실질 부족 해소율(%p) 계산
                 const coveredDeficit = requiredLithiumTons > 0
@@ -247,26 +254,34 @@ export function computeIndividualReroutingOptions(
             const remainingDeficit = Math.max(0, Math.round((totalDeficitPercentage - totalCoveredPercentage) * 10) / 10);
             const avgLeadTime = Math.round(weightedLeadTimeSum * 10) / 10;
 
-            return {
+            perFactoryPlans.set(deficit.nodeId, {
                 planNumber: planNum,
-                title,
+                title: planTitle,
                 criterion: crit,
                 coveredDeficitPercentage: Math.round(totalCoveredPercentage * 10) / 10,
                 remainingDeficitPercentage: remainingDeficit,
                 totalExtraCostUsd: weightedCostSum,
                 averageExtraLeadTimeDays: avgLeadTime,
                 options,
-            };
-        };
+            });
+        }
 
-        const plan1 = buildPlan('cost', 1, '1안: 비용 우선');
-        const plan2 = buildPlan('leadTime', 2, '2안: 운송시간 우선');
-        const plan3 = buildPlan('balanced', 3, '3안: 밸런스');
+        return perFactoryPlans;
+    };
 
-        const plans: ReroutingProposalPlan[] = [plan1, plan2, plan3].filter(
-            (p): p is ReroutingProposalPlan => p !== null,
-        );
+    const costPlansByFactory = buildCriterionResults('cost', 1, '1안: 비용 우선');
+    const leadTimePlansByFactory = buildCriterionResults('leadTime', 2, '2안: 운송시간 우선');
+    const balancedPlansByFactory = buildCriterionResults('balanced', 3, '3안: 밸런스');
 
+    for (const deficit of effectiveDeficitItems) {
+        const targetNode = nodeMap.get(deficit.nodeId);
+        if (!targetNode) continue;
+
+        const p1 = costPlansByFactory.get(deficit.nodeId);
+        const p2 = leadTimePlansByFactory.get(deficit.nodeId);
+        const p3 = balancedPlansByFactory.get(deficit.nodeId);
+
+        const plans = [p1, p2, p3].filter((p): p is ReroutingProposalPlan => p !== undefined);
         if (plans.length === 0) continue;
 
         const defaultPlan = plans.find((p) => p.criterion === defaultCriterion) || plans[0];
@@ -291,3 +306,4 @@ export function computeIndividualReroutingOptions(
 
     return results;
 }
+
