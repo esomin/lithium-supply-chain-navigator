@@ -63,9 +63,25 @@ export function GraphRenderer({
     const onNodeClickRef = useRef(onNodeClick);
     onNodeClickRef.current = onNodeClick;
 
-    // LG Chem Cheongju 타겟 비콘(Pulsing Dot) 상태 및 위치 계산
+    // LG Chem Cheongju 타겟 비콘(Pulsing Dot) 상태 및 위치 계산 (최초 1회 노출)
+    const STORAGE_KEY_NODE_COACH_MARK = 'has_seen_node_coach_mark';
     const [beaconPos, setBeaconPos] = useState<{ x: number; y: number } | null>(null);
-    const [isBeaconDismissed, setIsBeaconDismissed] = useState(false);
+    const [isBeaconDismissed, setIsBeaconDismissed] = useState<boolean>(() => {
+        try {
+            return localStorage.getItem(STORAGE_KEY_NODE_COACH_MARK) === 'true';
+        } catch {
+            return false;
+        }
+    });
+
+    const dismissBeacon = useCallback(() => {
+        setIsBeaconDismissed(true);
+        try {
+            localStorage.setItem(STORAGE_KEY_NODE_COACH_MARK, 'true');
+        } catch {
+            // ignore localStorage errors
+        }
+    }, []);
 
     const targetBeaconNode = useMemo(() => {
         return (
@@ -802,6 +818,7 @@ export function GraphRenderer({
                     {/* 펄스 비콘 점 (Pulsing Beacon Dot) */}
                     <div
                         onClick={() => {
+                            dismissBeacon();
                             if (onNodeClickRef.current) {
                                 onNodeClickRef.current(targetBeaconNode.id);
                             }
@@ -826,6 +843,7 @@ export function GraphRenderer({
                     <div
                         className="absolute left-8 -top-7 w-60 bg-card/95 backdrop-blur-md border border-primary text-card-foreground rounded-xl shadow-[0_0_16px_rgba(59,130,246,0.25)] p-3 animate-in fade-in zoom-in-95 group hover:border-2 hover:border-primary hover:shadow-[0_0_24px_rgba(59,130,246,0.45)] transition-all cursor-pointer"
                         onClick={() => {
+                            dismissBeacon();
                             if (onNodeClickRef.current) {
                                 onNodeClickRef.current(targetBeaconNode.id);
                             }
@@ -843,7 +861,7 @@ export function GraphRenderer({
                                 type="button"
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    setIsBeaconDismissed(true);
+                                    dismissBeacon();
                                 }}
                                 className="text-muted-foreground hover:text-foreground text-[11px] px-1 rounded hover:bg-muted/60 transition-colors cursor-pointer"
                                 title="닫기"
