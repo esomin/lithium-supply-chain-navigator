@@ -49,7 +49,6 @@ export function computeGlobalReroutingOption(
             if (!plan) return;
 
             globalTotalExtraCost += plan.totalExtraCostUsd;
-            weightedLeadTimeSum += plan.averageExtraLeadTimeDays * (nodeResult.defectQuantityTons || 1);
             globalRemainingDeficitSum += plan.remainingDeficitPercentage;
 
             plan.options.forEach((opt) => {
@@ -93,6 +92,8 @@ export function computeGlobalReroutingOption(
             opt.coveredDeficitPercentage = totalAllocatedVolume > 0
                 ? Math.round((opt.allocatedVolumeTons / totalAllocatedVolume) * totalCoveredDeficit * 10) / 10
                 : 0;
+            // 실제 할당된 물량에 비례하여 통합 리드타임 가중합 누적
+            weightedLeadTimeSum += opt.leadTimeImpact.additionalDays * opt.allocatedVolumeTons;
         });
 
         // 반올림 오차 보정 (합계가 totalCoveredDeficit과 정확히 일치하도록 1위에 보정)
