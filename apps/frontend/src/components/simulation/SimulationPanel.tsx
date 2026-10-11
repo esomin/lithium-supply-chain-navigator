@@ -1,4 +1,5 @@
-import { useCallback, useMemo, useEffect, useState } from 'react';
+import { useCallback, useMemo, useEffect, useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import type { Disruption, DisruptionType } from '@navigator/shared';
 import { useSupplyChainStore } from '../../store/supply-chain-store';
 import { useSimulationStore } from '../../store/simulation-store';
@@ -26,6 +27,82 @@ import {
     SimulationHistorySection,
 } from './SimulationResultSection';
 import { ReRoutingPanel } from './ReRoutingPanel';
+
+/**
+ * 패널 overflow에 잘리지 않도록 body에 직접 렌더링하는 프리셋 정보 툴팁 컴포넌트
+ */
+function PresetInfoTooltip({
+    name,
+    description,
+    isLast,
+}: {
+    name: string;
+    description: string;
+    isLast?: boolean;
+}) {
+    const [isHovered, setIsHovered] = useState(false);
+    const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
+    const buttonRef = useRef<HTMLButtonElement>(null);
+
+    const handleMouseEnter = () => {
+        if (buttonRef.current) {
+            setAnchorRect(buttonRef.current.getBoundingClientRect());
+        }
+        setIsHovered(true);
+    };
+
+    const handleMouseLeave = () => {
+        setIsHovered(false);
+    };
+
+    const renderTooltip = () => {
+        if (!isHovered || !anchorRect) return null;
+
+        const tooltipWidth = 260;
+        let left = anchorRect.left;
+        if (left + tooltipWidth > window.innerWidth - 16) {
+            left = window.innerWidth - 16 - tooltipWidth;
+        }
+        if (left < 16) left = 16;
+
+        const isBottomPlacement = !isLast;
+        const top = isBottomPlacement ? anchorRect.bottom + 6 : anchorRect.top - 6;
+
+        return createPortal(
+            <div
+                role="tooltip"
+                style={{
+                    position: 'fixed',
+                    top: `${top}px`,
+                    left: `${left}px`,
+                    transform: isBottomPlacement ? 'none' : 'translateY(-100%)',
+                    width: `${tooltipWidth}px`,
+                    zIndex: 99999,
+                }}
+                className="pointer-events-none p-2.5 bg-popover text-popover-foreground text-[10px] leading-relaxed rounded-[4px] border border-border/80 shadow-2xl backdrop-blur-md animate-in fade-in-0 duration-150"
+            >
+                {description}
+            </div>,
+            document.body
+        );
+    };
+
+    return (
+        <div className="relative inline-flex items-center shrink-0" onClick={(e) => e.stopPropagation()}>
+            <button
+                ref={buttonRef}
+                type="button"
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+                className="p-0.5 text-muted-foreground/60 hover:text-foreground transition-colors cursor-help rounded-[2px]"
+                aria-label={`${name} 설명`}
+            >
+                <Info className="w-3.5 h-3.5" />
+            </button>
+            {renderTooltip()}
+        </div>
+    );
+}
 
 export interface SimulationPanelProps {
     onClose?: () => void;
@@ -418,28 +495,12 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
                                                             {preset.name}
                                                         </span>
 
-                                                        {/* 안내 아이콘 및 툴팁 영역 (아이콘 호버 시에만 툴팁 노출) */}
-                                                        <div
-                                                            className="relative inline-flex items-center group/info shrink-0"
-                                                            onClick={(e) => e.stopPropagation()}
-                                                        >
-                                                            <button
-                                                                type="button"
-                                                                className="p-0.5 text-muted-foreground/60 hover:text-foreground transition-colors cursor-help rounded-[2px]"
-                                                                aria-label={`${preset.name} 설명`}
-                                                            >
-                                                                <Info className="w-3.5 h-3.5" />
-                                                            </button>
-
-                                                            {/* 안내 아이콘 호버 시 나오는 상세 설명 툴팁 */}
-                                                            <div
-                                                                className={`absolute hidden group-hover/info:block z-50 w-60 p-2.5 bg-popover text-popover-foreground text-[10px] leading-relaxed rounded-[4px] border border-border/80 shadow-2xl pointer-events-none ${
-                                                                    isLast ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
-                                                                } left-0`}
-                                                            >
-                                                                <div>{preset.description}</div>
-                                                            </div>
-                                                        </div>
+                                                        {/* 안내 아이콘 및 툴팁 영역 (Portal 렌더링으로 잘림 현상 방지) */}
+                                                        <PresetInfoTooltip
+                                                            name={preset.name}
+                                                            description={preset.description}
+                                                            isLast={isLast}
+                                                        />
                                                     </div>
                                                     <div className="flex items-center gap-1 shrink-0">
                                                         <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded-[3px] transition-colors shrink-0 ${
