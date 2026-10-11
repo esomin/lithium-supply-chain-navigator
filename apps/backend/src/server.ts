@@ -163,5 +163,18 @@ export async function startServer(port: number = DEFAULT_PORT): Promise<void> {
 
 export { app };
 
+import { flushLangfuse } from './services/langfuse-client.js';
+
+// 프로세스 종료 시 Langfuse 이벤트 버퍼 플러시
+process.on('SIGINT', async () => {
+    await flushLangfuse();
+    process.exit(0);
+});
+process.on('SIGTERM', async () => {
+    await flushLangfuse();
+    process.exit(0);
+});
+
 // 직접 실행 시 서버 기동
 startServer();
+

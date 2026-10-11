@@ -13,6 +13,7 @@ import type {
     RecommendationResponse,
     SimulationContextPayload,
 } from '@navigator/shared';
+import { getLangfuseClient } from './langfuse-client';
 
 /** 재시도 설정 */
 const MAX_RETRIES = 3;
@@ -305,6 +306,29 @@ ${userQuery}`;
         console.info(`[LLM] 요청 시작 | session=${sessionId} | query="${userQuery.substring(0, 80)}"`);
         console.info(`[LLM] 컨텍스트 | nodes=${graphContext.nodes.length} edges=${graphContext.edges.length} docs=${documentChunks.length} sim=${!!simulationContext}`);
 
+        // Langfuse Observability 트레이스 시작 (키 미설정 시 null 반환하여 no-op)
+        const langfuse = getLangfuseClient();
+        const trace = langfuse?.trace({
+            name: 'ai-insight-query',
+            sessionId,
+            input: userQuery,
+            tags: [
+                this.classifyIntent(userQuery),
+                simulationContext ? 'with-simulation' : 'without-simulation',
+                simulationContext?.selectedPlan?.emergencyPackage?.statusLevel || 'standard',
+            ],
+            metadata: {
+                scenarioId: simulationContext?.scenarioId,
+                originalDeficitPercentage: simulationContext?.originalDeficitPercentage,
+                selectedPlanTitle: simulationContext?.selectedPlan?.title,
+                statusLevel: simulationContext?.selectedPlan?.emergencyPackage?.statusLevel,
+                coverageRate: simulationContext?.selectedPlan?.emergencyPackage?.coverageRate,
+                nodeCount: graphContext.nodes.length,
+                edgeCount: graphContext.edges.length,
+                retrievedDocCount: documentChunks.length,
+            },
+        });
+
         // 세션 이력 조회 또는 생성
         if (!this.sessions.has(sessionId)) {
             this.sessions.set(sessionId, []);
@@ -319,6 +343,16 @@ ${userQuery}`;
         // 캐시된 데이터가 있고, 문서 청크가 0개가 아니었던 유효 응답일 때만 반환
         if (cached && cached.citations.length > 0 && Date.now() - cached.cachedAt < CACHE_TTL_MS) {
             console.info(`[LLM] ⚡ Exact Match 캐시 적중 (Cache Hit) | key=${cacheKey.substring(0, 10)}... | ${Date.now() - startTime}ms`);
+
+            // Langfuse 캐시 히트 메타데이터 기록
+            trace?.update({
+                output: cached.answer,
+                metadata: {
+                    cacheHit: true,
+                    latencyMs: Date.now() - startTime,
+                    citationsCount: cached.citations.length,
+                },
+            });
 
             // 사용자 메시지 기록
             history.push({
@@ -355,12 +389,34 @@ ${userQuery}`;
         // 모델 미초기화 시 에러 반환
         if (!this.model) {
             console.warn(`[LLM] 실패 | 모델 미초기화 | ${Date.now() - startTime}ms`);
+            trace?.update({
+                output: 'ERROR: Model not initialized',
+                metadata: { error: 'Gemini model not initialized' },
+            });
             return {
                 answer: '',
                 citations: [],
                 sessionId,
                 error: 'LLM 서비스를 사용할 수 없습니다. API 키를 확인해 주세요.',
             };
+        }
+
+        // Langfuse RAG Retrieval Span 기록
+        if (documentChunks.length > 0) {
+            const retrievalSpan = trace?.span({
+                name: 'rag-retrieval',
+                input: userQuery,
+                output: documentChunks.map((doc) => ({
+                    id: doc.id,
+                    source: doc.metadata.source,
+                    documentType: doc.metadata.documentType,
+                    pageNumber: doc.metadata.pageNumber,
+                })),
+                metadata: {
+                    chunkCount: documentChunks.length,
+                },
+            });
+            retrievalSpan?.end();
         }
 
         // 프롬프트 구성
@@ -371,12 +427,33 @@ ${userQuery}`;
         const historyTurns = Math.floor(history.length / 2);
         console.info(`[LLM] API 호출 | mode=${historyTurns > 0 ? 'chat' : 'single'} | history=${historyTurns}턴`);
 
+        // Langfuse LLM Generation Span 생성
+        const generation = trace?.generation({
+            name: 'gemini-generate-content',
+            model: MODEL_NAME,
+            input: prompt,
+            modelParameters: {
+                temperature: 0.2,
+                maxTurns: MAX_HISTORY_TURNS,
+            },
+        });
+
         let result: GenerateContentResult;
         try {
             result = await this.callWithChatHistory(sessionId, prompt);
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
             console.error(`[LLM] API 오류 | ${errorMessage} | ${Date.now() - startTime}ms`);
+
+            generation?.end({
+                output: errorMessage,
+                level: 'ERROR',
+                statusMessage: errorMessage,
+            });
+            trace?.update({
+                output: errorMessage,
+                metadata: { error: errorMessage },
+            });
 
             return {
                 answer: '',
@@ -389,6 +466,11 @@ ${userQuery}`;
         // 응답 텍스트 추출
         const rawResponseText = result.response.text();
 
+        // Langfuse Generation Span 완료
+        generation?.end({
+            output: rawResponseText,
+        });
+
         // 출처 인용 추출 및 본문 인용 번호 정규화 ([1], [2], [3]... 순차 동기화)
         const { citations, normalizedResponseText: responseText } = this.extractCitations(
             rawResponseText,
@@ -398,6 +480,16 @@ ${userQuery}`;
 
         const elapsed = Date.now() - startTime;
         console.info(`[LLM] 응답 완료 | ${elapsed}ms | 답변=${responseText.length}자 | 인용=${citations.length}건`);
+
+        // Langfuse Trace 완료 업데이트
+        trace?.update({
+            output: responseText,
+            metadata: {
+                latencyMs: elapsed,
+                citationsCount: citations.length,
+                citations: citations.map((c) => ({ docIndex: c.docIndex, source: c.source })),
+            },
+        });
 
         // 캐시 저장 (LRU 용량 관리)
         if (this.queryCache.size >= MAX_CACHE_ENTRIES) {
