@@ -107,7 +107,7 @@ export const SCENARIO_PRESETS: ScenarioPreset[] = [
             sourceNodeId: 'MINE_AU_PILBARA',
             disruptionType: 'logistics_disruption',
             severity: 3.0,
-            targetId: 'MINE_AU_PILBARA-REF_KR_POSCO_PILBARA',
+            targetId: 'E-MINE_AU_PILBARA-REF_KR_POSCO_PILBARA',
         },
     },
 ];
