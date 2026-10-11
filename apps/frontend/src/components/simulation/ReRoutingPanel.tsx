@@ -214,12 +214,25 @@ export const ReRoutingPanel: React.FC<ReRoutingPanelProps> = ({
                         let query = '';
 
                         if (pkg && pkg.statusLevel === 'CRITICAL') {
-                            query = `[비상대응 전략 보고서 요청] 중국 수출통제로 LCE 결손량 ${pkg.totalRequiredLithiumTons.toLocaleString()}톤(부족률 ${activeResult.originalDeficitPercentage}%)이 발생하였으나, 비중국계 정제소 스팟 조달은 ${pkg.spotAllocatedTons.toLocaleString()}톤(해결률 ${pkg.coverageRate}%)에 그쳐 공장 셧다운 위기에 직면했습니다.
-정부와 배터리 OEM이 실행해야 할 [다단계 비상 대응 프로토콜(ERP)]에 대해 다음 항목을 포함한 종합 의사결정 전략 보고서를 작성해 줘:
-1. 한국광해광업공단(KOMIR) 등 국가 전략 비축물량(약 ${pkg.steps[1]?.allocatedVolumeTons.toLocaleString()}톤) 긴급 방출 절차 및 대여 조건
-2. 성일하이텍 등 국내 배터리 리사이클러 블랙매스 추출 리튬(약 ${pkg.steps[2]?.allocatedVolumeTons.toLocaleString()}톤) 긴급 배정 방안
-3. 완성차 OEM과의 납기 협상, 불가항력(Force Majeure) 통보 요건 및 하이니켈 감산/LFP·HEV 제품 믹스 전환 전략
-4. 미국 IRA FEOC 긴급 예외(Safe Harbor) 적용을 위한 대미 통상 외교 대응 방안`;
+                            // 현재 시뮬레이션에서 실제로 결손이 발생한 말단 노드 목록 추출
+                            const simResult = useSimulationStore.getState().result;
+                            const allNodes = useSupplyChainStore.getState().nodes;
+                            const nodeMap = new Map(allNodes.map(n => [n.id, n]));
+                            
+                            const deficitNodes = (simResult?.deficits || [])
+                                .filter(d => d.deficitPercentage > 0 && d.nodeId !== 'GLOBAL_TOTAL')
+                                .map(d => {
+                                    const node = nodeMap.get(d.nodeId);
+                                    return node ? `${node.name}(${node.country}, ${node.type})` : d.nodeId;
+                                });
+                            const deficitNodesText = deficitNodes.length > 0 ? deficitNodes.join(', ') : '영향 노드';
+
+                            query = `[비상대응 전략 보고서 요청] 핵심광물 공급 차질로 LCE 결손량 ${pkg.totalRequiredLithiumTons.toLocaleString()}톤(부족률 ${activeResult.originalDeficitPercentage}%)이 발생하였으나, 스팟 우회 조달은 ${pkg.spotAllocatedTons.toLocaleString()}톤(해결률 ${pkg.coverageRate}%)에 그쳤습니다.
+현재 결손이 발생한 대상 노드[${deficitNodesText}]의 소재 국가(국내 vs 해외) 및 공정·화학조성 특성을 종합 분석하여, 정부와 글로벌 완성차/배터리 제조사가 실행해야 할 [다단계 비상 대응 프로토콜(ERP)] 종합 의사결정 전략 보고서를 작성해 줘:
+1. 소재국가별 전략 비축물량 방출: 결손 사업장의 국가별(국내 KOMIR, 해외 현지 비축기구 등) 비축물량 긴급 대여 및 글로벌 OEM 전략 안전재고 스왑 절차
+2. 권역별 폐배터리 리사이클링 긴급 회수: 국내 및 인근 권역별 리사이클러(블랙매스 추출 리튬 화합물) 긴급 배정 방안
+3. 공정/화학조성별 수요 관리 및 감산: 배터리 타입별(LFP, 삼원계 NCM 등) 원료 전환 및 일시 감산, 완성차 OEM 납기 조정 및 불가항력(Force Majeure) 통보 요건
+4. 주요국 통상 규제(IRA FEOC / EU CRMA) 긴급 예외(Safe Harbor) 적용을 위한 정부·기업 간 통상 외교 대응 방안`;
                         } else {
                             query = `현재 시뮬레이션에서 발생한 리튬 공급 결손(원래 부족률 ${activeResult.originalDeficitPercentage}%)에 대해 ${currentPlan.title} (${currentPlan.options.map(o => o.sourceName).join(', ')}) 대체 공급망이 제안되었습니다. 이 대체 공급망의 IRA Section 30D / FEOC 규제 적격성과 IEA/USGS 수급 타당성을 종합 분석해 줘.`;
                         }
