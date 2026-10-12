@@ -16,6 +16,8 @@ export interface PortalTooltipProps {
     triggerClassName?: string;
     /** 비활성화 여부 */
     disabled?: boolean;
+    /** 트리거 래퍼 태그 (기본값: 'span') */
+    as?: 'span' | 'div';
 }
 
 /**
@@ -31,10 +33,11 @@ export function PortalTooltip({
     className = '',
     triggerClassName = '',
     disabled = false,
+    as: Component = 'span',
 }: PortalTooltipProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
-    const triggerRef = useRef<HTMLDivElement>(null);
+    const triggerRef = useRef<HTMLElement>(null);
 
     const updatePosition = () => {
         if (triggerRef.current) {
@@ -115,14 +118,14 @@ export function PortalTooltip({
     };
 
     return (
-        <div
-            ref={triggerRef}
+        <Component
+            ref={triggerRef as any}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
             className={`inline-flex items-center shrink-0 ${triggerClassName}`}
         >
             {children}
             {renderTooltip()}
-        </div>
+        </Component>
     );
 }
