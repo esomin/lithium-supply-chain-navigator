@@ -284,6 +284,11 @@ export function computeIndividualReroutingOptions(
         const plans = [p1, p2, p3].filter((p): p is ReroutingProposalPlan => p !== undefined);
         if (plans.length === 0) continue;
 
+        if (p1 && p2 && p1.totalExtraCostUsd === p2.totalExtraCostUsd && p1.averageExtraLeadTimeDays === p2.averageExtraLeadTimeDays) {
+            p1.title = '비용·시간 단일 최적안';
+            p2.title = '비용·시간 단일 최적안';
+        }
+
         const defaultPlan = plans.find((p) => p.criterion === defaultCriterion) || plans[0];
         const targetCapacity = Number(targetNode.metadata?.productionCapacity) || 50000;
         const targetCapacityUnit = (targetNode.metadata?.capacityUnit as string) || '';

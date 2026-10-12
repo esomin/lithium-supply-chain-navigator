@@ -215,6 +215,18 @@ export function computeGlobalReroutingOption(
         };
     });
 
+    // 1안(비용)과 2안(시간)의 추가 비용 및 리드타임이 동일한지 판단하여 단일 최적안 타이틀 동기화
+    const plan1 = globalPlans.find((p) => p.planNumber === 1);
+    const plan2 = globalPlans.find((p) => p.planNumber === 2);
+    const isIdentical = plan1 && plan2 &&
+        plan1.totalExtraCostUsd === plan2.totalExtraCostUsd &&
+        plan1.averageExtraLeadTimeDays === plan2.averageExtraLeadTimeDays;
+
+    if (isIdentical && plan1) {
+        plan1.title = '비용·시간 단일 최적안';
+        if (plan2) plan2.title = '비용·시간 단일 최적안';
+    }
+
     const defaultGlobalPlan = globalPlans.find((p) => p.criterion === defaultCriterion) || globalPlans[0];
 
     return {

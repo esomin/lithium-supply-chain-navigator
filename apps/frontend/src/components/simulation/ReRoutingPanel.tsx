@@ -81,36 +81,35 @@ export const ReRoutingPanel: React.FC<ReRoutingPanelProps> = ({
                         <Route className="w-3.5 h-3.5 text-muted-foreground" />
                         통합 대체 공급망 시나리오
                     </div>
+                    {isIdenticalPlan && (
+                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-[3px] text-primary border border-[#0EA5E9]/50 tracking-tight">
+                            비용·시간 단일 최적안
+                        </span>
+                    )}
                 </div>
 
-                {/* 2. 언더바 형태 탭 (1안/2안 결과 동일 시 단일 최적안 통합 표시) */}
-                {plans.length > 0 && (
+                {/* 2. 언더바 형태 탭 (1안과 2안이 서로 다를 때만 탭 표시) */}
+                {plans.length > 0 && !isIdenticalPlan && (
                     <div className="flex border-b border-border/40 text-xs shrink-0">
-                        {isIdenticalPlan ? (
-                            <div className="flex-1 py-1.5 text-center font-semibold text-primary border-b-2 border-primary -mb-[1px]">
-                                비용·시간 단일 최적안
-                            </div>
-                        ) : (
-                            plans
-                                .filter((p) => p.planNumber !== 3 /* 3안(밸런스) 탭 숨김 처리 */)
-                                .map((p) => {
-                                    const isSelected = p.planNumber === selectedPlanNumber;
-                                    const label = p.criterion === 'cost' ? '비용 우선' : p.criterion === 'leadTime' ? '시간 우선' : '밸런스';
-                                    return (
-                                        <button
-                                            key={p.planNumber}
-                                            type="button"
-                                            onClick={() => setSelectedPlanNumber(p.planNumber)}
-                                            className={`flex-1 py-1.5 text-center transition-all cursor-pointer font-medium -mb-[1px] border-b-2 ${isSelected
-                                                ? 'border-primary text-primary font-semibold'
-                                                : 'border-transparent text-muted-foreground hover:text-foreground'
-                                                }`}
-                                        >
-                                            {p.planNumber}안 ({label})
-                                        </button>
-                                    );
-                                })
-                        )}
+                        {plans
+                            .filter((p) => p.planNumber !== 3 /* 3안(밸런스) 탭 숨김 처리 */)
+                            .map((p) => {
+                                const isSelected = p.planNumber === selectedPlanNumber;
+                                const label = p.criterion === 'cost' ? '비용 우선' : p.criterion === 'leadTime' ? '시간 우선' : '밸런스';
+                                return (
+                                    <button
+                                        key={p.planNumber}
+                                        type="button"
+                                        onClick={() => setSelectedPlanNumber(p.planNumber)}
+                                        className={`flex-1 py-1.5 text-center transition-all cursor-pointer font-medium -mb-[1px] border-b-2 ${isSelected
+                                            ? 'border-primary text-primary font-semibold'
+                                            : 'border-transparent text-muted-foreground hover:text-foreground'
+                                            }`}
+                                    >
+                                        {p.planNumber}안 ({label})
+                                    </button>
+                                );
+                            })}
                     </div>
                 )}
 
@@ -259,7 +258,7 @@ export const ReRoutingPanel: React.FC<ReRoutingPanelProps> = ({
                             useSupplyChainStore.getState().setShowAIPanel(true);
                         }}
                         className={`w-full h-8 font-semibold text-xs py-2 rounded-[4px] shadow-sm border cursor-pointer transition-all duration-200 flex items-center justify-center gap-1.5 group ${currentPlan.emergencyPackage?.statusLevel === 'CRITICAL'
-                            ? 'bg-[#fbbf24]/10 hover:bg-[#fbbf24]/20 text-[#fef3c7] border-[#fbbf24]/40 hover:border-[#fbbf24]/70 ring-1 ring-[#fbbf24]/20 shadow-[#fbbf24]/10'
+                            ? 'bg-[#fbbf24]/10 hover:bg-[#fbbf24]/20 text-[#fef3c7] border-[#fbbf24]/40 hover:border-[#fbbf24]/70'
                             : 'bg-white/10 hover:bg-white/20 text-white border-white/25 hover:border-white/45'
                             }`}
                         title={currentPlan.emergencyPackage?.statusLevel === 'CRITICAL' ? '구조적 결손 극복을 위한 비상 대응 종합 전략 보고서를 AI에게 요청합니다.' : '선택된 대체 공급망의 규제 검증 질의를 AI 입력창에 자동으로 입력합니다.'}
