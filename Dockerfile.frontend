@@ -12,8 +12,9 @@ COPY packages/pipeline/package.json ./packages/pipeline/
 COPY apps/frontend/package.json ./apps/frontend/
 COPY apps/backend/package.json ./apps/backend/
 
-# 의존성 설치
-RUN npm ci
+# 의존성 설치: Docker BuildKit 캐시 마운트 + 불필요한 audit/fund 생략
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --prefer-offline --no-audit --no-fund
 
 # 소스 코드 복사
 COPY packages ./packages

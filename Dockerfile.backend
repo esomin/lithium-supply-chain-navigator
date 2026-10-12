@@ -11,12 +11,13 @@ COPY packages/pipeline/package.json ./packages/pipeline/
 COPY apps/backend/package.json ./apps/backend/
 COPY apps/frontend/package.json ./apps/frontend/
 
-# 의존성 설치 (production + build tools like tsx)
-RUN npm ci
+# 의존성 설치: Docker BuildKit 캐시 마운트 + 불필요한 audit/fund 생략
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --prefer-offline --no-audit --no-fund
 
-# 소스 코드 및 데이터 복사
-COPY packages ./packages
-COPY apps/backend ./apps/backend
+# 소스 코드 및 데이터 복사 (복사 시 소유자 지정)
+COPY --chown=node:node packages ./packages
+COPY --chown=node:node apps/backend ./apps/backend
 
 # 환경변수 기본값
 ENV NODE_ENV=production
@@ -24,8 +25,7 @@ ENV PORT=3001
 
 EXPOSE 3001
 
-# 권한 설정 및 node 사용자 실행
-RUN chown -R node:node /app
+# [최적화]: 수분 이상 소요되던 RUN chown -R node:node /app 제거
 USER node
 
 # 백엔드 서버 기동
