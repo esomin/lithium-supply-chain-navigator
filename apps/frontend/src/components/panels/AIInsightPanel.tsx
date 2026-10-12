@@ -916,11 +916,11 @@ function MessageBubble({ message }: { message: ChatMessage }) {
                 </button>
 
                 {/* 메시지 내용 (컴팩트 text-[11px] 기준 비례 타이포그래피 적용) */}
-                <div className={`m-0 break-words ${isUser ? 'text-[11px] leading-relaxed font-normal whitespace-pre-wrap' : 'prose prose-invert prose-xs text-[11px] max-w-none prose-headings:font-bold prose-headings:text-slate-100'}`}>
+                <div className={`m-0 break-words ${isUser ? 'text-[12px] leading-relaxed font-normal whitespace-pre-wrap' : 'prose prose-invert prose-xs text-[12px] max-w-none prose-headings:font-bold prose-headings:text-slate-100'}`}>
                     <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
                         components={{
-                            p: ({ children }) => <p className={`leading-relaxed ${isUser ? 'm-0 text-[11px]' : ''}`}>{isUser ? children : renderNodeWithBadges(children)}</p>,
+                            p: ({ children }) => <p className={`leading-relaxed ${isUser ? 'm-0' : ''}`}>{isUser ? children : renderNodeWithBadges(children)}</p>,
                             li: ({ children }) => <li>{isUser ? children : renderNodeWithBadges(children)}</li>,
                             strong: ({ children }) => <strong className="font-bold text-white">{children}</strong>,
                             em: ({ children }) => <em className="italic text-slate-200">{children}</em>,
@@ -1036,7 +1036,7 @@ function CitationList({
                                     <span>{meta.organization}</span>
                                 </div>
 
-                                <div className="m-0 text-slate-300 text-[11px] leading-relaxed line-clamp-3 bg-slate-900/60 p-2 rounded border border-slate-800/50 font-sans prose prose-invert prose-xs max-w-none [&>p]:m-0 [&>p]:leading-relaxed [&>ul]:m-0 [&>ul]:pl-3.5 [&>ol]:m-0 [&>ol]:pl-3.5 [&>li]:m-0 [&>strong]:text-white [&>strong]:font-semibold [&>h1]:text-[11.5px] [&>h1]:font-semibold [&>h1]:text-white [&>h1]:m-0 [&>h1]:mt-1 [&>h2]:text-[11.5px] [&>h2]:font-semibold [&>h2]:text-white [&>h2]:m-0 [&>h2]:mt-1 [&>h3]:text-[11px] [&>h3]:font-semibold [&>h3]:text-slate-200 [&>h3]:m-0 [&>h3]:mt-1 [&>hr]:my-1">
+                                <div className="m-0 text-slate-300 leading-relaxed line-clamp-3 bg-slate-900/60 p-2 rounded border border-slate-800/50 font-sans [&>p]:m-0 [&>p]:leading-relaxed [&>ul]:m-0 [&>ul]:pl-3.5 [&>ol]:m-0 [&>ol]:pl-3.5 [&>li]:m-0 [&>strong]:text-white [&>strong]:font-semibold [&>h1]:text-inherit [&>h1]:font-semibold [&>h1]:text-white [&>h1]:m-0 [&>h1]:mt-1 [&>h2]:text-inherit [&>h2]:font-semibold [&>h2]:text-white [&>h2]:m-0 [&>h2]:mt-1 [&>h3]:text-inherit [&>h3]:font-semibold [&>h3]:text-slate-200 [&>h3]:m-0 [&>h3]:mt-1 [&>hr]:my-1">
                                     <ReactMarkdown>
                                         {citation.content}
                                     </ReactMarkdown>
@@ -1155,7 +1155,7 @@ function DocumentViewerModal({
                 {/* 인용 요약 배너 */}
                 <div className="px-5 py-2.5 bg-slate-950/60 border-b border-slate-800 flex items-start gap-2 text-xs">
                     <span className="font-medium text-slate-400 shrink-0 text-[11px] mt-0.5">[참조 단락]</span>
-                    <div className="m-0 text-slate-300 line-clamp-3 text-[11px] leading-relaxed prose prose-invert prose-xs max-w-none [&>p]:m-0 [&>p]:leading-relaxed [&>ul]:m-0 [&>ul]:pl-3.5 [&>ol]:m-0 [&>ol]:pl-3.5 [&>li]:m-0 [&>strong]:text-white [&>strong]:font-semibold [&>h1]:text-xs [&>h1]:font-bold [&>h2]:text-xs [&>h2]:font-bold [&>h3]:text-xs [&>h3]:font-semibold [&>hr]:my-1">
+                    <div className="m-0 text-slate-300 line-clamp-3 leading-relaxed [&>p]:m-0 [&>p]:leading-relaxed [&>ul]:m-0 [&>ul]:pl-3.5 [&>ol]:m-0 [&>ol]:pl-3.5 [&>li]:m-0 [&>strong]:text-white [&>strong]:font-semibold [&>h1]:text-inherit [&>h1]:font-bold [&>h2]:text-inherit [&>h2]:font-bold [&>h3]:text-inherit [&>h3]:font-semibold [&>hr]:my-1">
                         <ReactMarkdown>
                             {citation.content}
                         </ReactMarkdown>
