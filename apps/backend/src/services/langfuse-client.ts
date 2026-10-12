@@ -16,7 +16,7 @@ export function getLangfuseClient(): Langfuse | null {
     isInitialized = true;
     const publicKey = process.env.LANGFUSE_PUBLIC_KEY;
     const secretKey = process.env.LANGFUSE_SECRET_KEY;
-    const baseUrl = process.env.LANGFUSE_BASEURL || 'https://cloud.langfuse.com';
+    const baseUrl = process.env.LANGFUSE_BASE_URL || process.env.LANGFUSE_BASEURL || 'https://cloud.langfuse.com';
 
     if (!publicKey || !secretKey) {
         console.info('[Langfuse] API 키 미설정: LLM 추적(Tracing)이 비활성화된 상태로 안전하게 실행됩니다.');

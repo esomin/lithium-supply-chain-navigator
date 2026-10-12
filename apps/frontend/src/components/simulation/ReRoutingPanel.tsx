@@ -124,18 +124,28 @@ export const ReRoutingPanel: React.FC<ReRoutingPanelProps> = ({
                                         <AlertTriangle className="w-3.5 h-3.5 text-[#fbbf24] shrink-0" />
                                         <span>구조적 수급 한계 경보 (CRITICAL)</span>
                                     </div>
-                                    <span className="text-[9px] font-mono font-medium px-1.5 py-0.2 rounded bg-background/80 text-foreground border border-border/50">
+                                    <span className="text-[9.5px] font-mono text-muted-foreground">
                                         해결률 {currentPlan.emergencyPackage.coverageRate}%
                                     </span>
                                 </div>
                                 <div className="text-[9.5px] text-muted-foreground leading-relaxed pl-5">
-                                    비중국계 정제소 여유 캐파 한계로 스팟 우회만으로는 대부분 잔여합니다. 다단계 비상 대응 프로토콜(ERP) 검토가 필요합니다.
+                                    비중국계 정제소 여유 캐파 한계로 스팟 우회만으로는 대부분 잔여합니다. 다단계 비상 대응 프로토콜 검토가 필요합니다.
                                 </div>
                             </div>
                         ) : currentPlan.emergencyPackage.statusLevel === 'MODERATE' ? (
-                            <div className="px-2 py-1 rounded-[4px] bg-muted/30 border border-border/40 flex items-center justify-between text-[10px]">
-                                <span className="font-medium text-foreground/90">부분 조달 주의 (MODERATE)</span>
-                                <span className="text-muted-foreground text-[9px]">해결률 {currentPlan.emergencyPackage.coverageRate}%</span>
+                            <div className="px-2.5 py-2 rounded-[4px] bg-muted/40 border border-border/70 flex flex-col gap-1 shadow-2xs">
+                                <div className="flex items-center justify-between text-[10px]">
+                                    <div className="flex items-center gap-1.5 font-semibold text-foreground tracking-tight">
+                                        <AlertTriangle className="w-3.5 h-3.5 text-[#fbbf24] shrink-0" />
+                                        <span>부분 조달 주의 (MODERATE)</span>
+                                    </div>
+                                    <span className="text-[9.5px] font-mono text-muted-foreground">
+                                        해결률 {currentPlan.emergencyPackage.coverageRate}%
+                                    </span>
+                                </div>
+                                <div className="text-[9.5px] text-muted-foreground leading-relaxed pl-5">
+                                    우회 조달을 통해 일부 결손을 충당하나 잔여 리스크가 존재합니다. 추가적인 공급망 다변화 및 전략 비축 검토를 권장합니다.
+                                </div>
                             </div>
                         ) : (
                             <div className="px-2 py-1 rounded-[4px] bg-muted/30 border border-border/40 flex items-center justify-between text-[10px]">
@@ -229,11 +239,12 @@ export const ReRoutingPanel: React.FC<ReRoutingPanelProps> = ({
                             const deficitNodesText = deficitNodes.length > 0 ? deficitNodes.join(', ') : '영향 노드';
 
                             query = `[비상대응 전략 보고서 요청] 핵심광물 공급 차질로 LCE 결손량 ${pkg.totalRequiredLithiumTons.toLocaleString()}톤(부족률 ${activeResult.originalDeficitPercentage}%)이 발생하였으나, 스팟 우회 조달은 ${pkg.spotAllocatedTons.toLocaleString()}톤(해결률 ${pkg.coverageRate}%)에 그쳤습니다.
-현재 결손이 발생한 대상 노드[${deficitNodesText}]의 소재 국가(국내 vs 해외) 및 공정·화학조성 특성을 종합 분석하여, 정부와 글로벌 완성차/배터리 제조사가 실행해야 할 [다단계 비상 대응 프로토콜(ERP)] 종합 의사결정 전략 보고서를 작성해 줘:
+현재 결손이 발생한 대상 노드[${deficitNodesText}]의 소재 국가(국내 vs 해외) 및 공정·화학조성 특성을 종합 분석하여, 정부와 글로벌 완성차/배터리 제조사가 실행해야 할 [다단계 비상 대응 프로토콜] 종합 의사결정 전략 보고서를 작성해 줘:
 1. 소재국가별 전략 비축물량 방출: 결손 사업장의 국가별(국내 KOMIR, 해외 현지 비축기구 등) 비축물량 긴급 대여 및 글로벌 OEM 전략 안전재고 스왑 절차
 2. 권역별 폐배터리 리사이클링 긴급 회수: 국내 및 인근 권역별 리사이클러(블랙매스 추출 리튬 화합물) 긴급 배정 방안
 3. 공정/화학조성별 수요 관리 및 감산: 배터리 타입별(LFP, 삼원계 NCM 등) 원료 전환 및 일시 감산, 완성차 OEM 납기 조정 및 불가항력(Force Majeure) 통보 요건
-4. 주요국 통상 규제(IRA FEOC / EU CRMA) 긴급 예외(Safe Harbor) 적용을 위한 정부·기업 간 통상 외교 대응 방안`;
+4. 주요국 통상 규제(IRA FEOC / EU CRMA) 긴급 예외(Safe Harbor) 적용을 위한 정부·기업 간 통상 외교 대응 방안
+5. [결론]: 초기 공급 부족률(${activeResult.originalDeficitPercentage}%)에서 1단계 스팟 우회(${currentPlan.remainingDeficitPercentage.toFixed(1)}%) ➔ 2단계 정부 비축 ➔ 3단계 리사이클링 ➔ 4단계 감산/제품 전환 적용 시, 최종 수요처 평균 부족률이 단계별로 몇 %까지 줄어드는지 확보량(톤)과 함께 종합 요약표와 핵심 대응 방안으로 정리해 줘.`;
                         } else {
                             query = `현재 시뮬레이션에서 발생한 리튬 공급 결손(원래 부족률 ${activeResult.originalDeficitPercentage}%)에 대해 ${currentPlan.title} (${currentPlan.options.map(o => o.sourceName).join(', ')}) 대체 공급망이 제안되었습니다. 이 대체 공급망의 IRA Section 30D / FEOC 규제 적격성과 IEA/USGS 수급 타당성을 종합 분석해 줘.`;
                         }
@@ -241,14 +252,22 @@ export const ReRoutingPanel: React.FC<ReRoutingPanelProps> = ({
                         useSupplyChainStore.getState().setDraftAIQuery(query);
                         useSupplyChainStore.getState().setShowAIPanel(true);
                     }}
-                    className="w-full shrink-0 mt-1 h-8 font-medium text-xs py-2 rounded-[4px] shadow-sm border cursor-pointer transition-colors duration-200 flex items-center justify-center gap-1.5 bg-muted/30 hover:bg-muted/60 border-border/60 hover:border-border text-foreground"
+                    className={`w-full shrink-0 mt-1 h-8 font-semibold text-xs py-2 rounded-[4px] shadow-sm border cursor-pointer transition-all duration-200 flex items-center justify-center gap-1.5 group ${
+                        currentPlan.emergencyPackage?.statusLevel === 'CRITICAL'
+                            ? 'bg-[#fbbf24]/10 hover:bg-[#fbbf24]/20 text-[#fef3c7] border-[#fbbf24]/40 hover:border-[#fbbf24]/70 ring-1 ring-[#fbbf24]/20 shadow-[#fbbf24]/10'
+                            : 'bg-white/10 hover:bg-white/20 text-white border-white/25 hover:border-white/45'
+                    }`}
                     title={currentPlan.emergencyPackage?.statusLevel === 'CRITICAL' ? '구조적 결손 극복을 위한 비상 대응 종합 전략 보고서를 AI에게 요청합니다.' : '선택된 대체 공급망의 규제 검증 질의를 AI 입력창에 자동으로 입력합니다.'}
                 >
-                    <GiDiamonds className="w-3 h-3 shrink-0 text-primary" />
+                    <GiDiamonds className={`w-3.5 h-3.5 shrink-0 transition-transform group-hover:scale-110 ${
+                        currentPlan.emergencyPackage?.statusLevel === 'CRITICAL'
+                            ? 'text-[#fbbf24] drop-shadow-[0_0_6px_rgba(251,191,36,0.6)]'
+                            : 'text-primary drop-shadow-[0_0_4px_rgba(59,130,246,0.6)]'
+                    }`} />
                     <span className="tracking-tight text-[11px]">
                         {currentPlan.emergencyPackage?.statusLevel === 'CRITICAL'
-                            ? '다단계 비상 대응 전략 보고서 AI 생성'
-                            : '이 대체 공급망으로 AI에게 질문하기'}
+                            ? '비상 대응 전략 AI 보고서 생성'
+                            : '대체 공급망 AI 타당성 검증'}
                     </span>
                 </Button>
             </div>

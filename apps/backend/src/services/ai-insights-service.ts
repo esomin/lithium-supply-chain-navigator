@@ -167,7 +167,19 @@ export class AIInsightsService {
                 simulationSection += `- **선택된 대체 공급망 방안**: ${plan.title} (결손 해소 후 잔여 결손율: ${plan.remainingDeficitPercentage ?? 0}%)
 - **대체 공급원(Alternative Source) 수급 배분 현황**:
 ${plan.allocations.map(a => `  * [${a.rank ? `${a.rank}차 ` : ''}대체 공급처] ${a.sourceNode}: 공급 배분량 ${a.allocatedVolume ?? 'N/A'} (결손 해소 기여도 ${a.contributionPercentage ?? 'N/A'})${a.targetNode ? ` ➔ (차질 대상: ${a.targetNode})` : ''}`).join('\n')}
+`;
+                if (plan.emergencyPackage) {
+                    const ep = plan.emergencyPackage;
+                    simulationSection += `
+- **다단계 비상 대응 패키지 산출 지표**:
+  * 상태 등급: ${ep.statusLevel} (해결률: ${ep.coverageRate}%, 잔여 부족률: ${ep.residualDeficitPercentage}%)
+  * 총 LCE 원료 필요량: ${ep.totalRequiredLithiumTons?.toLocaleString()}톤, 1단계 스팟 조달량: ${ep.spotAllocatedTons?.toLocaleString()}톤
+  * 단계별 대응 계획:
+${(ep.steps || []).map((s: any) => `    - [${s.stepNumber}단계: ${s.name}] 배정량 ${s.allocatedVolumeTons?.toLocaleString()}톤 (해소 기여도 +${s.reliefPercentage}%p) | ${s.agencyOrSource}`).join('\n')}
+`;
+                }
 
+                simulationSection += `
 > [중요 분석 지침]
 > - 위 **대체 공급처(POSCO Pilbara, Umicore Cheonan, Pilgangoora 등)**는 결손을 메우기 위해 신규로 투입된 '대체 공급망 노드'입니다.
 > - 기존에 차질(결손)을 겪고 있던 다운스트림 수용처(예: EcoPro BM Pohang, Hunan Yuneng 등)와 '대체 공급처'를 절대 혼동하지 마세요.
@@ -193,7 +205,7 @@ ${plan.allocations.map(a => `  * [${a.rank ? `${a.rank}차 ` : ''}대체 공급�
 4. **양극재 플랜트와 정제소 원료 투입비율 (Cathode to LCE/LiOH) 및 수급 타당성 평가**:
    - 양극재(Cathode/CAM) 1톤 생산에는 화학양론적으로 약 **0.45~0.50톤의 정제 리튬 화합물(LCE/LiOH)**이 투입됩니다.
    - 시스템의 최적화 엔진은 정제소(POSCO Pilbara 4.3만톤, Umicore Cheonan 8.0만톤 등)의 연간 생산용량 한도 내에서 여유 가용 캐파를 초과하지 않도록 안전하게 분배합니다.
-5. **다단계 비상 대응 프로토콜 (Emergency Response Protocol - ERP)**:
+5. **다단계 비상 대응 프로토콜 (Emergency Protocol)**:
    - 핵심광물 공급 차질로 스팟 조달만으로 결손을 해소하기 어려울 때(잔여 부족률 > 30%의 CRITICAL 상황):
    - 질문에 제시된 **실제 결손 노드들의 국가 거점(한국, 중국, 미국, 유럽 등) 및 배터리 양극재 화학조성(LFP-탄산리튬 vs 삼원계 NCM/NCA-수산화리튬)을 동적으로 판별**하여 맞춤형 대응책을 제시하세요:
      1) **1단계 (글로벌 스팟 톨링 & 스왑 조달)**: 결손 사업장 인접 정제소 및 글로벌 비계열 톨링 정제소의 유휴/전환 캐파 긴급 배분.
@@ -203,7 +215,12 @@ ${plan.allocations.map(a => `  * [${a.rank ? `${a.rank}차 ` : ''}대체 공급�
      3) **3단계 (권역별 폐배터리 리사이클링 긴급 회수)**:
         - 해당 사업장 관할 권역 내 주요 배터리 리사이클러(한국 성일하이텍/포스코HY클린메탈, 중국 Brunp, 북미 Redwood Materials, 유럽 Umicore 등)의 블랙매스 추출 원료 우선 배정.
      4) **4단계 (수요 관리 및 화학조성(Chemistry)별 제품 믹스 전환)**:
-        - 결손 공정의 화학조성(LFP vs 삼원계)에 맞추어 저품위 대체 원료 전환, 일시 감산 스케줄링, 리튬 절약형(HEV 등) 팩 전환, 고객사 불가항력(Force Majeure) 통보 협상 로드맵 제시.`;
+        - 결손 공정의 화학조성(LFP vs 삼원계)에 맞추어 저품위 대체 원료 전환, 일시 감산 스케줄링, 리튬 절약형(HEV 등) 팩 전환, 고객사 불가항력(Force Majeure) 통보 협상 로드맵 제시.
+     5) **결론 - 단계별 결손 해소 및 평균 부족률 감축 로드맵**:
+        - 보고서 말미의 결론 섹션에는 **초기 부족률에서 최종 0%까지 단계별로 어떻게 줄어드는지(Waterfall) 종합 요약표**를 작성하세요.
+        - (컬럼 구성: 단계 | 대응 수단 | 확보/절감량(톤) | 해소 기여도(%p) | 잔여 결손량(톤) | 최종 수요처 평균 부족률)
+        - 표 내부에는 긴 HTML 태그 대신 간결한 텍스트를 사용하세요.
+        - 표 하단에는 경영진 및 정책 입안자를 위한 골든타임(D+1~7일), 중기 방어(D+14일~), 통상 외교 3대 핵심 대응 방안을 요약 제시하세요.`;
 
         if (intent === 'GENERAL_MARKET') {
             return `## Role & Instructions

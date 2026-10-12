@@ -5,6 +5,7 @@ import { GiDiamonds } from 'react-icons/gi';
 import { LuCopy, LuCheck } from 'react-icons/lu';
 import { FiFileText, FiSend, FiChevronRight, FiExternalLink, FiX, FiSearch, FiGlobe, FiPlus, FiCheck } from 'react-icons/fi';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { useSupplyChainStore } from '../../store/supply-chain-store';
 import { useSimulationStore } from '../../store/simulation-store';
 import { PortalTooltip } from '../ui/portal-tooltip';
@@ -121,6 +122,7 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
                     allocatedVolume: opt.allocatedVolumeTons !== undefined ? `${opt.allocatedVolumeTons.toLocaleString()} tons` : undefined,
                     contributionPercentage: opt.coveredDeficitPercentage !== undefined ? `${opt.coveredDeficitPercentage}%p` : undefined,
                 })),
+                emergencyPackage: currentActivePlan.emergencyPackage,
             } : null,
         }
         : null;
@@ -377,7 +379,7 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
 
     return (
         <aside
-            className="fixed top-0 right-0 w-[580px] max-w-[92vw] h-full bg-card/95 backdrop-blur-md border-l border-border shadow-2xl z-40 flex flex-col animate-slide-in text-foreground"
+            className="fixed top-0 right-0 w-[720px] max-w-[94vw] h-full bg-card/95 backdrop-blur-md border-l border-border shadow-2xl z-40 flex flex-col animate-slide-in text-foreground"
             aria-label="AI 인사이트 패널"
         >
             {/* 헤더 */}
@@ -826,7 +828,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
         }
     };
 
-    // 텍스트 내 [문서 N], [N], [출처: ...] 패턴을 감지하여 시안 뱃지로 변환하고, 일반 텍스트 부분은 용어 툴팁 파싱 적용
+    // 텍스트 내 [문서 N], [N], [출처: ...] 패턴을 감지하여 세련된 상단 첨자(Superscript) 링크로 변환하고, 일반 텍스트 부분은 용어 툴팁 파싱 적용
     const renderNodeWithBadges = (node: React.ReactNode): React.ReactNode => {
         if (typeof node === 'string') {
             const parts = node.split(/(\[문서\s*\d+\]|\[\d+\]|\[출처:\s*[^\]]+\])/g);
@@ -836,18 +838,22 @@ function MessageBubble({ message }: { message: ChatMessage }) {
 
             return parts.map((part, i) => {
                 if (/^\[(문서\s*\d+|\d+|출처:\s*[^\]]+)\]$/.test(part)) {
+                    // [1] 또는 [문서 1] 형태에서 숫자만 추출할 수 있는지 확인
+                    const numMatch = part.match(/\d+/);
+                    const label = numMatch ? `[${numMatch[0]}]` : part;
+
                     return (
-                        <span
+                        <sup
                             key={i}
                             onClick={(e) => {
                                 e.stopPropagation();
                                 handleBadgeClick(part);
                             }}
-                            className="inline-flex items-center px-1.5 py-0.2 mx-0.5 text-[11px] font-mono font-bold rounded bg-primary/15 text-primary select-none hover:bg-primary/25 hover:underline transition-all cursor-pointer"
+                            className="inline-block px-1 py-0 mx-0.5 text-[9.5px] font-mono font-semibold text-cyan-400 bg-cyan-950/40 hover:bg-cyan-900/60 border border-cyan-800/50 rounded cursor-pointer select-none transition-all hover:underline hover:text-cyan-300"
                             title="클릭하여 참조 원문 보기"
                         >
-                            {part}
-                        </span>
+                            {label}
+                        </sup>
                     );
                 }
                 return renderTextWithGlossary(part);
@@ -874,7 +880,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
     return (
         <div className={`group flex ${isUser ? 'justify-end' : 'justify-start'}`}>
             <div
-                className={`max-w-[92%] rounded-xl text-xs relative border shadow-md transition-all ${isUser
+                className={`max-w-[96%] rounded-xl text-xs relative border shadow-md transition-all ${isUser
                     ? 'bg-primary text-primary-foreground border-primary/50 rounded-br-xs pl-4 pr-9 py-3'
                     : 'bg-slate-900/95 text-slate-100 border-slate-700/80 rounded-bl-xs pl-4 pr-10 py-3 backdrop-blur-md'
                     }`}
@@ -901,12 +907,24 @@ function MessageBubble({ message }: { message: ChatMessage }) {
                 {/* 메시지 내용 (선명한 명도 대비와 가독성) */}
                 <div className="m-0 leading-relaxed break-words space-y-2 [&>p]:mb-1.5 [&>p]:leading-relaxed [&>ul]:list-disc [&>ul]:pl-4 [&>ul]:space-y-1 [&>ol]:list-decimal [&>ol]:pl-4 [&>ol]:space-y-1 [&>h3]:text-[13px] [&>h3]:font-bold [&>h3]:text-primary [&>h3]:mt-2 [&>h4]:text-xs [&>h4]:font-bold [&>h4]:text-slate-200 [&>strong]:text-white [&>code]:bg-slate-800 [&>code]:px-1 [&>code]:py-0.5 [&>code]:rounded [&>code]:text-primary/90">
                     <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
                         components={{
                             p: ({ children }) => <p className="mb-1.5 leading-relaxed">{isUser ? children : renderNodeWithBadges(children)}</p>,
                             li: ({ children }) => <li>{isUser ? children : renderNodeWithBadges(children)}</li>,
                             strong: ({ children }) => <strong className="font-bold text-white">{children}</strong>,
                             em: ({ children }) => <em className="italic text-slate-200">{children}</em>,
-                            td: ({ children }) => <td>{isUser ? children : renderNodeWithBadges(children)}</td>,
+                            table: ({ children }) => (
+                                <div className="my-2.5 overflow-x-auto rounded border border-slate-700/80 bg-slate-950/60 shadow-xs">
+                                    <table className="w-full text-left text-[11px] border-collapse min-w-[480px]">
+                                        {children}
+                                    </table>
+                                </div>
+                            ),
+                            thead: ({ children }) => <thead className="bg-slate-800/80 border-b border-white/20 font-semibold text-white">{children}</thead>,
+                            tbody: ({ children }) => <tbody className="divide-y divide-slate-800/80 text-slate-300">{children}</tbody>,
+                            tr: ({ children }) => <tr className="hover:bg-slate-800/40 transition-colors">{children}</tr>,
+                            th: ({ children }) => <th className="px-2.5 py-1.5 whitespace-nowrap text-white font-semibold">{isUser ? children : renderNodeWithBadges(children)}</th>,
+                            td: ({ children }) => <td className="px-2.5 py-1.5 align-middle leading-snug">{isUser ? children : renderNodeWithBadges(children)}</td>,
                         }}
                     >
                         {message.content}
@@ -925,7 +943,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
                 {(import.meta.env.VITE_SHOW_MESSAGE_TIMESTAMP === 'true' ||
                     (import.meta.env.DEV && import.meta.env.VITE_SHOW_MESSAGE_TIMESTAMP !== 'false')) && (
                         <span
-                            className={`absolute bottom-1.5 text-[9px] font-mono opacity-60 pointer-events-none ${isUser ? 'left-2 text-primary-foreground/70' : 'right-2 text-slate-400'
+                            className={`absolute bottom-0.5 text-[9px] font-mono opacity-60 pointer-events-none ${isUser ? 'left-2 text-primary-foreground/70' : 'right-2 text-slate-400'
                                 }`}
                         >
                             {new Date(message.timestamp).toLocaleTimeString('ko-KR', {
