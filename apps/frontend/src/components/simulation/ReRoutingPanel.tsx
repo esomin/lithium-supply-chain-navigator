@@ -199,81 +199,82 @@ export const ReRoutingPanel: React.FC<ReRoutingPanelProps> = ({
                         : `+$${currentPlan.totalExtraCostUsd.toLocaleString()}`;
 
                     return (
-                        <div className="pt-2 border-t border-border/40 flex flex-col gap-1 text-[11px] text-muted-foreground shrink-0 px-0.5">
-                            {/* 1행: 비용 & 총 조달량 */}
-                            <div className="flex items-center justify-between whitespace-nowrap">
-                                <span className="text-[10.5px]">
+                        <div className="pt-2 border-t border-border/40 flex flex-col gap-1.5 text-[11px] text-muted-foreground shrink-0 px-0.5">
+                            {/* 1행: 추가비용, 총 조달량, 리드타임 */}
+                            <div className="flex items-center justify-between whitespace-nowrap text-[10px]">
+                                <span>
                                     추가비용 <strong className="text-emerald-400 font-semibold">{costFormatted}</strong>
                                 </span>
-                                <span className="text-[10.5px] text-foreground/90 font-medium">
+                                <span>
                                     총 조달량: <strong className="font-semibold text-foreground">{totalAllocatedTons.toLocaleString()}톤</strong>
                                 </span>
-                            </div>
-                            {/* 2행: 리드타임 & 부족률 해소 */}
-                            <div className="flex items-center justify-between whitespace-nowrap text-[10px]">
                                 <span>
                                     리드타임 <strong className="text-emerald-400 font-semibold">+{currentPlan.averageExtraLeadTimeDays}일</strong>
                                 </span>
+                            </div>
+
+                            {/* 2행: 최종 수요처 평균 부족률 */}
+                            <div className="flex items-center justify-end whitespace-nowrap text-[10px]">
                                 <span>
-                                    {activeResult.isGlobalCombined ? '최종 수요처 평균 부족률' : '부족률'}: <strong className="text-foreground">{activeResult.originalDeficitPercentage.toFixed(1)}%</strong> → <strong className="text-foreground font-semibold">{currentPlan.remainingDeficitPercentage.toFixed(1)}%</strong>
+                                    {activeResult.isGlobalCombined ? '평균 부족률' : '부족률'}: <strong className="text-muted-foreground">{activeResult.originalDeficitPercentage.toFixed(1)}%</strong> <span className="text-emerald-400 font-bold mx-0.5">→</span> <strong className="text-emerald-400 font-semibold">{currentPlan.remainingDeficitPercentage.toFixed(1)}%</strong>
                                 </span>
                             </div>
                         </div>
                     );
                 })()}
 
-                {/* 5. AI 인사이트 연계 버튼 (정제된 전문가용 톤앤매너) */}
-                <Button
-                    type="button"
-                    onClick={() => {
-                        const pkg = currentPlan.emergencyPackage;
-                        let query = '';
+                {/* 5. AI 인사이트 연계 버튼 (하단 고정 Sticky Footer) */}
+                <div className="sticky bottom-0 z-10 pt-2 pb-0.5 bg-background/95 backdrop-blur-sm border-t border-border/40 shrink-0 mt-2">
+                    <Button
+                        type="button"
+                        onClick={() => {
+                            const pkg = currentPlan.emergencyPackage;
+                            let query = '';
 
-                        if (pkg && pkg.statusLevel === 'CRITICAL') {
-                            // 현재 시뮬레이션에서 실제로 결손이 발생한 말단 노드 목록 추출
-                            const simResult = useSimulationStore.getState().result;
-                            const allNodes = useSupplyChainStore.getState().nodes;
-                            const nodeMap = new Map(allNodes.map(n => [n.id, n]));
-                            
-                            const deficitNodes = (simResult?.deficits || [])
-                                .filter(d => d.deficitPercentage > 0 && d.nodeId !== 'GLOBAL_TOTAL')
-                                .map(d => {
-                                    const node = nodeMap.get(d.nodeId);
-                                    return node ? `${node.name}(${node.country}, ${node.type})` : d.nodeId;
-                                });
-                            const deficitNodesText = deficitNodes.length > 0 ? deficitNodes.join(', ') : '영향 노드';
+                            if (pkg && pkg.statusLevel === 'CRITICAL') {
+                                // 현재 시뮬레이션에서 실제로 결손이 발생한 말단 노드 목록 추출
+                                const simResult = useSimulationStore.getState().result;
+                                const allNodes = useSupplyChainStore.getState().nodes;
+                                const nodeMap = new Map(allNodes.map(n => [n.id, n]));
 
-                            query = `[비상대응 전략 보고서 요청] 핵심광물 공급 차질로 LCE 결손량 ${pkg.totalRequiredLithiumTons.toLocaleString()}톤(부족률 ${activeResult.originalDeficitPercentage}%)이 발생하였으나, 스팟 우회 조달은 ${pkg.spotAllocatedTons.toLocaleString()}톤(해결률 ${pkg.coverageRate}%)에 그쳤습니다.
+                                const deficitNodes = (simResult?.deficits || [])
+                                    .filter(d => d.deficitPercentage > 0 && d.nodeId !== 'GLOBAL_TOTAL')
+                                    .map(d => {
+                                        const node = nodeMap.get(d.nodeId);
+                                        return node ? `${node.name}(${node.country}, ${node.type})` : d.nodeId;
+                                    });
+                                const deficitNodesText = deficitNodes.length > 0 ? deficitNodes.join(', ') : '영향 노드';
+
+                                query = `[비상대응 전략 보고서 요청] 핵심광물 공급 차질로 LCE 결손량 ${pkg.totalRequiredLithiumTons.toLocaleString()}톤(부족률 ${activeResult.originalDeficitPercentage}%)이 발생하였으나, 스팟 우회 조달은 ${pkg.spotAllocatedTons.toLocaleString()}톤(해결률 ${pkg.coverageRate}%)에 그쳤습니다.
 현재 결손이 발생한 대상 노드[${deficitNodesText}]의 소재 국가(국내 vs 해외) 및 공정·화학조성 특성을 종합 분석하여, 정부와 글로벌 완성차/배터리 제조사가 실행해야 할 [다단계 비상 대응 프로토콜] 종합 의사결정 전략 보고서를 아래 3개 대제목 구조로 작성해 줘:
 
 1. 결손 대상 노드 특성 분석
 2. 다단계 비상 대응 프로토콜 (2.1 스팟 우회 / 2.2 정부 비축 / 2.3 폐배터리 리사이클링 / 2.4 수요 관리·감산 / 2.5 통상 외교 예외 대응)
 3. 결론: 단계별 결손 해소 및 평균 부족률 감축 로드맵 (초기 부족률 ${activeResult.originalDeficitPercentage}% ➔ 스팟 우회 ${currentPlan.remainingDeficitPercentage.toFixed(1)}% ➔ 정부 비축 ➔ 리사이클링 ➔ 감산/제품 전환 적용 시, 최종 수요처 평균 부족률 단계별 종합 요약표 및 핵심 대응 방안)`;
-                        } else {
-                            query = `현재 시뮬레이션에서 발생한 리튬 공급 결손(원래 부족률 ${activeResult.originalDeficitPercentage}%)에 대해 ${currentPlan.title} (${currentPlan.options.map(o => o.sourceName).join(', ')}) 대체 공급망이 제안되었습니다. 이 대체 공급망의 IRA Section 30D / FEOC 규제 적격성과 IEA/USGS 수급 타당성을 종합 분석해 줘.`;
-                        }
+                            } else {
+                                query = `현재 시뮬레이션에서 발생한 리튬 공급 결손(원래 부족률 ${activeResult.originalDeficitPercentage}%)에 대해 ${currentPlan.title} (${currentPlan.options.map(o => o.sourceName).join(', ')}) 대체 공급망이 제안되었습니다. 이 대체 공급망의 IRA Section 30D / FEOC 규제 적격성과 IEA/USGS 수급 타당성을 종합 분석해 줘.`;
+                            }
 
-                        useSupplyChainStore.getState().setDraftAIQuery(query);
-                        useSupplyChainStore.getState().setShowAIPanel(true);
-                    }}
-                    className={`w-full shrink-0 mt-1 h-8 font-semibold text-xs py-2 rounded-[4px] shadow-sm border cursor-pointer transition-all duration-200 flex items-center justify-center gap-1.5 group ${
-                        currentPlan.emergencyPackage?.statusLevel === 'CRITICAL'
+                            useSupplyChainStore.getState().setDraftAIQuery(query);
+                            useSupplyChainStore.getState().setShowAIPanel(true);
+                        }}
+                        className={`w-full h-8 font-semibold text-xs py-2 rounded-[4px] shadow-sm border cursor-pointer transition-all duration-200 flex items-center justify-center gap-1.5 group ${currentPlan.emergencyPackage?.statusLevel === 'CRITICAL'
                             ? 'bg-[#fbbf24]/10 hover:bg-[#fbbf24]/20 text-[#fef3c7] border-[#fbbf24]/40 hover:border-[#fbbf24]/70 ring-1 ring-[#fbbf24]/20 shadow-[#fbbf24]/10'
                             : 'bg-white/10 hover:bg-white/20 text-white border-white/25 hover:border-white/45'
-                    }`}
-                    title={currentPlan.emergencyPackage?.statusLevel === 'CRITICAL' ? '구조적 결손 극복을 위한 비상 대응 종합 전략 보고서를 AI에게 요청합니다.' : '선택된 대체 공급망의 규제 검증 질의를 AI 입력창에 자동으로 입력합니다.'}
-                >
-                    <GiDiamonds className={`w-3.5 h-3.5 shrink-0 transition-transform group-hover:scale-110 ${
-                        currentPlan.emergencyPackage?.statusLevel === 'CRITICAL'
+                            }`}
+                        title={currentPlan.emergencyPackage?.statusLevel === 'CRITICAL' ? '구조적 결손 극복을 위한 비상 대응 종합 전략 보고서를 AI에게 요청합니다.' : '선택된 대체 공급망의 규제 검증 질의를 AI 입력창에 자동으로 입력합니다.'}
+                    >
+                        <GiDiamonds className={`w-3.5 h-3.5 shrink-0 transition-transform group-hover:scale-110 ${currentPlan.emergencyPackage?.statusLevel === 'CRITICAL'
                             ? 'text-[#fbbf24] drop-shadow-[0_0_6px_rgba(251,191,36,0.6)]'
                             : 'text-primary drop-shadow-[0_0_4px_rgba(59,130,246,0.6)]'
-                    }`} />
-                    <span className="tracking-tight text-[11px]">
-                        {currentPlan.emergencyPackage?.statusLevel === 'CRITICAL'
-                            ? '비상 대응 전략 AI 보고서 생성'
-                            : '대체 공급망 AI 타당성 검증'}
-                    </span>
-                </Button>
+                            }`} />
+                        <span className="tracking-tight text-[11px]">
+                            {currentPlan.emergencyPackage?.statusLevel === 'CRITICAL'
+                                ? 'AI 비상 대응 전략 보고서 생성'
+                                : 'AI 타당성 검증'}
+                        </span>
+                    </Button>
+                </div>
             </div>
 
             {/* 수급 세부 내역 상세 모달 */}
