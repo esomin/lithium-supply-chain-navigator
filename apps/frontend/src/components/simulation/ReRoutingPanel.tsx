@@ -121,7 +121,7 @@ export const ReRoutingPanel: React.FC<ReRoutingPanelProps> = ({
                             <div className="px-2.5 py-2 rounded-[4px] bg-muted/40 border border-border/70 flex flex-col gap-1 shadow-2xs">
                                 <div className="flex items-center justify-between text-[10px]">
                                     <div className="flex items-center gap-1.5 font-semibold text-foreground tracking-tight">
-                                        <AlertTriangle className="w-3.5 h-3.5 text-primary shrink-0" />
+                                        <AlertTriangle className="w-3.5 h-3.5 text-[#fbbf24] shrink-0" />
                                         <span>구조적 수급 한계 경보 (CRITICAL)</span>
                                     </div>
                                     <span className="text-[9px] font-mono font-medium px-1.5 py-0.2 rounded bg-background/80 text-foreground border border-border/50">

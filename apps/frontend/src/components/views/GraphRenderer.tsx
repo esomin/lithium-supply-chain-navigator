@@ -33,8 +33,8 @@ export function GraphRenderer({
     isSimulationOpen,
     onToggleSimulation,
 }: GraphRendererProps) {
-    // 보기 기준 (색상 표현 기준) 선택 상태 ('country' | 'nodeType' | 'risk') - 디폴트: 'nodeType'
-    const [colorMode, setColorMode] = useState<ColorMode>('nodeType');
+    // 보기 기준 (색상 표현 기준) 선택 상태 ('country' | 'nodeType' | 'risk') - useSupplyChainStore에서 전역 동기화
+    const { colorMode, setColorMode, selectedNodeId } = useSupplyChainStore();
 
     // 복잡도 감소를 위해 'Resource' 노드 및 관련 엣지 필터링
     const filteredNodes = useMemo(() => nodes.filter((n) => n.type !== 'Resource'), [nodes]);
@@ -52,7 +52,6 @@ export function GraphRenderer({
     const [isGraphReady, setIsGraphReady] = useState(false);
 
     // 스토어에서 선택된 노드 및 우회 경로 상태 조회
-    const { selectedNodeId } = useSupplyChainStore();
     const { activeRerouteOptions, isRerouteApplied, selectedPlanNumber } = useSimulationStore((state) => ({
         activeRerouteOptions: state.activeRerouteOptions,
         isRerouteApplied: state.isRerouteApplied,
@@ -798,7 +797,7 @@ export function GraphRenderer({
                                     onChange={() => setColorMode('risk')}
                                     className="w-3.5 h-3.5 accent-primary cursor-pointer"
                                 />
-                                <span>리스크별</span>
+                                <span>리스크 등급별</span>
                             </label>
                         </div>
                     </div>

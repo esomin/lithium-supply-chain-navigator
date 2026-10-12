@@ -7,10 +7,11 @@ import { NodeDetailPanel } from '../components/panels/NodeDetailPanel';
 import { TraceabilityPanel } from '../components/panels/TraceabilityPanel';
 import { SimulationPanel } from '../components/simulation/SimulationPanel';
 import { AIInsightPanel } from '../components/panels/AIInsightPanel';
-import { Play } from 'lucide-react';
+import { Play, Info } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { toast } from 'sonner';
 import { AppHeader } from '../components/common/AppHeader';
+import { PortalTooltip } from '../components/ui/portal-tooltip';
 // 공급망 그래프 시각화 페이지 (Phase 1 메인 뷰)
 export function GraphView() {
     const {
@@ -27,6 +28,7 @@ export function GraphView() {
         isLoading,
         showAIPanel,
         setShowAIPanel,
+        colorMode,
     } = useSupplyChainStore();
 
     // 시뮬레이션 결과 및 실행 상태 가져오기
@@ -378,72 +380,152 @@ export function GraphView() {
                 {/* 시뮬레이션 제어 패널 */}
                 {showSimulation && <SimulationPanel onClose={() => setShowSimulation(false)} />}
 
-                {/* 범례 */}
+                {/* 범례 — 현재 시각화 모드(colorMode)에 동적으로 대응 */}
                 <div
-                    className="absolute bottom-4 left-4 bg-muted/80 border border-border text-foreground rounded-lg p-3 text-xs shadow-lg z-[5] pointer-events-auto backdrop-blur-md"
+                    className="absolute bottom-4 left-4 bg-muted/80 border border-border text-foreground rounded-lg p-3 text-xs shadow-lg z-[5] pointer-events-auto backdrop-blur-md min-w-[200px]"
                     aria-label="그래프 범례"
                 >
-                    <div className="font-bold mb-1 text-foreground">국가</div>
-                    <div className="flex gap-2 flex-wrap mb-2 text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                            <span className="inline-block w-3 h-3 rounded-full bg-[rgba(0,188,212,0.8)]" />{' '}
-                            한국
-                        </span>
-                        <span className="flex items-center gap-1">
-                            <span className="inline-block w-3 h-3 rounded-full bg-[rgba(93,52,14,0.8)]" />{' '}
-                            중국
-                        </span>
-                        <span className="flex items-center gap-1">
-                            <span className="inline-block w-3 h-3 rounded-full bg-[rgba(0,57,166,0.8)]" />{' '}
-                            칠레
-                        </span>
-                        <span className="flex items-center gap-1">
-                            <span className="inline-block w-3 h-3 rounded-full bg-[rgba(123,104,238,0.8)]" />{' '}
-                            미국
-                        </span>
-                        <span className="flex items-center gap-1">
-                            <span className="inline-block w-3 h-3 rounded-full bg-[rgba(255,105,180,0.8)]" />{' '}
-                            일본
-                        </span>
-                        <span className="flex items-center gap-1">
-                            <span className="inline-block w-3 h-3 rounded-full bg-[rgba(117,190,233,0.8)]" />{' '}
-                            아르헨티나
-                        </span>
-                        <span className="flex items-center gap-1">
-                            <span className="inline-block w-3 h-3 rounded-full bg-[rgba(255,193,7,0.8)]" />{' '}
-                            호주
-                        </span>
-                    </div>
-                    <div className="font-bold mb-1 text-foreground">노드 타입</div>
-                    <div className="flex gap-2 flex-wrap mb-2 text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                            <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-muted-foreground/30 text-[9px] font-bold text-foreground">M</span>{' '}
-                            광산
-                        </span>
-                        <span className="flex items-center gap-1">
-                            <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-muted-foreground/30 text-[9px] font-bold text-foreground">R</span>{' '}
-                            정제소
-                        </span>
-                        <span className="flex items-center gap-1">
-                            <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-muted-foreground/30 text-[9px] font-bold text-foreground">P</span>{' '}
-                            양극재 플랜트
-                        </span>
-                    </div>
-                    <div className="font-bold mb-1 text-foreground">리스크</div>
-                    <div className="flex gap-2 text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                            <span className="inline-block w-3 h-3 rounded-full bg-[#b7eb8f]" />{' '}
-                            저위험
-                        </span>
-                        <span className="flex items-center gap-1">
-                            <span className="inline-block w-3 h-3 rounded-full bg-[#ffc95e]" />{' '}
-                            중위험
-                        </span>
-                        <span className="flex items-center gap-1">
-                            <span className="inline-block w-3 h-3 rounded-full bg-[#ffa39e]" />{' '}
-                            고위험
-                        </span>
-                    </div>
+                    {colorMode === 'nodeType' && (
+                        <div>
+                            <div className="font-bold mb-1.5 text-foreground">
+                                노드 타입
+                            </div>
+                            <div className="flex flex-col gap-1.5 text-muted-foreground">
+                                <span className="flex items-center gap-2">
+                                    <span
+                                        className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold text-white shadow-xs"
+                                        style={{ backgroundColor: '#10B981' }}
+                                    >
+                                        M
+                                    </span>
+                                    <span className="font-medium text-foreground">광산</span>
+                                    <span className="text-[10px] text-muted-foreground font-mono">(Mine)</span>
+                                </span>
+                                <span className="flex items-center gap-2">
+                                    <span
+                                        className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold text-white shadow-xs"
+                                        style={{ backgroundColor: '#F59E0B' }}
+                                    >
+                                        R
+                                    </span>
+                                    <span className="font-medium text-foreground">정제소</span>
+                                    <span className="text-[10px] text-muted-foreground font-mono">(Refinery)</span>
+                                </span>
+                                <span className="flex items-center gap-2">
+                                    <span
+                                        className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold text-white shadow-xs"
+                                        style={{ backgroundColor: 'rgba(91, 134, 195, 1)' }}
+                                    >
+                                        P
+                                    </span>
+                                    <span className="font-medium text-foreground">양극재 플랜트</span>
+                                    <span className="text-[10px] text-muted-foreground font-mono">(Plant)</span>
+                                </span>
+                            </div>
+                        </div>
+                    )}
+
+                    {colorMode === 'country' && (
+                        <div>
+                            <div className="font-bold mb-1.5 text-foreground">
+                                국가
+                            </div>
+                            <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-muted-foreground">
+                                <span className="flex items-center gap-1.5">
+                                    <span className="inline-block w-3 h-3 rounded-full bg-[rgba(0,188,212,0.8)]" />
+                                    한국
+                                </span>
+                                <span className="flex items-center gap-1.5">
+                                    <span className="inline-block w-3 h-3 rounded-full bg-[rgba(93,52,14,0.8)]" />
+                                    중국
+                                </span>
+                                <span className="flex items-center gap-1.5">
+                                    <span className="inline-block w-3 h-3 rounded-full bg-[rgba(0,57,166,0.8)]" />
+                                    칠레
+                                </span>
+                                <span className="flex items-center gap-1.5">
+                                    <span className="inline-block w-3 h-3 rounded-full bg-[rgba(123,104,238,0.8)]" />
+                                    미국
+                                </span>
+                                <span className="flex items-center gap-1.5">
+                                    <span className="inline-block w-3 h-3 rounded-full bg-[rgba(255,105,180,0.8)]" />
+                                    일본
+                                </span>
+                                <span className="flex items-center gap-1.5">
+                                    <span className="inline-block w-3 h-3 rounded-full bg-[rgba(117,190,233,0.8)]" />
+                                    아르헨티나
+                                </span>
+                                <span className="flex items-center gap-1.5">
+                                    <span className="inline-block w-3 h-3 rounded-full bg-[rgba(255,193,7,0.8)]" />
+                                    호주
+                                </span>
+                            </div>
+                            <div className="mt-2 pt-2 border-t border-border/50 text-[10px] text-muted-foreground flex gap-2">
+                                <span><strong>M</strong> 광산</span>
+                                <span><strong>R</strong> 정제소</span>
+                                <span><strong>P</strong> 플랜트</span>
+                            </div>
+                        </div>
+                    )}
+
+                    {colorMode === 'risk' && (
+                        <div>
+                            <div className="font-bold mb-1.5 text-foreground flex items-center justify-between">
+                                <div className="flex items-center gap-1.5">
+                                    <span>SRIL 리스크 등급</span>
+                                    <PortalTooltip
+                                        content={
+                                            <div className="space-y-1.5 text-left">
+                                                <div className="font-bold text-foreground text-xs border-b border-border/60 pb-1">
+                                                    SRIL (공급 리스크 지표)
+                                                </div>
+                                                <p className="text-[11px] leading-relaxed text-muted-foreground">
+                                                    <strong>HHI (공급 집중도)</strong>, <strong>WGI (국가 거버넌스 안정성)</strong>, <strong>네트워크 취약성(Vulnerability)</strong>을 결합하여 산출한 종합 리스크 점수(0~100)입니다.
+                                                </p>
+                                                <div className="pt-1 text-[10px] text-muted-foreground/80 space-y-0.5">
+                                                    <div>• 저위험 (&lt;15): 수급 및 운영 안정</div>
+                                                    <div>• 중위험 (15~25): 지정학·집중도 주의</div>
+                                                    <div>• 고위험 (&gt;25): 공급 차질 취약 노드</div>
+                                                </div>
+                                            </div>
+                                        }
+                                        side="top"
+                                        width={260}
+                                    >
+                                        <button
+                                            type="button"
+                                            className="inline-flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                                            aria-label="SRIL 리스크 등급 설명"
+                                        >
+                                            <Info className="w-3.5 h-3.5 text-muted-foreground hover:text-primary transition-colors" />
+                                        </button>
+                                    </PortalTooltip>
+                                </div>
+                            </div>
+                            <div className="flex flex-col gap-1.5 text-muted-foreground">
+                                <span className="flex items-center gap-2">
+                                    <span className="inline-block w-3 h-3 rounded-full bg-[#b7eb8f]" />
+                                    <span className="font-medium text-foreground">저위험</span>
+                                    <span className="text-[10px] text-muted-foreground font-mono">(&lt; 15)</span>
+                                </span>
+                                <span className="flex items-center gap-2">
+                                    <span className="inline-block w-3 h-3 rounded-full bg-[#ffc95e]" />
+                                    <span className="font-medium text-foreground">중위험</span>
+                                    <span className="text-[10px] text-muted-foreground font-mono">(15 ~ 25)</span>
+                                </span>
+                                <span className="flex items-center gap-2">
+                                    <span className="inline-block w-3 h-3 rounded-full bg-[#ffa39e]" />
+                                    <span className="font-medium text-foreground">고위험</span>
+                                    <span className="text-[10px] text-muted-foreground font-mono">(&gt; 25)</span>
+                                </span>
+                            </div>
+                            <div className="mt-2 pt-2 border-t border-border/50 text-[10px] text-muted-foreground flex gap-2">
+                                <span><strong>M</strong> 광산</span>
+                                <span><strong>R</strong> 정제소</span>
+                                <span><strong>P</strong> 플랜트</span>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </main>
         </div>

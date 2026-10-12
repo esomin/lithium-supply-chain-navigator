@@ -27,6 +27,7 @@ export interface SupplyChainState {
     showAIPanel: boolean;
     pendingAIQuery: string | null;
     draftAIQuery: string | null;
+    colorMode: 'nodeType' | 'country' | 'risk';
 
     // 액션
     setNodes: (nodes: SupplyChainNode[]) => void;
@@ -38,6 +39,7 @@ export interface SupplyChainState {
     setZoomLevel: (zoomLevel: number) => void;
     setShowAIPanel: (show: boolean) => void;
     toggleAIPanel: () => void;
+    setColorMode: (mode: 'nodeType' | 'country' | 'risk') => void;
     triggerAIQuery: (query: string) => void;
     clearPendingAIQuery: () => void;
     setDraftAIQuery: (query: string) => void;
@@ -64,6 +66,7 @@ export const useSupplyChainStore = create<SupplyChainState>((set) => ({
     showAIPanel: false,
     pendingAIQuery: null,
     draftAIQuery: null,
+    colorMode: 'nodeType',
 
     // 노드 데이터 설정
     setNodes: (nodes) => set({ nodes }),
@@ -93,6 +96,9 @@ export const useSupplyChainStore = create<SupplyChainState>((set) => ({
     setShowAIPanel: (showAIPanel) => set({ showAIPanel }),
     toggleAIPanel: () => set((state) => ({ showAIPanel: !state.showAIPanel })),
 
+    // 시각화 색상 기준 설정
+    setColorMode: (colorMode) => set({ colorMode }),
+
     // 외부에서 AI 패널 열기 및 질의 트리거 (즉시 전송)
     triggerAIQuery: (query) => set({ showAIPanel: true, pendingAIQuery: query }),
     clearPendingAIQuery: () => set({ pendingAIQuery: null }),
@@ -114,5 +120,6 @@ export const useSupplyChainStore = create<SupplyChainState>((set) => ({
             showAIPanel: false,
             pendingAIQuery: null,
             draftAIQuery: null,
+            colorMode: 'nodeType',
         }),
 }));
