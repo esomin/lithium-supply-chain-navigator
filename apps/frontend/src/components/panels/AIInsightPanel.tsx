@@ -601,51 +601,51 @@ interface SourceMeta {
     isGraph?: boolean;
 }
 
-function getSourceMeta(source: string): SourceMeta {
-    const s = source.toLowerCase();
-    if (s.includes('ira-feoc-guidance')) {
+function getSourceMeta(source: string, sourceTag?: string): SourceMeta {
+    const s = `${source} ${sourceTag || ''}`.toLowerCase();
+    if (s.includes('ira-feoc') || s.includes('ira_feoc')) {
         return {
             title: '미국 IRA §30D 해외우려기관(FEOC) 최종 규정 요약',
             organization: 'IRS / 미국 재무부',
             category: '법령/규제',
         };
     }
-    if (s.includes('irs-notice-2026-15')) {
+    if (s.includes('irs-notice') || s.includes('irs_notice')) {
         return {
             title: 'IRS Notice 2026-15 계약 지배력 및 실효 통제권 기준',
             organization: '미국 국세청 (IRS)',
             category: '가이드라인',
         };
     }
-    if (s.includes('treasury-30d-value-add')) {
+    if (s.includes('treasury-30d') || s.includes('treasury_30d')) {
         return {
             title: '미국 재무부 핵심광물 50% 부가가치 산정 기준',
             organization: '미국 재무부 (US Treasury)',
             category: '법령/규제',
         };
     }
-    if (s.includes('us-au-critical-minerals')) {
+    if (s.includes('us-au-critical') || s.includes('usa_au_framework')) {
         return {
             title: '미-호 핵심광물 공급망 전략 협력 프레임워크',
             organization: '미국-호주 정부 협정',
             category: '국가협정',
         };
     }
-    if (s.includes('iea-lithium-outlook')) {
+    if (s.includes('iea-lithium') || s.includes('iea_outlook')) {
         return {
             title: 'IEA 글로벌 리튬 시장 수급 전망 보고서 (2025)',
             organization: '국제에너지기구 (IEA)',
             category: '시장전망',
         };
     }
-    if (s.includes('usgs-lithium')) {
+    if (s.includes('usgs-lithium') || s.includes('usgs_lithium')) {
         return {
             title: 'USGS 리튬 광물 상품 요약 통계 (2025)',
             organization: '미국 지질조사국 (USGS)',
             category: '통계보고서',
         };
     }
-    if (s.includes('그래프') || s.includes('공급망')) {
+    if (s.includes('그래프') || s.includes('공급망') || s.includes('graph_topology')) {
         return {
             title: '실시간 리튬 공급망 토폴로지 네트워크',
             organization: '공급망 엔진',
@@ -786,24 +786,30 @@ function MessageBubble({ message }: { message: ChatMessage }) {
     const handleBadgeClick = (matchedText: string) => {
         if (!message.citations || message.citations.length === 0) return;
 
-        // [문서 2], [2] 등 숫자 추출
+        // 1. [1], [문서 1] 등 번호 추출
         const numMatch = matchedText.match(/\d+/);
         if (numMatch) {
             const num = parseInt(numMatch[0], 10);
-            // 1. 단일 docIndex 또는 복수 docIndices 매칭
-            const found = message.citations.find(c => 
-                c.docIndex === num || (c.docIndices && c.docIndices.includes(num))
-            );
-            if (found) {
-                setSelectedCitation(found);
+            // 1-1. 순차 docIndex 매칭 (Idea A로 재색인된 1, 2, 3...)
+            const foundBySeq = message.citations.find(c => c.docIndex === num);
+            if (foundBySeq) {
+                setSelectedCitation(foundBySeq);
                 return;
             }
-            // 2. docIndex가 없거나 1-indexed 배열 인덱스로 조회
+            // 1-2. 원본 청크 docIndices 매칭
+            const foundByDocIndices = message.citations.find(c => 
+                c.docIndices && c.docIndices.includes(num)
+            );
+            if (foundByDocIndices) {
+                setSelectedCitation(foundByDocIndices);
+                return;
+            }
+            // 1-3. 1-indexed 배열 인덱스로 조회
             if (message.citations[num - 1]) {
                 setSelectedCitation(message.citations[num - 1]);
                 return;
             }
-            // 3. 인덱스 번호가 주입된 청크 범위를 벗어난 경우 가장 연관도 높은 첫 번째 출처 모달로 안전하게 fallback
+            // 1-4. 안전 fallback: 첫 번째 인용
             if (message.citations.length > 0) {
                 setSelectedCitation(message.citations[0]);
                 return;
@@ -811,29 +817,38 @@ function MessageBubble({ message }: { message: ChatMessage }) {
             return;
         }
 
-        // 출처명 매칭 ([출처: ...])
-        const clean = matchedText.replace(/[\[\]]/g, '').replace(/^출처:\s*/, '').trim().toLowerCase();
+        // 2. [출처: TAG], [TAG] 형태 매칭
+        const clean = matchedText.replace(/[\[\]]/g, '').replace(/^(출처|문서):\s*/, '').trim().toLowerCase();
         if (clean.length >= 2) {
-            const foundByName = message.citations.find(c => {
+            // sourceTag 또는 source명으로 매칭
+            const foundByTagOrName = message.citations.find(c => {
+                const tag = (c.sourceTag || '').toLowerCase();
                 const src = c.source.toLowerCase();
-                return src.includes(clean) || clean.includes(src);
+                return tag === clean || tag.includes(clean) || clean.includes(tag) ||
+                    src.includes(clean) || clean.includes(src);
             });
-            if (foundByName) {
-                setSelectedCitation(foundByName);
+            if (foundByTagOrName) {
+                setSelectedCitation(foundByTagOrName);
+                return;
             }
+        }
+
+        // 3. 최후 fallback
+        if (message.citations.length > 0) {
+            setSelectedCitation(message.citations[0]);
         }
     };
 
-    // 텍스트 내 [문서 N], [N], [출처: ...] 패턴을 감지하여 세련된 상단 첨자(Superscript) 링크로 변환하고, 일반 텍스트 부분은 용어 툴팁 파싱 적용
+    // 텍스트 내 [문서 N], [N], [출처: ...], [TAG] 패턴을 감지하여 세련된 상단 첨자(Superscript) 링크로 변환하고, 일반 텍스트 부분은 용어 툴팁 파싱 적용
     const renderNodeWithBadges = (node: React.ReactNode): React.ReactNode => {
         if (typeof node === 'string') {
-            const parts = node.split(/(\[문서\s*\d+\]|\[\d+\]|\[출처:\s*[^\]]+\])/g);
+            const parts = node.split(/(\[문서\s*\d+\]|\[\d+\]|\[출처:\s*[^\]]+\]|\[문서:\s*[^\]]+\])/g);
             if (parts.length === 1) {
                 return renderTextWithGlossary(node);
             }
 
             return parts.map((part, i) => {
-                if (/^\[(문서\s*\d+|\d+|출처:\s*[^\]]+)\]$/.test(part)) {
+                if (/^\[(문서\s*\d+|\d+|출처:\s*[^\]]+|문서:\s*[^\]]+)\]$/.test(part)) {
                     // [1] 또는 [문서 1] 형태에서 숫자만 추출할 수 있는지 확인
                     const numMatch = part.match(/\d+/);
                     const label = numMatch ? `[${numMatch[0]}]` : part;
@@ -988,7 +1003,7 @@ function CitationList({
             {isExpanded && (
                 <ul className="mt-2.5 m-0 p-0 list-none space-y-2">
                     {citations.map((citation, idx) => {
-                        const meta = getSourceMeta(citation.source);
+                        const meta = getSourceMeta(citation.source, citation.sourceTag);
                         return (
                             <li
                                 key={idx}
@@ -1060,7 +1075,7 @@ function DocumentViewerModal({
     citation: Citation;
     onClose: () => void;
 }) {
-    const meta = getSourceMeta(citation.source);
+    const meta = getSourceMeta(citation.source, citation.sourceTag);
     const [fullContent, setFullContent] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);

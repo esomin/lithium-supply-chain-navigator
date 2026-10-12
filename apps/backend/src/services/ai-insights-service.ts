@@ -237,7 +237,7 @@ ${documentContext}
 1. "분석가로서", "설명해 드리겠습니다"와 같은 자기소개나 불필요한 메타 서두 없이, 첫 문장부터 즉시 핵심 결론과 정량적 데이터로 시작하세요.
 2. 배터리 부문 소비 비중, 주요 소비국 순위 등 수치와 통계를 명확하게 제시하세요. (필요 시 마크다운 표나 글머리 기호 활용)
 3. 제공된 문서에 특정 세부 수치가 없더라도, 글로벌 시장 전문 지식을 적극 활용하여 완결성 있게 설명하세요.
-4. 문서 인용 시 문맥에 맞춰 [1], [2] 또는 [출처: 소스명] 형식의 인덱스 번호로 인라인 표기하세요.
+4. 문서 인용 시 본문에 [출처: 문서태그] (예: [출처: USGS_LITHIUM], [출처: IEA_OUTLOOK]) 형식 또는 [1], [2] 형식으로 인라인 표기하세요.
 
 ## 사용자 질문
 ${userQuery}`;
@@ -257,7 +257,7 @@ ${graphSummary}
 ## 답변 규칙
 1. 서두의 자기소개나 인사말 없이, 첫 문장부터 즉시 출발 광산(Mine) → 중간 정제소(Refinery) → 도착 양극재 플랜트(Plant)의 구체적인 연결 경로로 시작하세요.
 2. 각 시설의 공식 명칭, 국가, 생산 용량(Capacity)을 함께 명시하여 정확성을 높이세요.
-3. 출처는 [출처: 공급망 그래프 토폴로지]로 표기하세요.
+3. 출처는 [출처: GRAPH_TOPOLOGY]로 표기하세요.
 
 ## 사용자 질문
 ${userQuery}`;
@@ -280,7 +280,7 @@ ${documentContext}
 1. 역할 선언이나 장황한 서두 없이, 첫 문장부터 질문에 대한 규제 적격성 및 위험도 판정 결과로 즉시 진입하세요.
 2. 화면 시뮬레이션 분석 데이터가 제공된 경우, 시뮬레이션의 노드별 수급 할당량과 기여도를 근거로 수급 타당성을 실무적으로 분석하세요.
 3. 광산 정광(SC6)과 정제 화합물(LCE/LiOH)의 단위 수율 차이를 정확히 반영하여 수급 병목 여부를 판단하세요.
-4. 문서 인용 시 [1], [2] 또는 [출처: 소스명] 형식의 인덱스 번호로 인라인 표기하세요.
+4. 문서 인용 시 본문에 [출처: 문서태그] (예: [출처: IRA_FEOC], [출처: IRS_NOTICE], [출처: USGS_LITHIUM], [출처: GRAPH_TOPOLOGY]) 형식 또는 [1], [2] 형식으로 인라인 표기하세요.
 5. 불확실하거나 해석의 여지가 있는 부분은 유의사항으로 명시하세요.
 6. 사용자가 비상대응 보고서를 명시적으로 요청하지 않은 경우, "3. 다단계 비상 대응 패키지 분석 및 로드맵"이나 단계별 비상 대응표를 절대 출력하지 마세요. 사용자가 질문한 내용(대체 공급망 적격성 및 수급 타당성)에만 정확히 답변하세요.
 
@@ -923,7 +923,26 @@ JSON 블록 아래에 각 대안에 대한 상세 분석도 포함하세요.`;
     }
 
     /**
-     * 문서 컨텍스트 문자열을 생성한다.
+     * 파일명 또는 소스 경로로부터 표준화된 문서 슬러그(Doc Slug)를 추출한다.
+     */
+    private getDocumentSlug(source: string): string {
+        const s = source.toLowerCase();
+        if (s.includes('usgs-lithium')) return 'USGS_LITHIUM';
+        if (s.includes('iea-lithium')) return 'IEA_OUTLOOK';
+        if (s.includes('ira-feoc')) return 'IRA_FEOC';
+        if (s.includes('irs-notice')) return 'IRS_NOTICE';
+        if (s.includes('treasury-30d')) return 'TREASURY_30D';
+        if (s.includes('us-au-critical')) return 'USA_AU_FRAMEWORK';
+        if (s.includes('그래프') || s.includes('공급망') || s.includes('graph')) return 'GRAPH_TOPOLOGY';
+        
+        // 기타 파일인 경우 파일 기본 이름 정규화
+        const base = source.split('/').pop()?.replace(/\.[^/.]+$/, '').toUpperCase().replace(/[^A-Z0-9_]/g, '_') || 'DOC';
+        return base;
+    }
+
+    /**
+     * 검색된 문서 청크를 프롬프트에 주입할 컨텍스트 문자열로 변환한다.
+     * Idea A: LLM이 환각 없이 인용할 수 있도록 각 문서 청크에 [문서: SLUG] 태그를 명시한다.
      */
     private buildDocumentContext(documentChunks: DocumentChunk[]): string {
         if (documentChunks.length === 0) {
@@ -933,7 +952,8 @@ JSON 블록 아래에 각 대안에 대한 상세 분석도 포함하세요.`;
         let context = '';
         for (let i = 0; i < documentChunks.length; i++) {
             const chunk = documentChunks[i];
-            context += `[${i + 1}] 출처: ${chunk.metadata.source}, 유형: ${chunk.metadata.documentType}\n`;
+            const slug = this.getDocumentSlug(chunk.metadata.source);
+            context += `[${i + 1}] [문서: ${slug}] 출처: ${chunk.metadata.source}, 유형: ${chunk.metadata.documentType}\n`;
             context += `${chunk.content}\n\n`;
         }
 
@@ -941,112 +961,197 @@ JSON 블록 아래에 각 대안에 대한 상세 분석도 포함하세요.`;
     }
 
     /**
-     * LLM 응답에서 출처 인용을 추출하고, 본문의 인용 번호([N])를 실제 인용된 문서 순서([1], [2], ...)로 정규화한다.
-     * 1) [문서 1], [1] 등의 문서 인덱스 번호 기반 동적 매핑
-     * 2) [출처: ...] 명칭 및 본문 내 문서명/출처명 출현 기반 동적 매핑
-     * 3) 실제 인용된 문서들만 모아 [1], [2], [3]... 순차 번호로 본문 텍스트와 citation.docIndex를 1:1 동기화
+     * LLM 응답에서 출처 인용을 추출하고, 본문의 인용 번호([출처: SLUG], [SLUG], [문서 N], [N])를
+     * 실제 인용된 순서대로 [1], [2], [3]... 순차 번호로 100% 동기화하여 재색인(Re-indexing)한다.
+     * (Idea A: 고유 문서 슬러그 기반 매칭 + 인용 번호 자동 재색인 파이프라인)
      */
     private extractCitations(
         responseText: string,
         documentChunks: DocumentChunk[],
         graphContext: GraphContext,
     ): { citations: Citation[]; normalizedResponseText: string } {
-        // 1. [문서 1], [문서 2], [1], [2] 인덱스 패턴 추출
-        const docIndexMatches = [...responseText.matchAll(/\[(?:문서\s*)?(\d+)\]/g)];
-        const citedRawIndices = new Set<number>();
-        for (const match of docIndexMatches) {
-            const num = parseInt(match[1], 10);
-            if (!isNaN(num) && num >= 1 && num <= documentChunks.length) {
-                citedRawIndices.add(num); // 1-based (주입 당시 번호)
-            }
-        }
-
-        // 2. [출처: ...] 명시적 대괄호 패턴 추출
-        const citationPattern = /\[(?:출처:\s*)?([^\]]+)\]/g;
-        const citedNames: string[] = [];
-        let nameMatch: RegExpExecArray | null;
-
-        while ((nameMatch = citationPattern.exec(responseText)) !== null) {
-            const text = nameMatch[1].trim().toLowerCase();
-            if (text && !text.startsWith('문서') && !/^\d+$/.test(text)) {
-                citedNames.push(text);
-            }
-        }
-
-        // 3. DocumentChunk 순회하며 인용된 청크 식별 및 소스별 인덱스 수집
-        const sourceMap = new Map<string, { chunk: DocumentChunk; docIndices: number[] }>();
+        // 1. 소스 및 청크 맵 생성 (소스별, 슬러그별)
+        const slugToSource = new Map<string, string>();
+        const sourceToChunks = new Map<string, DocumentChunk[]>();
+        const sourceToRawIndices = new Map<string, number[]>();
 
         for (let i = 0; i < documentChunks.length; i++) {
             const chunk = documentChunks[i];
-            const originalIndex = i + 1;
-            const source = chunk.metadata.source;
-            const docType = chunk.metadata.documentType;
+            const src = chunk.metadata.source;
+            const slug = this.getDocumentSlug(src);
 
-            // 파일명에서 확장자를 뗀 순수 이름 및 단어 토큰 분리
-            const baseFilename = source.split('/').pop()?.replace(/\.[^/.]+$/, '').toLowerCase() || '';
-            const sourceTokens = baseFilename.split(/[-_\s.]+/).filter(t => t.length >= 2);
+            slugToSource.set(slug.toUpperCase(), src);
+            if (!sourceToChunks.has(src)) {
+                sourceToChunks.set(src, []);
+                sourceToRawIndices.set(src, []);
+            }
+            sourceToChunks.get(src)!.push(chunk);
+            sourceToRawIndices.get(src)!.push(i + 1);
+        }
 
-            // A. 번호 기반 인용 매칭 ([문서 1], [1])
-            const isIndexMatched = citedRawIndices.has(originalIndex);
+        // 그래프 토폴로지 특수 소스 등록
+        const GRAPH_SOURCE_NAME = '공급망 그래프 토폴로지';
+        const GRAPH_SLUG = 'GRAPH_TOPOLOGY';
+        slugToSource.set(GRAPH_SLUG, GRAPH_SOURCE_NAME);
 
-            // B. 명시적 출처명 매칭
-            const isNameMatched = citedNames.some(cited => {
-                return cited.includes(baseFilename) || 
-                    baseFilename.includes(cited) ||
-                    sourceTokens.some(token => cited.includes(token));
-            });
+        // 2. 본문에서 모든 인용 패턴 탐지:
+        //    - [출처: TAG/이름]
+        //    - [문서: TAG]
+        //    - [문서 N]
+        //    - [TAG] (예: [USGS_LITHIUM], [IRA_FEOC])
+        //    - [N] (숫자 인용)
+        const tagRegex = /\[(?:출처:\s*|문서:\s*|문서\s*)?([A-Za-z0-9_\-가-힣\s\.]+?)\]/g;
+        let match: RegExpExecArray | null;
 
-            // C. 본문 텍스트 내 원본 파일명 직접 언급 여부
-            const isContentMentioned = responseText.includes(source) || 
-                (docType && responseText.includes(docType));
+        // 인용 출현 순서대로 기록할 맵 (source -> 첫 출현 위치 및 정보)
+        const orderedSources: string[] = [];
+        const sourceOccurrences = new Set<string>();
 
-            if (isIndexMatched || isNameMatched || isContentMentioned) {
-                if (!sourceMap.has(source)) {
-                    sourceMap.set(source, { chunk, docIndices: [originalIndex] });
+        // 패턴 교체 대상을 기록할 리스트 (start, end, source)
+        interface MatchTarget {
+            start: number;
+            end: number;
+            source: string;
+            matchedText: string;
+        }
+        const matchesToReplace: MatchTarget[] = [];
+
+        while ((match = tagRegex.exec(responseText)) !== null) {
+            const fullMatch = match[0];
+            const inner = match[1].trim();
+            const upperInner = inner.toUpperCase();
+            let matchedSource: string | null = null;
+
+            // A. 슬러그 매칭 (예: [출처: USGS_LITHIUM], [USGS_LITHIUM])
+            if (slugToSource.has(upperInner)) {
+                matchedSource = slugToSource.get(upperInner)!;
+            } else {
+                // 슬러그 부분 일치 확인 (예: 'USGS', 'FEOC', 'GRAPH')
+                for (const [slug, src] of slugToSource.entries()) {
+                    if (upperInner === slug || upperInner.includes(slug) || slug.includes(upperInner)) {
+                        matchedSource = src;
+                        break;
+                    }
+                }
+            }
+
+            // B. 숫자 인덱스 매칭 ([1], [문서 1] -> 해당 청크의 source)
+            if (!matchedSource && /^\d+$/.test(inner)) {
+                const num = parseInt(inner, 10);
+                if (num >= 1 && num <= documentChunks.length) {
+                    matchedSource = documentChunks[num - 1].metadata.source;
+                }
+            }
+
+            // C. 한국어/출처명 텍스트 매칭 ([출처: 공급망 그래프 토폴로지], [출처: usgs-lithium])
+            if (!matchedSource) {
+                const lowerInner = inner.toLowerCase();
+                if (lowerInner.includes('공급망') || lowerInner.includes('그래프') || lowerInner.includes('토폴로지')) {
+                    matchedSource = GRAPH_SOURCE_NAME;
                 } else {
-                    const entry = sourceMap.get(source)!;
-                    if (!entry.docIndices.includes(originalIndex)) {
-                        entry.docIndices.push(originalIndex);
+                    for (const src of sourceToChunks.keys()) {
+                        const base = src.split('/').pop()?.replace(/\.[^/.]+$/, '').toLowerCase() || '';
+                        if (lowerInner.includes(base) || base.includes(lowerInner)) {
+                            matchedSource = src;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (matchedSource) {
+                matchesToReplace.push({
+                    start: match.index,
+                    end: match.index + fullMatch.length,
+                    source: matchedSource,
+                    matchedText: fullMatch,
+                });
+
+                if (!sourceOccurrences.has(matchedSource)) {
+                    sourceOccurrences.add(matchedSource);
+                    orderedSources.push(matchedSource);
+                }
+            }
+        }
+
+        // 본문 텍스트 내에서 인용 태그가 명시되지 않았으나 문서/그래프가 강력히 언급된 경우 보완
+        for (const [slug, src] of slugToSource.entries()) {
+            if (!sourceOccurrences.has(src)) {
+                if (src === GRAPH_SOURCE_NAME) {
+                    if (
+                        graphContext.nodes.length > 0 &&
+                        (responseText.includes('공급망 토폴로지') || responseText.includes('그래프 토폴로지'))
+                    ) {
+                        sourceOccurrences.add(src);
+                        orderedSources.push(src);
+                    }
+                } else {
+                    const base = src.split('/').pop()?.replace(/\.[^/.]+$/, '').toLowerCase() || '';
+                    if (base.length > 3 && responseText.toLowerCase().includes(base)) {
+                        sourceOccurrences.add(src);
+                        orderedSources.push(src);
                     }
                 }
             }
         }
 
-        // 4. 인용된 문서들을 citations 목록에 추가 (첫 번째 docIndex 및 전체 docIndices 유지)
+        // 3. 인용된 각 source에 1부터 시작하는 순차 번호 부여 (1, 2, 3...)
+        const sourceToSequentialIndex = new Map<string, number>();
+        orderedSources.forEach((src, idx) => {
+            sourceToSequentialIndex.set(src, idx + 1);
+        });
+
+        // 4. 본문 텍스트의 모든 인용 태그를 순차 번호([1], [2]...)로 깨끗하게 치환
+        let normalizedResponseText = '';
+        let lastCursor = 0;
+
+        // start 기준 정렬
+        matchesToReplace.sort((a, b) => a.start - b.start);
+
+        for (const m of matchesToReplace) {
+            // 중첩 또는 역행 방지
+            if (m.start < lastCursor) continue;
+
+            normalizedResponseText += responseText.substring(lastCursor, m.start);
+            const seqIndex = sourceToSequentialIndex.get(m.source)!;
+            normalizedResponseText += `[${seqIndex}]`;
+            lastCursor = m.end;
+        }
+        normalizedResponseText += responseText.substring(lastCursor);
+
+        // 5. 최종 citations 배열 생성 (순차 번호 1, 2, 3...와 1:1 일치)
         const citations: Citation[] = [];
 
-        sourceMap.forEach(({ chunk, docIndices }) => {
-            citations.push({
-                source: chunk.metadata.source,
-                content: chunk.content.substring(0, 200), // 요약용 200자
-                relevance: 1.0,
-                docIndex: docIndices[0],
-                docIndices,
-            });
+        orderedSources.forEach((src) => {
+            const seqIndex = sourceToSequentialIndex.get(src)!;
+            const slug = this.getDocumentSlug(src);
+
+            if (src === GRAPH_SOURCE_NAME) {
+                citations.push({
+                    source: GRAPH_SOURCE_NAME,
+                    sourceTag: GRAPH_SLUG,
+                    content: `${graphContext.nodes.length}개 노드, ${graphContext.edges.length}개 엣지 실시간 연결망 분석`,
+                    relevance: 1.0,
+                    docIndex: seqIndex,
+                });
+            } else {
+                const chunks = sourceToChunks.get(src) || [];
+                const rawIndices = sourceToRawIndices.get(src) || [];
+                const primaryChunk = chunks[0];
+                const content = primaryChunk ? primaryChunk.content.substring(0, 200) : '';
+
+                citations.push({
+                    source: src,
+                    sourceTag: slug,
+                    content,
+                    relevance: 1.0,
+                    docIndex: seqIndex,
+                    docIndices: rawIndices,
+                });
+            }
         });
 
-        // 5. 그래프 데이터 인용 (명시적으로 [공급망...] 등을 인용했거나, 본문에 [공급망 토폴로지] 또는 노드/생산능력 분석이 포함된 경우)
-        const isGraphMentioned = citedNames.some(name => 
-            name.includes('공급망') || name.includes('그래프') || name.includes('토폴로지') || name.includes('네트워크')
-        ) || responseText.includes('공급망 토폴로지') || responseText.includes('공급망') || responseText.includes('생산능력');
-
-        if (graphContext.nodes.length > 0 && isGraphMentioned) {
-            citations.push({
-                source: '공급망 그래프 토폴로지',
-                content: `${graphContext.nodes.length}개 노드, ${graphContext.edges.length}개 엣지 실시간 연결망 분석`,
-                relevance: 1.0,
-            });
-        }
-
-        // docIndex가 있는 항목들을 번호 순으로 정렬 (번호 없는 그래프 등은 마지막에 위치)
-        citations.sort((a, b) => {
-            if (a.docIndex !== undefined && b.docIndex !== undefined) return a.docIndex - b.docIndex;
-            if (a.docIndex !== undefined) return -1;
-            if (b.docIndex !== undefined) return 1;
-            return 0;
-        });
-
-        return { citations, normalizedResponseText: responseText };
+        return { citations, normalizedResponseText };
     }
 
     /**

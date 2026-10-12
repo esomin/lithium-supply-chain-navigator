@@ -117,7 +117,7 @@ describe('AIInsightsService', () => {
             const graphContext = createTestGraphContext();
             const prompt = service.buildContextPrompt(graphContext, [], '질문');
 
-            expect(prompt).toContain('[출처: 소스명]');
+            expect(prompt).toContain('[출처: 문서태그]');
         });
     });
 

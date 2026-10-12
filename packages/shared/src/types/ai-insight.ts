@@ -30,6 +30,8 @@ export interface Citation {
     docIndex?: number;
     /** 단일 출처에 매핑된 주입 문서 번호 목록 */
     docIndices?: number[];
+    /** 고유 문서 태그 슬러그 (예: 'USGS_LITHIUM', 'IRA_FEOC', 'IEA_OUTLOOK') */
+    sourceTag?: string;
 }
 
 /**

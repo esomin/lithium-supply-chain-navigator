@@ -334,11 +334,10 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
                 }`}>
                 <h2 className="text-sm font-bold text-foreground tracking-tight flex items-center gap-2">
                     <span
-                        className={`w-2 h-2 rounded-full inline-block transition-colors duration-200 ${
-                            result
+                        className={`w-2 h-2 rounded-full inline-block transition-colors duration-200 ${result
                                 ? 'bg-cyan-400 drop-shadow-[0_0_5px_rgba(34,211,238,0.85)]'
                                 : 'bg-slate-400/80'
-                        }`}
+                            }`}
                     />
                     공급망 충격 시뮬레이션
                 </h2>
@@ -382,7 +381,6 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
                                     <RiLightbulbLine className="w-3.5 h-3.5 text-muted-foreground" />
                                     추천 시나리오 프리셋
                                 </h3>
-                                <span className="text-[10px] text-muted-foreground font-normal">빠른 충격 적용</span>
                             </div>
 
                             <div className="border border-border/40 bg-muted/20 rounded-[4px] overflow-hidden divide-y divide-border/30">
@@ -401,84 +399,80 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
                                         ) ?? '';
 
                                     return (
-                                            <div
-                                                key={preset.id}
-                                                onClick={() => handleApplyPreset(preset)}
-                                                className={`w-full text-left p-2.5 transition-colors duration-150 cursor-pointer flex flex-col gap-1 ${
-                                                    isSelected
-                                                        ? 'bg-slate-700/80 text-foreground font-medium shadow-2xs'
-                                                        : 'bg-transparent text-muted-foreground hover:bg-slate-700/40 hover:text-foreground'
+                                        <div
+                                            key={preset.id}
+                                            onClick={() => handleApplyPreset(preset)}
+                                            className={`w-full text-left p-2.5 transition-colors duration-150 cursor-pointer flex flex-col gap-1 ${isSelected
+                                                    ? 'bg-slate-700/80 text-foreground font-medium shadow-2xs'
+                                                    : 'bg-transparent text-muted-foreground hover:bg-slate-700/40 hover:text-foreground'
                                                 }`}
-                                                role="button"
-                                                tabIndex={0}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Enter' || e.key === ' ') {
-                                                        e.preventDefault();
-                                                        handleApplyPreset(preset);
-                                                    }
-                                                }}
-                                                aria-label={`프리셋 적용: ${preset.name}`}
-                                            >
-                                                <div className="flex items-center justify-between gap-2">
-                                                    <div className="flex items-center gap-1.5 min-w-0">
-                                                        <span
-                                                            className={`text-[10px] font-medium py-0.5 px-1.5 rounded-[3px] shrink-0 transition-colors ${
-                                                                isSelected
-                                                                    ? 'bg-primary/25 text-primary font-semibold'
-                                                                    : 'bg-muted-foreground/15 text-muted-foreground group-hover:text-foreground group-hover:bg-muted-foreground/25'
+                                            role="button"
+                                            tabIndex={0}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' || e.key === ' ') {
+                                                    e.preventDefault();
+                                                    handleApplyPreset(preset);
+                                                }
+                                            }}
+                                            aria-label={`프리셋 적용: ${preset.name}`}
+                                        >
+                                            <div className="flex items-center justify-between gap-2">
+                                                <div className="flex items-center gap-1.5 min-w-0">
+                                                    <span
+                                                        className={`text-[10px] font-medium py-0.5 px-1.5 rounded-[3px] shrink-0 transition-colors ${isSelected
+                                                                ? 'bg-primary/25 text-primary font-semibold'
+                                                                : 'bg-muted-foreground/15 text-muted-foreground group-hover:text-foreground group-hover:bg-muted-foreground/25'
                                                             }`}
-                                                        >
-                                                            {preset.badge}
-                                                        </span>
-                                                        <span
-                                                            className={`text-xs font-medium leading-tight truncate transition-colors ${
-                                                                isSelected ? 'text-foreground font-semibold' : 'text-foreground/80 group-hover:text-foreground'
+                                                    >
+                                                        {preset.badge}
+                                                    </span>
+                                                    <span
+                                                        className={`text-xs font-medium leading-tight truncate transition-colors ${isSelected ? 'text-foreground font-semibold' : 'text-foreground/80 group-hover:text-foreground'
                                                             }`}
-                                                        >
-                                                            {preset.name}
-                                                        </span>
+                                                    >
+                                                        {preset.name}
+                                                    </span>
 
-                                                        {/* 안내 아이콘 및 툴팁 영역 (PortalTooltip 렌더링으로 잘림 현상 방지) */}
-                                                        <PortalTooltip
-                                                            content={preset.description}
-                                                            side={isLast ? 'top' : 'bottom'}
-                                                            width={260}
-                                                            className="text-[10px] leading-relaxed"
+                                                    {/* 안내 아이콘 및 툴팁 영역 (PortalTooltip 렌더링으로 잘림 현상 방지) */}
+                                                    <PortalTooltip
+                                                        content={preset.description}
+                                                        side={isLast ? 'top' : 'bottom'}
+                                                        width={260}
+                                                        className="text-[10px] leading-relaxed"
+                                                    >
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => e.stopPropagation()}
+                                                            className="p-0.5 text-muted-foreground/60 hover:text-foreground transition-colors cursor-help rounded-[2px]"
+                                                            aria-label={`${preset.name} 설명`}
                                                         >
-                                                            <button
-                                                                type="button"
-                                                                onClick={(e) => e.stopPropagation()}
-                                                                className="p-0.5 text-muted-foreground/60 hover:text-foreground transition-colors cursor-help rounded-[2px]"
-                                                                aria-label={`${preset.name} 설명`}
-                                                            >
-                                                                <Info className="w-3.5 h-3.5" />
-                                                            </button>
-                                                        </PortalTooltip>
-                                                    </div>
-                                                    <div className="flex items-center gap-1 shrink-0">
-                                                        <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded-[3px] transition-colors shrink-0 ${
-                                                            isSelected
-                                                                ? 'bg-background text-foreground font-semibold shadow-2xs'
-                                                                : 'text-muted-foreground/80 group-hover:text-foreground group-hover:bg-background/60'
-                                                        }`}>
-                                                            {severityVal}
-                                                        </span>
-                                                    </div>
+                                                            <Info className="w-3.5 h-3.5" />
+                                                        </button>
+                                                    </PortalTooltip>
                                                 </div>
-                                                <div className="text-[10px] text-muted-foreground/80 leading-tight pl-0.5 group-hover:text-muted-foreground">
-                                                    <span>
-                                                        {preset.summaryLabel
-                                                            ? preset.summaryLabel
-                                                            : preset.config.targetType === 'node'
-                                                                ? preset.config.country === 'ALL'
-                                                                    ? '모든 국가'
-                                                                    : `${getCountryDisplayName(preset.config.country || '')} ${getNodeTypeLabel(preset.config.nodeType || '')}`
-                                                                : '호주 ➔ 한국 수송로'}
-                                                        {' • '}
-                                                        {DISRUPTION_TYPE_CONFIGS[preset.config.disruptionType]?.label}
+                                                <div className="flex items-center gap-1 shrink-0">
+                                                    <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded-[3px] transition-colors shrink-0 ${isSelected
+                                                            ? 'bg-background text-foreground font-semibold shadow-2xs'
+                                                            : 'text-muted-foreground/80 group-hover:text-foreground group-hover:bg-background/60'
+                                                        }`}>
+                                                        {severityVal}
                                                     </span>
                                                 </div>
                                             </div>
+                                            <div className="text-[10px] text-muted-foreground/80 leading-tight pl-0.5 group-hover:text-muted-foreground">
+                                                <span>
+                                                    {preset.summaryLabel
+                                                        ? preset.summaryLabel
+                                                        : preset.config.targetType === 'node'
+                                                            ? preset.config.country === 'ALL'
+                                                                ? '모든 국가'
+                                                                : `${getCountryDisplayName(preset.config.country || '')} ${getNodeTypeLabel(preset.config.nodeType || '')}`
+                                                            : '호주 ➔ 한국 수송로'}
+                                                    {' • '}
+                                                    {DISRUPTION_TYPE_CONFIGS[preset.config.disruptionType]?.label}
+                                                </span>
+                                            </div>
+                                        </div>
                                     );
                                 })}
                             </div>
@@ -552,7 +546,7 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
 
                                         {/* 노드 타겟팅 활성화 및 국가/시설유형 가로 필터 렌더링 */}
                                         {currentDisruption.targetType === 'node' && (
-                                             <div className="flex gap-2 mb-1.5">
+                                            <div className="flex gap-2 mb-1.5">
                                                 <div className="flex-1">
                                                     <Select
                                                         value={selectedCountry}
@@ -750,15 +744,15 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
 
                                     {/* 충격 추가 버튼 */}
                                     <Button
-                                         type="button"
-                                         onClick={handleAddDisruption}
-                                         disabled={!currentDisruption.targetId}
-                                         variant="secondary"
-                                         className="w-full h-8 text-xs font-semibold shadow-xs cursor-pointer border border-border/50 text-secondary-foreground hover:border-primary/50 disabled:border-border/30 disabled:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-all rounded-[4px]"
-                                     >
-                                         + 충격 조건 추가
-                                     </Button>
-                                 </div>
+                                        type="button"
+                                        onClick={handleAddDisruption}
+                                        disabled={!currentDisruption.targetId}
+                                        variant="secondary"
+                                        className="w-full h-8 text-xs font-semibold shadow-xs cursor-pointer border border-border/50 text-secondary-foreground hover:border-primary/50 disabled:border-border/30 disabled:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-all rounded-[4px]"
+                                    >
+                                        + 충격 조건 추가
+                                    </Button>
+                                </div>
                             )}
                         </div>
 
