@@ -132,16 +132,29 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
         setTargetId(preset.config.targetId);
 
         // 프리셋 조건을 적용될 충격 목록(disruptions)에 즉시 자동 큐잉
-        const presetDisruption: Disruption = {
-            targetType: preset.config.targetType,
-            targetId: preset.config.targetId,
-            disruptionType: preset.config.disruptionType,
-            severity: preset.config.severity,
-            country: preset.config.country,
-            nodeType: preset.config.nodeType,
-            sourceNodeId: preset.config.sourceNodeId,
-        };
-        setDisruptions([presetDisruption]);
+        if (preset.disruptions && preset.disruptions.length > 0) {
+            const multiDisruptions: Disruption[] = preset.disruptions.map((d) => ({
+                targetType: d.targetType,
+                targetId: d.targetId,
+                disruptionType: d.disruptionType,
+                severity: d.severity,
+                country: d.country,
+                nodeType: d.nodeType,
+                sourceNodeId: d.sourceNodeId,
+            }));
+            setDisruptions(multiDisruptions);
+        } else {
+            const presetDisruption: Disruption = {
+                targetType: preset.config.targetType,
+                targetId: preset.config.targetId,
+                disruptionType: preset.config.disruptionType,
+                severity: preset.config.severity,
+                country: preset.config.country,
+                nodeType: preset.config.nodeType,
+                sourceNodeId: preset.config.sourceNodeId,
+            };
+            setDisruptions([presetDisruption]);
+        }
     }, [setTargetType, setDisruptionType, setSeverity, setTargetId, setDisruptions]);
 
     // 충격 시나리오 구성 초기화 핸들러 (프리셋 선택 해제 및 설정값 리셋)
@@ -448,11 +461,13 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
                                                 </div>
                                                 <div className="text-[10px] text-muted-foreground/80 leading-tight pl-0.5 group-hover:text-muted-foreground">
                                                     <span>
-                                                        {preset.config.targetType === 'node'
-                                                            ? preset.config.country === 'ALL'
-                                                                ? '모든 국가'
-                                                                : `${getCountryDisplayName(preset.config.country || '')} ${getNodeTypeLabel(preset.config.nodeType || '')}`
-                                                            : '호주 ➔ 한국 수송로'}
+                                                        {preset.summaryLabel
+                                                            ? preset.summaryLabel
+                                                            : preset.config.targetType === 'node'
+                                                                ? preset.config.country === 'ALL'
+                                                                    ? '모든 국가'
+                                                                    : `${getCountryDisplayName(preset.config.country || '')} ${getNodeTypeLabel(preset.config.nodeType || '')}`
+                                                                : '호주 ➔ 한국 수송로'}
                                                         {' • '}
                                                         {DISRUPTION_TYPE_CONFIGS[preset.config.disruptionType]?.label}
                                                     </span>

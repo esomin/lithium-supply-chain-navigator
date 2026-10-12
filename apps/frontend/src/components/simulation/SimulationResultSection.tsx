@@ -70,7 +70,9 @@ export function SimulationResultSection({
                     </div>
                 </div>
                 <div className="text-center py-1.5 px-1 flex flex-col justify-center">
-                    <div className="text-[10px] text-muted-foreground">평균 부족률</div>
+                    <div className="text-[10px] text-muted-foreground truncate" title="원자재를 소비하는 최종 하류 플랜트(리프 노드) 기준 평균 부족률">
+                        최종 수요처 평균 부족률
+                    </div>
                     <div className="font-semibold text-red-400 mt-0.5">{avgDeficit.toFixed(1)}%</div>
                 </div>
             </div>

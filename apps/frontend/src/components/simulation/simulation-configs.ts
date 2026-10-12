@@ -57,6 +57,7 @@ export interface ScenarioPreset {
     name: string;
     description: string;
     badge: string;
+    summaryLabel?: string;
     config: {
         targetType: 'node' | 'edge';
         country?: string;
@@ -66,6 +67,16 @@ export interface ScenarioPreset {
         disruptionType: DisruptionType;
         severity: number;
     };
+    /** 복수 충격으로 확장 시 적용될 충격 목록 (정의 시 단일 config 대신 우선 적용) */
+    disruptions?: Array<{
+        targetType: 'node' | 'edge';
+        country?: string;
+        nodeType?: string;
+        sourceNodeId?: string;
+        targetId: string;
+        disruptionType: DisruptionType;
+        severity: number;
+    }>;
 }
 
 export const SCENARIO_PRESETS: ScenarioPreset[] = [
@@ -85,17 +96,28 @@ export const SCENARIO_PRESETS: ScenarioPreset[] = [
     },
     {
         id: 'latin-nationalization',
-        name: '남미 리튬 삼각지대 국유화 및 조업 중단',
-        description: '남미 자원 민족주의 고조에 따라 칠레 주요 광산의 국가 통제 및 조업 중단으로 유통 공급망에서 자원 공급 능력이 50% 제한되는 시나리오입니다.',
-        badge: '공급',
+        name: '남미 생산·물류 차질',
+        description: '아르헨티나 안데스 고지대의 악천후 및 산악 도로 접근 제한으로 살타·옴브레 무에르토 리튬 생산·정제 시설의 출하 및 인도 일정이 40% 지연·차질을 빚는 현실적 공급망 병목 시나리오입니다.',
+        badge: '공급·물류',
+        summaryLabel: '아르헨티나 고지대의 악천후·도로 접근 제한',
         config: {
             targetType: 'node',
-            country: 'Chile',
-            nodeType: 'Mine',
+            country: 'Argentina',
+            nodeType: 'ALL',
             disruptionType: 'facility_closure',
-            severity: 0.5,
-            targetId: 'MINE_CL_ATACAMA',
+            severity: 0.4,
+            targetId: 'ALL_NODES',
         },
+        disruptions: [
+            {
+                targetType: 'node',
+                country: 'Argentina',
+                nodeType: 'ALL',
+                disruptionType: 'facility_closure',
+                severity: 0.4,
+                targetId: 'ALL_NODES',
+            },
+        ],
     },
     {
         id: 'sea-route-blockade',

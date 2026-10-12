@@ -4,7 +4,7 @@ import { useSimulationStore } from '../../store/simulation-store';
 import { useSupplyChainStore } from '../../store/supply-chain-store';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
-import { Route, Loader2, Info } from 'lucide-react';
+import { Route, Loader2, Info, AlertTriangle } from 'lucide-react';
 import { GiDiamonds } from 'react-icons/gi';
 import { SupplyDetailModal } from './SupplyDetailModal';
 
@@ -118,28 +118,29 @@ export const ReRoutingPanel: React.FC<ReRoutingPanelProps> = ({
                 {currentPlan.emergencyPackage && (
                     <div className="pt-1">
                         {currentPlan.emergencyPackage.statusLevel === 'CRITICAL' ? (
-                            <div className="px-2.5 py-1.5 rounded-[4px] bg-zinc-800/40 border border-zinc-700/50 flex flex-col gap-0.5">
+                            <div className="px-2.5 py-2 rounded-[4px] bg-muted/40 border border-border/70 flex flex-col gap-1 shadow-2xs">
                                 <div className="flex items-center justify-between text-[10px]">
-                                    <span className="font-medium text-rose-300 tracking-tight">
-                                        구조적 수급 한계 경보 (CRITICAL)
-                                    </span>
-                                    <span className="text-zinc-400 font-mono text-[9px]">
+                                    <div className="flex items-center gap-1.5 font-semibold text-foreground tracking-tight">
+                                        <AlertTriangle className="w-3.5 h-3.5 text-primary shrink-0" />
+                                        <span>구조적 수급 한계 경보 (CRITICAL)</span>
+                                    </div>
+                                    <span className="text-[9px] font-mono font-medium px-1.5 py-0.2 rounded bg-background/80 text-foreground border border-border/50">
                                         해결률 {currentPlan.emergencyPackage.coverageRate}%
                                     </span>
                                 </div>
-                                <div className="text-[9.5px] text-zinc-400 leading-tight">
+                                <div className="text-[9.5px] text-muted-foreground leading-relaxed pl-5">
                                     비중국계 정제소 여유 캐파 한계로 스팟 우회만으로는 대부분 잔여합니다. 다단계 비상 대응 프로토콜(ERP) 검토가 필요합니다.
                                 </div>
                             </div>
                         ) : currentPlan.emergencyPackage.statusLevel === 'MODERATE' ? (
-                            <div className="px-2 py-1 rounded-[4px] bg-zinc-800/40 border border-zinc-700/50 flex items-center justify-between text-[10px]">
-                                <span className="font-medium text-amber-300">부분 조달 주의 (MODERATE)</span>
-                                <span className="text-zinc-400 text-[9px]">해결률 {currentPlan.emergencyPackage.coverageRate}%</span>
+                            <div className="px-2 py-1 rounded-[4px] bg-muted/30 border border-border/40 flex items-center justify-between text-[10px]">
+                                <span className="font-medium text-foreground/90">부분 조달 주의 (MODERATE)</span>
+                                <span className="text-muted-foreground text-[9px]">해결률 {currentPlan.emergencyPackage.coverageRate}%</span>
                             </div>
                         ) : (
-                            <div className="px-2 py-1 rounded-[4px] bg-zinc-800/40 border border-zinc-700/50 flex items-center justify-between text-[10px]">
-                                <span className="font-medium text-emerald-300">대체 수급 안정 (RESOLVED)</span>
-                                <span className="text-zinc-400 text-[9px]">해결률 {currentPlan.emergencyPackage.coverageRate}%</span>
+                            <div className="px-2 py-1 rounded-[4px] bg-muted/30 border border-border/40 flex items-center justify-between text-[10px]">
+                                <span className="font-medium text-foreground/90">대체 수급 안정 (RESOLVED)</span>
+                                <span className="text-muted-foreground text-[9px]">해결률 {currentPlan.emergencyPackage.coverageRate}%</span>
                             </div>
                         )}
                     </div>
@@ -199,7 +200,7 @@ export const ReRoutingPanel: React.FC<ReRoutingPanelProps> = ({
                                     리드타임 <strong className="text-emerald-400 font-semibold">+{currentPlan.averageExtraLeadTimeDays}일</strong>
                                 </span>
                                 <span>
-                                    {activeResult.isGlobalCombined ? '평균 부족률' : '부족률'}: <strong className="text-foreground">{activeResult.originalDeficitPercentage.toFixed(1)}%</strong> → <strong className="text-foreground font-semibold">{currentPlan.remainingDeficitPercentage.toFixed(1)}%</strong>
+                                    {activeResult.isGlobalCombined ? '최종 수요처 평균 부족률' : '부족률'}: <strong className="text-foreground">{activeResult.originalDeficitPercentage.toFixed(1)}%</strong> → <strong className="text-foreground font-semibold">{currentPlan.remainingDeficitPercentage.toFixed(1)}%</strong>
                                 </span>
                             </div>
                         </div>
@@ -240,16 +241,10 @@ export const ReRoutingPanel: React.FC<ReRoutingPanelProps> = ({
                         useSupplyChainStore.getState().setDraftAIQuery(query);
                         useSupplyChainStore.getState().setShowAIPanel(true);
                     }}
-                    className={`w-full shrink-0 mt-1 h-8 font-medium text-xs py-2 rounded-[4px] shadow-sm border cursor-pointer transition-colors duration-200 flex items-center justify-center gap-1.5 bg-white/10 hover:bg-white/20 border-white/25 hover:border-white/45 ${
-                        currentPlan.emergencyPackage?.statusLevel === 'CRITICAL'
-                            ? 'text-rose-200'
-                            : 'text-white'
-                    }`}
+                    className="w-full shrink-0 mt-1 h-8 font-medium text-xs py-2 rounded-[4px] shadow-sm border cursor-pointer transition-colors duration-200 flex items-center justify-center gap-1.5 bg-muted/30 hover:bg-muted/60 border-border/60 hover:border-border text-foreground"
                     title={currentPlan.emergencyPackage?.statusLevel === 'CRITICAL' ? '구조적 결손 극복을 위한 비상 대응 종합 전략 보고서를 AI에게 요청합니다.' : '선택된 대체 공급망의 규제 검증 질의를 AI 입력창에 자동으로 입력합니다.'}
                 >
-                    <GiDiamonds className={`w-3 h-3 shrink-0 ${
-                        currentPlan.emergencyPackage?.statusLevel === 'CRITICAL' ? 'text-rose-400' : 'text-primary'
-                    }`} />
+                    <GiDiamonds className="w-3 h-3 shrink-0 text-primary" />
                     <span className="tracking-tight text-[11px]">
                         {currentPlan.emergencyPackage?.statusLevel === 'CRITICAL'
                             ? '다단계 비상 대응 전략 보고서 AI 생성'
