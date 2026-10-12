@@ -70,9 +70,9 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
         return nodes.filter((n) => n.type !== 'Resource');
     }, [nodes]);
 
-    // 필터링 상태 추가 (디폴트: 중국 / Refinery)
-    const [selectedCountry, setSelectedCountry] = useState<string>('China');
-    const [selectedNodeType, setSelectedNodeType] = useState<string>('Refinery');
+    // 필터링 상태 추가 (디폴트: 아르헨티나 / ALL)
+    const [selectedCountry, setSelectedCountry] = useState<string>('Argentina');
+    const [selectedNodeType, setSelectedNodeType] = useState<string>('ALL');
     const [selectedSourceNodeId, setSelectedSourceNodeId] = useState<string>('ALL');
 
     // 직접 구성 아코디언 상태 (기본 닫힘)

@@ -81,20 +81,6 @@ export interface ScenarioPreset {
 
 export const SCENARIO_PRESETS: ScenarioPreset[] = [
     {
-        id: 'china-export-restriction',
-        name: '중국 리튬 수출 통제',
-        description: '지정학적 갈등 심화 및 자원 무기화로 인해 중국 내 리튬 제련 시설의 대외 수출 가능 물량이 80% 강력히 제한되는 고위험 규제 시나리오입니다.',
-        badge: '지정학',
-        config: {
-            targetType: 'node',
-            country: 'China',
-            nodeType: 'Refinery',
-            disruptionType: 'export_restriction',
-            severity: 0.8,
-            targetId: 'REF_CN_LITHIUM',
-        },
-    },
-    {
         id: 'latin-nationalization',
         name: '남미 생산·물류 차질',
         description: '아르헨티나 안데스 고지대의 악천후 및 산악 도로 접근 제한으로 살타·옴브레 무에르토 리튬 생산·정제 시설의 출하 및 인도 일정이 40% 지연·차질을 빚는 현실적 공급망 병목 시나리오입니다.',
@@ -118,6 +104,20 @@ export const SCENARIO_PRESETS: ScenarioPreset[] = [
                 targetId: 'ALL_NODES',
             },
         ],
+    },
+    {
+        id: 'china-export-restriction',
+        name: '중국 리튬 수출 통제',
+        description: '지정학적 갈등 심화 및 자원 무기화로 인해 중국 내 리튬 제련 시설의 대외 수출 가능 물량이 80% 강력히 제한되는 고위험 규제 시나리오입니다.',
+        badge: '지정학',
+        config: {
+            targetType: 'node',
+            country: 'China',
+            nodeType: 'Refinery',
+            disruptionType: 'export_restriction',
+            severity: 0.8,
+            targetId: 'REF_CN_LITHIUM',
+        },
     },
     {
         id: 'pilbara-cyclone-disruption',

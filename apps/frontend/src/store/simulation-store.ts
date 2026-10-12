@@ -71,21 +71,21 @@ export interface SimulationState {
 
 // Zustand 스토어 생성 - 시뮬레이션 상태 관리
 export const useSimulationStore = create<SimulationState>((set, get) => ({
-    // 초기 상태 ('중국 리튬 수출 통제' 프리셋 디폴트 선택)
+    // 초기 상태 ('남미 생산·물류 차질' 프리셋 디폴트 선택)
     currentDisruption: {
-        targetId: 'REF_CN_LITHIUM',
+        targetId: 'ALL_NODES',
         targetType: 'node',
-        disruptionType: 'export_restriction',
-        severity: 0.8,
+        disruptionType: 'facility_closure',
+        severity: 0.4,
     },
     disruptions: [
         {
             targetType: 'node',
-            targetId: 'REF_CN_LITHIUM',
-            disruptionType: 'export_restriction',
-            severity: 0.8,
-            country: 'China',
-            nodeType: 'Refinery',
+            targetId: 'ALL_NODES',
+            disruptionType: 'facility_closure',
+            severity: 0.4,
+            country: 'Argentina',
+            nodeType: 'ALL',
         },
     ],
     result: null,
