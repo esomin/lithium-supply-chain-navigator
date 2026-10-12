@@ -103,10 +103,18 @@ export class AIInsightsService {
         // 최근 MAX_HISTORY_TURNS개 메시지만 사용
         const recentHistory = history.slice(-MAX_HISTORY_TURNS);
 
-        return recentHistory.map((msg) => ({
+        const mapped: Content[] = recentHistory.map((msg) => ({
             role: msg.role === 'user' ? 'user' : 'model',
             parts: [{ text: msg.content }],
         }));
+
+        // [Gemini SDK 규격 방어]: 첫 번째 메시지는 반드시 role이 'user'여야 함
+        // 슬라이싱 과정에서 맨 앞이 'model'이 된 경우 'user'가 나올 때까지 선두 제거
+        while (mapped.length > 0 && mapped[0].role !== 'user') {
+            mapped.shift();
+        }
+
+        return mapped;
     }
 
     /**
@@ -460,6 +468,9 @@ ${userQuery}`;
         try {
             result = await this.callWithChatHistory(sessionId, prompt);
         } catch (error) {
+            // API 오류 발생 시 방금 추가된 미응답 user 메시지를 세션에서 롤백 (이력 오염 및 턴 불일치 방지)
+            history.pop();
+
             const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
             console.error(`[LLM] API 오류 | ${errorMessage} | ${Date.now() - startTime}ms`);
 
@@ -655,11 +666,14 @@ ${userQuery}`;
             // 마지막 user 메시지는 sendMessage로 전달하므로 이력에서 제외
             const historyForChat = chatHistory.slice(0, -1);
 
-            const chat = this.model!.startChat({ history: historyForChat });
-            return this.callChatWithRetry(chat, prompt);
+            // [안전 검증]: historyForChat이 존재하고 첫 메시지가 'user'인 경우에만 startChat 사용
+            if (historyForChat.length > 0 && historyForChat[0].role === 'user') {
+                const chat = this.model!.startChat({ history: historyForChat });
+                return this.callChatWithRetry(chat, prompt);
+            }
         }
 
-        // 이력이 없으면 단순 generateContent 호출
+        // 이력이 없거나 유효하지 않으면 단순 generateContent 호출 (안전 fallback)
         return this.callWithRetry(prompt);
     }
 
