@@ -211,16 +211,19 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
         const cached = clientCache.get(cacheKey);
 
         if (cached) {
-            console.info(`[AI Client Cache Hit] 0ms 즉각 반환: "${query.substring(0, 30)}..."`);
-            const assistantMessage: ChatMessage = {
-                role: 'assistant',
-                content: cached.answer,
-                citations: cached.citations,
-                timestamp: new Date(),
-            };
-            // 자연스러운 UI 전환을 위해 미세한 딜레이(50ms) 후 응답 추가
+            console.info(`[AI Client Cache Hit] 캐시된 응답 반환: "${query.substring(0, 30)}..."`);
+            setIsLoading(true);
+
+            // 사용자가 AI 분석 중임을 자연스럽게 체감할 수 있도록 약간의 지연(450ms) 부여
             setTimeout(() => {
+                const assistantMessage: ChatMessage = {
+                    role: 'assistant',
+                    content: cached.answer,
+                    citations: cached.citations,
+                    timestamp: new Date(),
+                };
                 setMessages((prev) => [...prev, assistantMessage]);
+                setIsLoading(false);
             }, 50);
             return;
         }
@@ -386,6 +389,10 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
 
     // 대화 내역 초기화 핸들러
     const handleClearChat = () => {
+        // TODO: [비동기 요청 취소 개선] 현재 응답 대기 중(isLoading === true)일 때 새 대화를 누르면
+        // 백그라운드 fetch가 취소되지 않아 빈 화면에 뒤늦게 답변만 단독으로 렌더링되는 레이스 컨디션 발생.
+        // 향후 AbortController(abortControllerRef)를 도입하여 진행 중인 네트워크 요청을 즉시 abort() 처리 필요.
+
         setMessages([]);
         setSessionId(null);
         setError(null);
