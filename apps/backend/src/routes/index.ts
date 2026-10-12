@@ -16,7 +16,7 @@ const graphController = new GraphController(store);
 const simulationController = new SimulationController(store);
 const traceabilityController = new TraceabilityController(store);
 
-// 포트폴리오 데모 보호용 AI 질의 Rate Limiter (IP당 15분에 최대 10회)
+// 포트폴리오 데모 보호용 AI 질의 Rate Limiter (15분당 최대 10회)
 const aiRateLimiter = createRateLimiter({
     windowMs: 15 * 60 * 1000,
     max: 10,
@@ -234,7 +234,7 @@ router.get('/documents/content', async (req: Request, res: Response) => {
 
         const currentDir = dirname(fileURLToPath(import.meta.url));
         const cleanSource = source.replace(/^[./\\]+/, '');
-        
+
         // 탐색 후보 경로 (개발 tsx 환경 및 빌드 dist 환경 대응)
         const candidates = [
             resolve(currentDir, '../../../packages/database/src', cleanSource),

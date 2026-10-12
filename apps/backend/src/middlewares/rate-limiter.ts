@@ -36,6 +36,18 @@ export function createRateLimiter(options: {
         const now = Date.now();
         let record = records.get(ip);
 
+        if (options.max <= 0) {
+            res.setHeader('Retry-After', Math.ceil(options.windowMs / 1000));
+            res.setHeader('X-RateLimit-Limit', 0);
+            res.setHeader('X-RateLimit-Remaining', 0);
+            res.status(429).json({
+                error: options.message,
+                statusCode: 429,
+                retryAfter: Math.ceil(options.windowMs / 1000),
+            });
+            return;
+        }
+
         if (!record || now > record.resetTime) {
             record = {
                 count: 1,

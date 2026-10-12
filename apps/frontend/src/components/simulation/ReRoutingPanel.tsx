@@ -4,7 +4,7 @@ import { useSimulationStore } from '../../store/simulation-store';
 import { useSupplyChainStore } from '../../store/supply-chain-store';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
-import { Route, Loader2, Info, AlertTriangle } from 'lucide-react';
+import { Route, Loader2, Info, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { GiDiamonds } from 'react-icons/gi';
 import { SupplyDetailModal } from './SupplyDetailModal';
 
@@ -148,9 +148,14 @@ export const ReRoutingPanel: React.FC<ReRoutingPanelProps> = ({
                                 </div>
                             </div>
                         ) : (
-                            <div className="px-2 py-1 rounded-[4px] bg-muted/30 border border-border/40 flex items-center justify-between text-[10px]">
-                                <span className="font-medium text-foreground/90">대체 수급 안정 (RESOLVED)</span>
-                                <span className="text-muted-foreground text-[9px]">해결률 {currentPlan.emergencyPackage.coverageRate}%</span>
+                            <div className="px-2.5 py-2 rounded-[4px] bg-muted/40 border border-border/70 flex items-center justify-between text-[10px] shadow-2xs">
+                                <div className="flex items-center gap-1.5 font-semibold text-foreground tracking-tight">
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                                    <span>대체 수급 안정 (RESOLVED)</span>
+                                </div>
+                                <span className="text-[9.5px] font-mono text-muted-foreground">
+                                    해결률 {currentPlan.emergencyPackage.coverageRate}%
+                                </span>
                             </div>
                         )}
                     </div>
