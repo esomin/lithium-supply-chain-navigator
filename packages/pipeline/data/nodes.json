@@ -2,7 +2,7 @@
     {
         "id": "MINE_AU_PILBARA",
         "type": "Mine",
-        "name": "Pilgangoora",
+        "name": "Pilbara Minerals Pilgangoora",
         "country": "Australia",
         "coordinates": {
             "lat": -21.03,
@@ -23,7 +23,7 @@
     {
         "id": "MINE_AU_GREENBUSHES",
         "type": "Mine",
-        "name": "Greenbushes",
+        "name": "Talison Greenbushes",
         "country": "Australia",
         "coordinates": {
             "lat": -33.86,
@@ -43,7 +43,7 @@
     {
         "id": "MINE_CL_ATACAMA",
         "type": "Mine",
-        "name": "Atacama Salt Flat",
+        "name": "SQM Atacama (Salar)",
         "country": "Chile",
         "coordinates": {
             "lat": -23.38,
@@ -84,7 +84,7 @@
     {
         "id": "REF_AR_POSCO",
         "type": "Refinery",
-        "name": "POSCO Argentina",
+        "name": "POSCO Hombre Muerto",
         "country": "Argentina",
         "coordinates": {
             "lat": -24.78,
@@ -187,7 +187,7 @@
     {
         "id": "MINE_AR_SALTA",
         "type": "Mine",
-        "name": "Argentina Salta Salt Flat",
+        "name": "Ganfeng Salta (Mariana)",
         "country": "Argentina",
         "coordinates": {
             "lat": -24.78,
@@ -204,7 +204,7 @@
     {
         "id": "REF_CN_LITHIUM",
         "type": "Refinery",
-        "name": "China Lithium Refinery Core",
+        "name": "Ganfeng & Tianqi Refinery Hub",
         "country": "China",
         "coordinates": {
             "lat": 27.88,
@@ -243,7 +243,7 @@
     {
         "id": "MINE_AU_LITHIUM_EU",
         "type": "Mine",
-        "name": "AU Lithium Mine (EU Target)",
+        "name": "Liontown Kathleen Valley",
         "country": "Australia",
         "coordinates": {
             "lat": -31.95,
@@ -263,7 +263,7 @@
     {
         "id": "MINE_CL_LITHIUM_EU",
         "type": "Mine",
-        "name": "CL Lithium Mine (EU Target)",
+        "name": "Albemarle Atacama",
         "country": "Chile",
         "coordinates": {
             "lat": -23.38,

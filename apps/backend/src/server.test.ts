@@ -23,7 +23,7 @@ describe('서버 시작 시 시드 데이터 초기화', () => {
         const node = store.getNodeById('MINE_AU_PILBARA');
         expect(node).toBeDefined();
         expect(node!.type).toBe('Mine');
-        expect(node!.name).toBe('Pilgangoora');
+        expect(node!.name).toBe('Pilbara Minerals Pilgangoora');
     });
 
     it('엣지 ID로 개별 엣지를 조회할 수 있어야 한다', () => {

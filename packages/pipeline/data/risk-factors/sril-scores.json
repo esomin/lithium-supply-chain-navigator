@@ -10,7 +10,7 @@
     "nodes": [
         {
             "nodeId": "MINE_AU_PILBARA",
-            "name": "Pilgangoora",
+            "name": "Pilbara Minerals Pilgangoora",
             "type": "Mine",
             "country": "Australia",
             "hhi": 1.0,
@@ -33,7 +33,7 @@
         },
         {
             "nodeId": "MINE_AU_GREENBUSHES",
-            "name": "Greenbushes",
+            "name": "Talison Greenbushes",
             "type": "Mine",
             "country": "Australia",
             "hhi": 1.0,
@@ -56,7 +56,7 @@
         },
         {
             "nodeId": "MINE_CL_ATACAMA",
-            "name": "Atacama Salt Flat",
+            "name": "SQM Atacama (Salar)",
             "type": "Mine",
             "country": "Chile",
             "hhi": 1.0,
@@ -103,7 +103,7 @@
         },
         {
             "nodeId": "REF_AR_POSCO",
-            "name": "POSCO Argentina",
+            "name": "POSCO Hombre Muerto",
             "type": "Refinery",
             "country": "Argentina",
             "hhi": 1.0,
@@ -217,7 +217,7 @@
         },
         {
             "nodeId": "MINE_AR_SALTA",
-            "name": "Argentina Salta Salt Flat",
+            "name": "Ganfeng Salta (Mariana)",
             "type": "Mine",
             "country": "Argentina",
             "hhi": 1.0,
@@ -242,7 +242,7 @@
         },
         {
             "nodeId": "REF_CN_LITHIUM",
-            "name": "China Lithium Refinery Core",
+            "name": "Ganfeng & Tianqi Refinery Hub",
             "type": "Refinery",
             "country": "China",
             "hhi": 1.0,
@@ -294,7 +294,7 @@
         },
         {
             "nodeId": "MINE_AU_LITHIUM_EU",
-            "name": "AU Lithium Mine (EU Target)",
+            "name": "Liontown Kathleen Valley",
             "type": "Mine",
             "country": "Australia",
             "hhi": 1.0,
@@ -317,7 +317,7 @@
         },
         {
             "nodeId": "MINE_CL_LITHIUM_EU",
-            "name": "CL Lithium Mine (EU Target)",
+            "name": "Albemarle Atacama",
             "type": "Mine",
             "country": "Chile",
             "hhi": 1.0,
