@@ -300,22 +300,55 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
         }
     }, [pendingAIQuery, sendQuery, clearPendingAIQuery]);
 
+    // 타이핑 애니메이션 중 여부 및 하이라이트 상태
+    const [isTyping, setIsTyping] = useState(false);
+
     // 외부에서 스토어를 통해 입력창에 질문만 주입 (draftAIQuery - 확인 후 전송)
     const draftAIQuery = useSupplyChainStore((state) => state.draftAIQuery);
     const clearDraftAIQuery = useSupplyChainStore((state) => state.clearDraftAIQuery);
 
+    const typingTimerRef = useRef<NodeJS.Timeout | null>(null);
+
     useEffect(() => {
-        if (draftAIQuery && draftAIQuery.trim()) {
-            setInputValue(draftAIQuery);
-            clearDraftAIQuery();
-            // 패널 애니메이션/렌더링 후 텍스트에어리어 포커스 및 커서 맨 끝 이동
-            setTimeout(() => {
-                if (textareaRef.current) {
-                    textareaRef.current.focus();
-                    textareaRef.current.setSelectionRange(draftAIQuery.length, draftAIQuery.length);
-                }
-            }, 100);
+        if (!draftAIQuery || !draftAIQuery.trim()) return;
+
+        const targetText = draftAIQuery;
+        // 기존 실행 중인 타이핑이 있다면 정리
+        if (typingTimerRef.current) {
+            clearInterval(typingTimerRef.current);
+            typingTimerRef.current = null;
         }
+
+        setIsTyping(true);
+        setInputValue('');
+
+        let currentIdx = 0;
+        const step = Math.max(3, Math.min(8, Math.ceil(targetText.length / 28)));
+
+        typingTimerRef.current = setInterval(() => {
+            currentIdx += step;
+            if (currentIdx >= targetText.length) {
+                setInputValue(targetText);
+                setIsTyping(false);
+                if (typingTimerRef.current) {
+                    clearInterval(typingTimerRef.current);
+                    typingTimerRef.current = null;
+                }
+                clearDraftAIQuery();
+                setTimeout(() => {
+                    if (textareaRef.current) {
+                        textareaRef.current.focus();
+                        textareaRef.current.setSelectionRange(targetText.length, targetText.length);
+                    }
+                }, 50);
+            } else {
+                setInputValue(targetText.slice(0, currentIdx));
+            }
+        }, 16);
+
+        return () => {
+            // 컴포넌트 unmount 시에만 정리
+        };
     }, [draftAIQuery, clearDraftAIQuery]);
 
     // 외부에서 props로 질문이 주입되었을 때 자동 전송
@@ -467,7 +500,10 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
                 onSubmit={handleSubmit}
                 className="px-4 py-3 border-t border-border bg-card/95 backdrop-blur-xs"
             >
-                <div className="relative flex flex-col bg-slate-900/90 border border-slate-700/80 rounded-xl p-2.5 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/50 shadow-inner transition-all">
+                <div className={`relative flex flex-col bg-slate-900/90 border rounded-xl p-2.5 shadow-inner transition-all duration-300 ${isTyping
+                    ? 'border-primary/80 ring-2 ring-primary/40 shadow-[0_0_15px_rgba(59,130,246,0.25)]'
+                    : 'border-slate-700/80 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/50'
+                    }`}>
                     <textarea
                         ref={textareaRef}
                         rows={2}
