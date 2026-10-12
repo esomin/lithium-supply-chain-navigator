@@ -973,9 +973,8 @@ JSON 블록 아래에 각 대안에 대한 상세 분석도 포함하세요.`;
             }
         }
 
-        // 3. DocumentChunk 순회하며 인용된 청크 식별
-        const matchedChunks: { chunk: DocumentChunk; originalIndex: number }[] = [];
-        const addedSources = new Set<string>();
+        // 3. DocumentChunk 순회하며 인용된 청크 식별 및 소스별 인덱스 수집
+        const sourceMap = new Map<string, { chunk: DocumentChunk; docIndices: number[] }>();
 
         for (let i = 0; i < documentChunks.length; i++) {
             const chunk = documentChunks[i];
@@ -1001,21 +1000,28 @@ JSON 블록 아래에 각 대안에 대한 상세 분석도 포함하세요.`;
             const isContentMentioned = responseText.includes(source) || 
                 (docType && responseText.includes(docType));
 
-            if ((isIndexMatched || isNameMatched || isContentMentioned) && !addedSources.has(source)) {
-                addedSources.add(source);
-                matchedChunks.push({ chunk, originalIndex });
+            if (isIndexMatched || isNameMatched || isContentMentioned) {
+                if (!sourceMap.has(source)) {
+                    sourceMap.set(source, { chunk, docIndices: [originalIndex] });
+                } else {
+                    const entry = sourceMap.get(source)!;
+                    if (!entry.docIndices.includes(originalIndex)) {
+                        entry.docIndices.push(originalIndex);
+                    }
+                }
             }
         }
 
-        // 4. 인용된 문서들을 citations 목록에 추가 (원래 주입된 번호 originalIndex를 docIndex로 유지)
+        // 4. 인용된 문서들을 citations 목록에 추가 (첫 번째 docIndex 및 전체 docIndices 유지)
         const citations: Citation[] = [];
 
-        matchedChunks.forEach((item) => {
+        sourceMap.forEach(({ chunk, docIndices }) => {
             citations.push({
-                source: item.chunk.metadata.source,
-                content: item.chunk.content.substring(0, 200), // 요약용 200자
+                source: chunk.metadata.source,
+                content: chunk.content.substring(0, 200), // 요약용 200자
                 relevance: 1.0,
-                docIndex: item.originalIndex,
+                docIndex: docIndices[0],
+                docIndices,
             });
         });
 

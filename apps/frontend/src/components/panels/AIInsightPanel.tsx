@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import type { ChatMessage, Citation, InsightResponse, SimulationContextPayload } from '@navigator/shared';
 import { GiDiamonds } from 'react-icons/gi';
 import { LuCopy, LuCheck } from 'react-icons/lu';
-import { FiFileText, FiSend, FiChevronRight, FiExternalLink, FiX, FiSearch, FiGlobe, FiPlus, FiCheck } from 'react-icons/fi';
+import { FiFileText, FiSend, FiChevronRight, FiExternalLink, FiX, FiSearch, FiGlobe, FiPlus, FiCheck, FiAlertCircle, FiRefreshCw } from 'react-icons/fi';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { toast } from 'sonner';
@@ -143,8 +143,6 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
         return map;
     })());
 
-    // 에러 자동 제거 타이머
-    const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     // 메시지 리스트 스크롤 영역
     const messagesEndRef = useRef<HTMLDivElement>(null);
     // 마지막 사용자 질의 (재시도용)
@@ -173,20 +171,6 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
             console.warn('Failed to save session ID to localStorage', e);
         }
     }, [sessionId]);
-
-    // 에러 발생 시 10초 후 자동 제거
-    useEffect(() => {
-        if (error) {
-            errorTimerRef.current = setTimeout(() => {
-                setError(null);
-            }, 10000);
-        }
-        return () => {
-            if (errorTimerRef.current) {
-                clearTimeout(errorTimerRef.current);
-            }
-        };
-    }, [error]);
 
     // 새 메시지 추가 시 자동 스크롤
     useEffect(() => {
@@ -806,17 +790,24 @@ function MessageBubble({ message }: { message: ChatMessage }) {
         const numMatch = matchedText.match(/\d+/);
         if (numMatch) {
             const num = parseInt(numMatch[0], 10);
-            const found = message.citations.find(c => c.docIndex === num);
+            // 1. 단일 docIndex 또는 복수 docIndices 매칭
+            const found = message.citations.find(c => 
+                c.docIndex === num || (c.docIndices && c.docIndices.includes(num))
+            );
             if (found) {
                 setSelectedCitation(found);
                 return;
             }
-            // docIndex가 없거나 1-indexed 배열 인덱스로 조회
+            // 2. docIndex가 없거나 1-indexed 배열 인덱스로 조회
             if (message.citations[num - 1]) {
                 setSelectedCitation(message.citations[num - 1]);
                 return;
             }
-            // 순수 숫자 번호 뱃지([2], [4])인 경우 잘못된 텍스트 매칭 방지를 위해 여기서 반환
+            // 3. 인덱스 번호가 주입된 청크 범위를 벗어난 경우 가장 연관도 높은 첫 번째 출처 모달로 안전하게 fallback
+            if (message.citations.length > 0) {
+                setSelectedCitation(message.citations[0]);
+                return;
+            }
             return;
         }
 
@@ -918,6 +909,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
                             li: ({ children }) => <li>{isUser ? children : renderNodeWithBadges(children)}</li>,
                             strong: ({ children }) => <strong className="font-bold text-white">{children}</strong>,
                             em: ({ children }) => <em className="italic text-slate-200">{children}</em>,
+                            del: ({ children }) => <span>~{children}~</span>,
                             table: ({ children }) => (
                                 <div className="my-2.5 overflow-x-auto rounded border border-slate-700/80 bg-slate-950/60 shadow-xs">
                                     <table className="w-full text-left text-[11px] border-collapse min-w-[480px]">
@@ -1211,7 +1203,7 @@ function TypingIndicator() {
     );
 }
 
-/** 에러 표시 + 재시도 컴포넌트 (이모지 제거) */
+/** 에러 표시 + 재시도 컴포넌트 (차분하고 정돈된 시스템 알림 디자인) */
 function ErrorDisplay({
     error,
     onRetry,
@@ -1222,20 +1214,30 @@ function ErrorDisplay({
     hasLastQuery: boolean;
 }) {
     return (
-        <div className="p-3 bg-destructive/10 border border-destructive/40 text-destructive rounded-xl text-xs" role="alert">
-            <p className="m-0 font-medium mb-2">[오류] {error}</p>
-            <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex justify-start my-1" role="alert">
+            <div className="max-w-[96%] rounded-xl text-xs bg-slate-900/95 border border-rose-500/30 rounded-bl-xs p-3 shadow-md flex flex-col gap-2">
+                <div className="flex items-start gap-2">
+                    <FiAlertCircle className="w-3.5 h-3.5 text-rose-400 shrink-0 mt-0.5" />
+                    <div className="flex-1 text-slate-200 leading-relaxed font-normal">
+                        {error}
+                    </div>
+                </div>
                 {hasLastQuery && (
-                    <button
-                        onClick={onRetry}
-                        className="px-2.5 py-1 bg-destructive/20 text-destructive border border-destructive/40 rounded text-xs cursor-pointer hover:bg-destructive/30 transition-colors font-medium"
-                    >
-                        다시 시도
-                    </button>
+                    <div className="flex items-center gap-2 pl-5.5 pt-0.5">
+                        <button
+                            type="button"
+                            onClick={onRetry}
+                            className="p-1 text-rose-300 hover:text-rose-200 hover:bg-rose-500/10 rounded transition-colors cursor-pointer"
+                            title="질문 다시 시도"
+                            aria-label="질문 다시 시도"
+                        >
+                            <FiRefreshCw className="w-3.5 h-3.5" />
+                        </button>
+                        <span className="text-[10px] text-slate-500">
+                            네트워크 또는 일시적 API 제한 상태입니다.
+                        </span>
+                    </div>
                 )}
-                <span className="text-[11px] text-muted-foreground">
-                    네트워크 또는 API 키 설정을 확인해 주세요.
-                </span>
             </div>
         </div>
     );

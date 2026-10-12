@@ -28,6 +28,8 @@ export interface Citation {
     relevance: number;
     /** 주입 당시의 문서 번호 ([문서 1], [문서 2] 등, 1-based) */
     docIndex?: number;
+    /** 단일 출처에 매핑된 주입 문서 번호 목록 */
+    docIndices?: number[];
 }
 
 /**
