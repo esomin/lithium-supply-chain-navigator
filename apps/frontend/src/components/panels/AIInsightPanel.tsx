@@ -797,7 +797,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
                 return;
             }
             // 1-2. 원본 청크 docIndices 매칭
-            const foundByDocIndices = message.citations.find(c => 
+            const foundByDocIndices = message.citations.find(c =>
                 c.docIndices && c.docIndices.includes(num)
             );
             if (foundByDocIndices) {
@@ -860,7 +860,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
                                 e.stopPropagation();
                                 handleBadgeClick(part);
                             }}
-                            className="inline-block px-1 py-0 mx-0.5 text-[9.5px] font-mono font-semibold text-cyan-400 bg-cyan-950/40 hover:bg-cyan-900/60 border border-cyan-800/50 rounded cursor-pointer select-none transition-all hover:underline hover:text-cyan-300"
+                            className="inline font-mono font-bold text-cyan-400 hover:text-cyan-300 cursor-pointer select-none"
                             title="클릭하여 참조 원문 보기"
                         >
                             {label}
@@ -915,28 +915,25 @@ function MessageBubble({ message }: { message: ChatMessage }) {
                     )}
                 </button>
 
-                {/* 메시지 내용 (선명한 명도 대비와 가독성) */}
-                <div className="m-0 leading-relaxed break-words space-y-2 [&>p]:mb-1.5 [&>p]:leading-relaxed [&>ul]:list-disc [&>ul]:pl-4 [&>ul]:space-y-1 [&>ol]:list-decimal [&>ol]:pl-4 [&>ol]:space-y-1 [&>h3]:text-[13px] [&>h3]:font-bold [&>h3]:text-primary [&>h3]:mt-2 [&>h4]:text-xs [&>h4]:font-bold [&>h4]:text-slate-200 [&>strong]:text-white [&>code]:bg-slate-800 [&>code]:px-1 [&>code]:py-0.5 [&>code]:rounded [&>code]:text-primary/90">
+                {/* 메시지 내용 (컴팩트 text-[11px] 기준 비례 타이포그래피 적용) */}
+                <div className={`m-0 break-words ${isUser ? 'text-[11px] leading-relaxed font-normal whitespace-pre-wrap' : 'prose prose-invert prose-xs text-[11px] max-w-none prose-headings:font-bold prose-headings:text-slate-100'}`}>
                     <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
                         components={{
-                            p: ({ children }) => <p className="mb-1.5 leading-relaxed">{isUser ? children : renderNodeWithBadges(children)}</p>,
+                            p: ({ children }) => <p className={`leading-relaxed ${isUser ? 'm-0 text-[11px]' : ''}`}>{isUser ? children : renderNodeWithBadges(children)}</p>,
                             li: ({ children }) => <li>{isUser ? children : renderNodeWithBadges(children)}</li>,
                             strong: ({ children }) => <strong className="font-bold text-white">{children}</strong>,
                             em: ({ children }) => <em className="italic text-slate-200">{children}</em>,
                             del: ({ children }) => <span>~{children}~</span>,
                             table: ({ children }) => (
-                                <div className="my-2.5 overflow-x-auto rounded border border-slate-700/80 bg-slate-950/60 shadow-xs">
-                                    <table className="w-full text-left text-[11px] border-collapse min-w-[480px]">
+                                <div className="my-2.5 overflow-x-auto rounded-lg border border-slate-800/80 bg-slate-950/50 shadow-xs">
+                                    <table className="w-full text-left border-collapse m-0">
                                         {children}
                                     </table>
                                 </div>
                             ),
-                            thead: ({ children }) => <thead className="bg-slate-800/80 border-b border-white/20 font-semibold text-white">{children}</thead>,
-                            tbody: ({ children }) => <tbody className="divide-y divide-slate-800/80 text-slate-300">{children}</tbody>,
-                            tr: ({ children }) => <tr className="hover:bg-slate-800/40 transition-colors">{children}</tr>,
-                            th: ({ children }) => <th className="px-2.5 py-1.5 whitespace-nowrap text-white font-semibold">{isUser ? children : renderNodeWithBadges(children)}</th>,
-                            td: ({ children }) => <td className="px-2.5 py-1.5 align-middle leading-snug">{isUser ? children : renderNodeWithBadges(children)}</td>,
+                            th: ({ children }) => <th className="px-3 py-2 text-slate-200 font-semibold align-bottom leading-snug break-keep first:whitespace-nowrap first:w-16">{isUser ? children : renderNodeWithBadges(children)}</th>,
+                            td: ({ children }) => <td className="px-3 py-2 align-middle leading-relaxed break-keep first:whitespace-nowrap first:font-medium first:text-slate-200 [&:nth-child(2)]:min-w-[170px]">{isUser ? children : renderNodeWithBadges(children)}</td>,
                         }}
                     >
                         {message.content}
@@ -1039,7 +1036,7 @@ function CitationList({
                                     <span>{meta.organization}</span>
                                 </div>
 
-                                <div className="m-0 text-slate-300 text-[11px] leading-relaxed line-clamp-3 bg-slate-900/60 p-2 rounded border border-slate-800/50 font-sans prose prose-invert prose-xs max-w-none [&>p]:m-0 [&>p]:leading-relaxed [&>ul]:m-0 [&>ul]:pl-3.5 [&>ol]:m-0 [&>ol]:pl-3.5 [&>li]:m-0 [&>strong]:text-white [&>strong]:font-semibold">
+                                <div className="m-0 text-slate-300 text-[11px] leading-relaxed line-clamp-3 bg-slate-900/60 p-2 rounded border border-slate-800/50 font-sans prose prose-invert prose-xs max-w-none [&>p]:m-0 [&>p]:leading-relaxed [&>ul]:m-0 [&>ul]:pl-3.5 [&>ol]:m-0 [&>ol]:pl-3.5 [&>li]:m-0 [&>strong]:text-white [&>strong]:font-semibold [&>h1]:text-[11.5px] [&>h1]:font-semibold [&>h1]:text-white [&>h1]:m-0 [&>h1]:mt-1 [&>h2]:text-[11.5px] [&>h2]:font-semibold [&>h2]:text-white [&>h2]:m-0 [&>h2]:mt-1 [&>h3]:text-[11px] [&>h3]:font-semibold [&>h3]:text-slate-200 [&>h3]:m-0 [&>h3]:mt-1 [&>hr]:my-1">
                                     <ReactMarkdown>
                                         {citation.content}
                                     </ReactMarkdown>
