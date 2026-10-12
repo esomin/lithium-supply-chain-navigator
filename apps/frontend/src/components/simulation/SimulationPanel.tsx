@@ -333,7 +333,13 @@ export function SimulationPanel({ onClose }: SimulationPanelProps = {}) {
             <div className={`bg-card border-b border-r border-border px-3.5 py-3 shadow-sm flex items-center justify-between pointer-events-auto z-10 transition-all duration-300 ease-in-out ${isSecondColumnOpen ? 'w-[760px]' : 'w-[380px]'
                 }`}>
                 <h2 className="text-sm font-bold text-foreground tracking-tight flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-primary inline-block"></span>
+                    <span
+                        className={`w-2 h-2 rounded-full inline-block transition-colors duration-200 ${
+                            result
+                                ? 'bg-cyan-400 drop-shadow-[0_0_5px_rgba(34,211,238,0.85)]'
+                                : 'bg-slate-400/80'
+                        }`}
+                    />
                     공급망 충격 시뮬레이션
                 </h2>
                 <div className="flex items-center gap-1.5">

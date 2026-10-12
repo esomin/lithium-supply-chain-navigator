@@ -7,7 +7,7 @@ import { NodeDetailPanel } from '../components/panels/NodeDetailPanel';
 import { TraceabilityPanel } from '../components/panels/TraceabilityPanel';
 import { SimulationPanel } from '../components/simulation/SimulationPanel';
 import { AIInsightPanel } from '../components/panels/AIInsightPanel';
-import { Play, Info } from 'lucide-react';
+import { Info } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { toast } from 'sonner';
 import { AppHeader } from '../components/common/AppHeader';
@@ -32,11 +32,12 @@ export function GraphView() {
     } = useSupplyChainStore();
 
     // 시뮬레이션 결과 및 실행 상태 가져오기
-    const { highlightedPath, isRunning, isRerouteApplied, activeRerouteOptions } = useSimulationStore((state) => ({
+    const { highlightedPath, isRunning, isRerouteApplied, activeRerouteOptions, simulationResult } = useSimulationStore((state) => ({
         highlightedPath: state.highlightedPath,
         isRunning: state.isRunning,
         isRerouteApplied: state.isRerouteApplied,
         activeRerouteOptions: state.activeRerouteOptions,
+        simulationResult: state.result,
     }));
 
     const [error, setError] = useState<string | null>(null);
@@ -263,10 +264,17 @@ export function GraphView() {
                                 dismissSimTooltip();
                             }}
                             variant="default"
-                            className="font-semibold shadow-xs flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer rounded-[4px] px-3 py-1.5 text-xs h-8 bg-primary text-primary-foreground hover:bg-primary-hover border border-primary/20 backdrop-blur-md"
+                            className="font-semibold shadow-xs flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer rounded-[4px] px-3 py-1.5 text-xs h-8 bg-primary text-primary-foreground hover:bg-primary-hover border border-primary/20 backdrop-blur-md"
                             aria-label="공급망 충격 시뮬레이션 패널 열기"
+                            title={simulationResult ? '시뮬레이션 분석 결과 적용 중 (클릭하여 패널 열기)' : '공급망 충격 시뮬레이션 패널 열기'}
                         >
-                            <Play className="w-3.5 h-3.5 fill-current" />
+                            <span
+                                className={`w-2 h-2 rounded-full shrink-0 transition-colors duration-200 ${
+                                    simulationResult
+                                        ? 'bg-cyan-300'
+                                        : 'bg-white'
+                                }`}
+                            />
                             <span>공급망 충격 시뮬레이션</span>
                         </Button>
 
