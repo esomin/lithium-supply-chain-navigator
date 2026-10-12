@@ -6,6 +6,7 @@ import { LuCopy, LuCheck } from 'react-icons/lu';
 import { FiFileText, FiSend, FiChevronRight, FiExternalLink, FiX, FiSearch, FiGlobe, FiPlus, FiCheck } from 'react-icons/fi';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { toast } from 'sonner';
 import { useSupplyChainStore } from '../../store/supply-chain-store';
 import { useSimulationStore } from '../../store/simulation-store';
 import { PortalTooltip } from '../ui/portal-tooltip';
@@ -294,7 +295,11 @@ export function AIInsightPanel({ onClose, initialQuery }: AIInsightPanelProps) {
             };
             setMessages((prev) => [...prev, assistantMessage]);
         } catch (err) {
-            setError(err instanceof Error ? err.message : '인사이트 생성에 실패했습니다.');
+            const errorMsg = err instanceof Error ? err.message : '인사이트 생성에 실패했습니다.';
+            setError(errorMsg);
+            toast.error(errorMsg, {
+                duration: 5000,
+            });
         } finally {
             setIsLoading(false);
         }

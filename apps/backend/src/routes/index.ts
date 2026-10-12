@@ -8,12 +8,20 @@ import { DocumentController } from '../controllers/document-controller.js';
 import { TraceabilityController } from '../controllers/traceability-controller.js';
 import { AIInsightsController } from '../controllers/ai-insights-controller.js';
 import { store, vectorStore, embeddingProvider } from '../store.js';
+import { createRateLimiter } from '../middlewares/rate-limiter.js';
 
 const router = Router();
 const riskController = new RiskController(store);
 const graphController = new GraphController(store);
 const simulationController = new SimulationController(store);
 const traceabilityController = new TraceabilityController(store);
+
+// 포트폴리오 데모 보호용 AI 질의 Rate Limiter (IP당 15분에 최대 10회)
+const aiRateLimiter = createRateLimiter({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    message: '데모 환경 보호를 위해 15분당 최대 10회까지 질문 가능합니다. 잠시 후 다시 시도해 주세요.',
+});
 
 // 문서 인덱싱 컨트롤러 초기화 (싱글톤 공유)
 const documentController = new DocumentController(vectorStore, embeddingProvider);
@@ -278,7 +286,7 @@ router.get('/trace/:factoryNodeId', (req: Request, res: Response) => {
 // === AI 인사이트 라우트 (Phase 2) ===
 
 /** POST /api/insights/query - AI 질의 */
-router.post('/insights/query', async (req: Request, res: Response) => {
+router.post('/insights/query', aiRateLimiter, async (req: Request, res: Response) => {
     const { sessionId, query, simulationContext } = req.body;
 
     if (!query || typeof query !== 'string' || query.trim().length === 0) {
@@ -305,7 +313,7 @@ router.post('/insights/query', async (req: Request, res: Response) => {
 });
 
 /** POST /api/insights/recommend - 시뮬레이션 결과 기반 대안 추천 */
-router.post('/insights/recommend', async (req: Request, res: Response) => {
+router.post('/insights/recommend', aiRateLimiter, async (req: Request, res: Response) => {
     const { sessionId, simulationId } = req.body;
 
     if (!simulationId || typeof simulationId !== 'string' || simulationId.trim().length === 0) {
