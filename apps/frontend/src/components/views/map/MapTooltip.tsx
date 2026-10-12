@@ -29,9 +29,9 @@ export type TooltipInfo =
 
 // 노드 타입 한글 매핑
 const NODE_TYPE_KO: Record<string, string> = {
-    Resource: '자원',
     Mine: '광산',
     Refinery: '정제소',
+    Plant: '양극재 플랜트',
     Factory: '양극재 플랜트',
 };
 

@@ -128,7 +128,7 @@
         {
             "nodeId": "MAT_KR_LG_CHEM",
             "name": "LG Chem Cheongju",
-            "type": "Factory",
+            "type": "Plant",
             "country": "SouthKorea",
             "hhi": 1.0,
             "wgi": 0.88,
@@ -151,7 +151,7 @@
         {
             "nodeId": "MAT_KR_ECOPRO_BM",
             "name": "EcoPro BM Pohang",
-            "type": "Factory",
+            "type": "Plant",
             "country": "SouthKorea",
             "hhi": 1.0,
             "wgi": 0.88,
@@ -172,7 +172,7 @@
         {
             "nodeId": "MAT_KR_POSCO_FUTUREM",
             "name": "POSCO Future M Gwangyang",
-            "type": "Factory",
+            "type": "Plant",
             "country": "SouthKorea",
             "hhi": 1.0,
             "wgi": 0.88,
@@ -270,7 +270,7 @@
         {
             "nodeId": "MAT_CN_HUNAN_YUNENG",
             "name": "Hunan Yuneng",
-            "type": "Factory",
+            "type": "Plant",
             "country": "China",
             "hhi": 1.0,
             "wgi": 0.30,
@@ -366,7 +366,7 @@
         {
             "nodeId": "MAT_PL_UMICORE",
             "name": "Umicore Poland",
-            "type": "Factory",
+            "type": "Plant",
             "country": "Poland",
             "hhi": 1.0,
             "wgi": 0.82,
@@ -389,7 +389,7 @@
         {
             "nodeId": "MAT_KR_UMICORE",
             "name": "Umicore Cheonan Plant",
-            "type": "Factory",
+            "type": "Plant",
             "country": "SouthKorea",
             "hhi": 1.0,
             "wgi": 0.88,

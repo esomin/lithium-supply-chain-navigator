@@ -845,7 +845,7 @@ JSON 블록 아래에 각 대안에 대한 상세 분석도 포함하세요.`;
 
         // 가용한 노드 중 생산능력이 있는 노드를 대안으로 제시
         const producers = nodes.filter(n =>
-            n.type === 'Mine' || n.type === 'Refinery' || n.type === 'Factory'
+            n.type === 'Mine' || n.type === 'Refinery' || n.type === 'Plant' || n.type === 'Factory'
         );
 
         if (producers.length === 0) return [];

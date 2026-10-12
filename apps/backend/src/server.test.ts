@@ -47,7 +47,7 @@ describe('서버 시작 시 시드 데이터 초기화', () => {
         const types = new Set(nodes.map(n => n.type));
         expect(types).toContain('Mine');
         expect(types).toContain('Refinery');
-        expect(types).toContain('Factory');
+        expect(types).toContain('Plant');
     });
 
     it('대상 국가의 노드가 존재해야 한다', () => {

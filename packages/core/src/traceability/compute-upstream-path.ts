@@ -91,8 +91,8 @@ export function computeUpstreamPaths(
 ): TraceabilityResult {
     const startNode = allNodes.find((n) => n.id === factoryNodeId);
 
-    // 시작 노드가 없거나 Factory 타입이 아닌 경우 빈 결과 반환
-    if (!startNode || startNode.type !== 'Factory') {
+    // 시작 노드가 없거나 Plant/Factory 타입이 아닌 경우 빈 결과 반환
+    if (!startNode || (startNode.type !== 'Plant' && startNode.type !== 'Factory')) {
         return {
             factoryNodeId,
             factoryName: startNode?.name ?? '',

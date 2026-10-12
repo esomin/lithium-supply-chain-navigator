@@ -124,8 +124,8 @@ export function NodeDetailPanel({ node, connectedEdges, riskScore, onClose, onOp
                     {/* 연결된 엣지 목록 컴포넌트 */}
                     <ConnectedEdgesList connectedEdges={connectedEdges} />
 
-                    {/* Factory 노드일 때 ESG 역추적 버튼 */}
-                    {node.type === 'Factory' && onOpenTraceability && (
+                    {/* Plant/Factory 노드일 때 ESG 역추적 버튼 */}
+                    {(node.type === 'Plant' || node.type === 'Factory') && onOpenTraceability && (
                         <div className="pt-2">
                             <button
                                 id="tour-esg-trace-button"

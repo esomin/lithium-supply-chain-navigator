@@ -1,7 +1,7 @@
 // Supply Chain Graph Data Model Types
 // 2025 기준 리튬(HS 2530.90, HS 2836.91, HS 2825.20) 공급망, 7개국 27개 마스터 노드
 
-export type NodeType = 'Resource' | 'Mine' | 'Refinery' | 'Factory';
+export type NodeType = 'Mine' | 'Refinery' | 'Plant' | 'Resource' | 'Factory';
 
 export type EdgeType = 'Supply' | 'Delivery';
 

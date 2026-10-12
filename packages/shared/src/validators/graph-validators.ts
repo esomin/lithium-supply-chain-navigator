@@ -5,6 +5,7 @@ const VALID_NODE_TYPES: ReadonlySet<string> = new Set<NodeType>([
     'Mine',
     'Refinery',
     'Factory',
+    'Plant',
 ]);
 
 const VALID_EDGE_TYPES: ReadonlySet<string> = new Set<EdgeType>([

@@ -66,9 +66,9 @@ export function getNodeRadius(
  */
 export function getNodeTypeLabel(type: string): string {
     const labels: Record<string, string> = {
-        Resource: '매장된 자원',
         Mine: '광산',
         Refinery: '정제소',
+        Plant: '양극재 플랜트',
         Factory: '양극재 플랜트',
     };
     return labels[type] || type;
@@ -93,10 +93,10 @@ const COUNTRY_COLORS: Record<string, string> = {
  * 노드 타입별 fill 색상 매핑.
  */
 const NODE_TYPE_COLORS: Record<string, string> = {
-    Resource: '#0EA5E9',   // 하늘색 (자원)
     Mine: '#10B981',       // 에메랄드 그린 (광산)
     Refinery: '#F59E0B',   // 앰버/주황 (정제소)
-    Factory: 'rgba(91, 134, 195, 1)',    // 연한 그레이 (공장)
+    Plant: 'rgba(91, 134, 195, 1)',      // 블루/그레이 (양극재 플랜트)
+    Factory: 'rgba(91, 134, 195, 1)',    // 하위 호환
 };
 
 /**

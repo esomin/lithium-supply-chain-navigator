@@ -20,8 +20,8 @@ export class TraceabilityController {
     getUpstreamTrace(factoryNodeId: string): TraceabilityReport | null {
         const node = this.store.getNodeById(factoryNodeId);
 
-        // 노드가 없거나 Factory 타입이 아닌 경우 null 반환
-        if (!node || node.type !== 'Factory') {
+        // 노드가 없거나 Plant/Factory 타입이 아닌 경우 null 반환
+        if (!node || (node.type !== 'Plant' && node.type !== 'Factory')) {
             return null;
         }
 

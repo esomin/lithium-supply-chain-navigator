@@ -23,11 +23,11 @@ describe('loadFromFiles', () => {
     it('should load nodes with correct types distribution', () => {
         const mines = result.nodes.filter(n => n.type === 'Mine');
         const refineries = result.nodes.filter(n => n.type === 'Refinery');
-        const factories = result.nodes.filter(n => n.type === 'Factory');
+        const plants = result.nodes.filter(n => n.type === 'Plant');
 
         expect(mines).toHaveLength(7);
         expect(refineries).toHaveLength(4);
-        expect(factories).toHaveLength(6);
+        expect(plants).toHaveLength(6);
     });
 
     it('should load nodes for target countries', () => {

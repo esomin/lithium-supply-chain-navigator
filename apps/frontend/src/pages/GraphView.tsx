@@ -357,12 +357,12 @@ export function GraphView() {
                         connectedEdges={connectedEdges}
                         riskScore={riskScoreMap.get(selectedNode.id)}
                         onClose={handleClosePanel}
-                        onOpenTraceability={selectedNode.type === 'Factory' ? handleOpenTraceability : undefined}
+                        onOpenTraceability={(selectedNode.type === 'Plant' || selectedNode.type === 'Factory') ? handleOpenTraceability : undefined}
                     />
                 )}
 
                 {/* ESG 역추적 패널 */}
-                {selectedNode && showTraceability && selectedNode.type === 'Factory' && (
+                {selectedNode && showTraceability && (selectedNode.type === 'Plant' || selectedNode.type === 'Factory') && (
                     <TraceabilityPanel
                         factoryNodeId={selectedNode.id}
                         factoryName={selectedNode.name}
@@ -425,12 +425,8 @@ export function GraphView() {
                             정제소
                         </span>
                         <span className="flex items-center gap-1">
-                            <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-muted-foreground/30 text-[9px] font-bold text-foreground">F</span>{' '}
+                            <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-muted-foreground/30 text-[9px] font-bold text-foreground">P</span>{' '}
                             양극재 플랜트
-                        </span>
-                        <span className="flex items-center gap-1">
-                            <span className="inline-flex items-center justify-center px-1 h-4 rounded-full bg-muted-foreground/30 text-[8px] font-bold text-foreground">RES</span>{' '}
-                            자원
                         </span>
                     </div>
                     <div className="font-bold mb-1 text-foreground">리스크</div>

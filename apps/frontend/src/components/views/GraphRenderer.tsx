@@ -86,7 +86,7 @@ export function GraphRenderer({
     const targetBeaconNode = useMemo(() => {
         return (
             filteredNodes.find((n) => n.name.includes('LG Chem Cheongju')) ||
-            filteredNodes.find((n) => n.type === 'Factory')
+            filteredNodes.find((n) => n.type === 'Plant' || n.type === 'Factory')
         );
     }, [filteredNodes]);
 
@@ -297,8 +297,7 @@ export function GraphRenderer({
                         const type = nodeData?.nodeType as string;
                         if (type === 'Mine') return 'M';
                         if (type === 'Refinery') return 'R';
-                        if (type === 'Factory') return 'F';
-                        if (type === 'Resource') return 'RES';
+                        if (type === 'Plant' || type === 'Factory') return 'P';
                         return '';
                     },
                     iconFontSize: 11,
@@ -890,9 +889,9 @@ export function GraphRenderer({
 
 /** 노드 타입 영-한 매핑 */
 const NODE_TYPE_LABEL_KO: Record<string, string> = {
-    Resource: '자원',
     Mine: '광산',
     Refinery: '정제소',
+    Plant: '양극재 플랜트',
     Factory: '양극재 플랜트',
 };
 

@@ -102,7 +102,7 @@
     },
     {
         "id": "MAT_KR_LG_CHEM",
-        "type": "Factory",
+        "type": "Plant",
         "name": "LG Chem Cheongju",
         "country": "SouthKorea",
         "coordinates": {
@@ -123,7 +123,7 @@
     },
     {
         "id": "MAT_KR_ECOPRO_BM",
-        "type": "Factory",
+        "type": "Plant",
         "name": "EcoPro BM Pohang",
         "country": "SouthKorea",
         "coordinates": {
@@ -145,7 +145,7 @@
     },
     {
         "id": "MAT_KR_POSCO_FUTUREM",
-        "type": "Factory",
+        "type": "Plant",
         "name": "POSCO Future M Gwangyang",
         "country": "SouthKorea",
         "coordinates": {
@@ -222,7 +222,7 @@
     },
     {
         "id": "MAT_CN_HUNAN_YUNENG",
-        "type": "Factory",
+        "type": "Plant",
         "name": "Hunan Yuneng",
         "country": "China",
         "coordinates": {
@@ -302,7 +302,7 @@
     },
     {
         "id": "MAT_PL_UMICORE",
-        "type": "Factory",
+        "type": "Plant",
         "name": "Umicore Poland",
         "country": "Poland",
         "coordinates": {
@@ -323,7 +323,7 @@
     },
     {
         "id": "MAT_KR_UMICORE",
-        "type": "Factory",
+        "type": "Plant",
         "name": "Umicore Cheonan Plant",
         "country": "SouthKorea",
         "coordinates": {

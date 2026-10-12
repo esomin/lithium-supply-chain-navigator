@@ -95,7 +95,7 @@ export function computeIndividualReroutingOptions(
                 if (candidate.id === targetNode.id) return false;
                 if (candidate.type === 'Resource') return false;
 
-                if (targetNode.type === 'Factory') {
+                if (targetNode.type === 'Plant' || targetNode.type === 'Factory') {
                     if (candidate.type !== 'Refinery') return false;
                 } else if (targetNode.type === 'Refinery') {
                     if (candidate.type !== 'Mine') return false;
@@ -131,7 +131,7 @@ export function computeIndividualReroutingOptions(
                     (e) => e.sourceNodeId === candidate.id && e.targetNodeId === targetNode.id,
                 );
 
-                const hsCode = (existingEdge?.attributes?.hsCode as string) || Array.from(incomingHsCodes)[0] || (targetNode.type === 'Factory' ? '2825.20' : '2530.90');
+                const hsCode = (existingEdge?.attributes?.hsCode as string) || Array.from(incomingHsCodes)[0] || ((targetNode.type === 'Plant' || targetNode.type === 'Factory') ? '2825.20' : '2530.90');
                 const existingLogistics = existingEdge?.attributes?.logisticsInfo as LogisticsInfo | undefined;
 
                 const isSameCountry = candidate.country === targetNode.country;
